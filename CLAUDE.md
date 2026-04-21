@@ -8,25 +8,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 交互式使用方式（Claude Code）
 
-用户可以直接用自然语言描述需求，例如：
+### 自动触发规则（重要）
 
-- "为五年级上册生成 8 个实验"
-- "看看教材文件夹里有哪些教材"
-- "飞书表格里现在有哪些数据表"
+当用户的请求属于下表中任一**意图类型**时，**立即执行**对应的操作，不要追问年级/数量/路径等细节（已能从自然语言中推断），不要请求用户确认，不要给出"我可以帮你做..."之类的准备性回复——直接开跑。
 
-遇到此类请求时，直接调用相应模块完成任务，无需用户手动运行脚本：
+| 意图类型 | 触发词示例 | 执行方式 |
+|---------|-----------|---------|
+| 生成实验 | "生成/创建/写... X个... 实验"、"为X年级... 做实验" | 按下方代码模板运行 |
+| 查看表格 | "有哪些数据表"、"飞书里有什么" | 调用 `FeishuBase.list_tables()` |
+| 查看教材 | "有哪些教材"、"教材文件夹" | Glob `教材/*.docx` |
 
-```python
+### 生成实验的执行模板
+
+```bash
+python -c "
+import sys; sys.stdout.reconfigure(encoding='utf-8')
 from textbook import parse_textbook
 from generator import generate_experiments
 from feishu import FeishuBase
-
-book = parse_textbook("教材/AI教材五年级上册.docx")
-experiments = generate_experiments(book, 8, api_key="sk-ant-...")
-feishu = FeishuBase("T5WXb4Hx2aRmoUs1fpJcbkFrn8g")
-table_id = feishu.get_or_create_table(book["grade"])
+book = parse_textbook('教材/AI教材<年级>.docx')
+experiments = generate_experiments(book, <数量>)
+feishu = FeishuBase('T5WXb4Hx2aRmoUs1fpJcbkFrn8g')
+table_id = feishu.get_or_create_table(book['grade'])
 feishu.write_experiments(table_id, experiments)
+print(f'done: {len(experiments)} experiments in table {book[\"grade\"]}')
+"
 ```
+
+### 预制斜杠命令
+
+`.claude/commands/` 下已预制：
+- `/generate <年级> <数量>` — 生成实验
+- `/list-tables` — 查看飞书数据表
+- `/list-textbooks` — 查看本地教材
+
+### 前置检查
+
+运行前仅需确认 `ANTHROPIC_API_KEY` 环境变量存在。不存在则一次性告知用户设置，不要反复询问。
 
 ## 脚本启动方式
 
