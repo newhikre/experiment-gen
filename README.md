@@ -4,6 +4,18 @@
 
 ## 使用方式
 
+### 方式一：Claude Code（推荐）
+
+用 [Claude Code](https://claude.ai/code) 打开本项目，直接用自然语言交互：
+
+> "为五年级上册生成 8 个实验"
+> "看看飞书表格里现在有哪些数据表"
+> "教材文件夹里有哪些教材"
+
+Claude Code 会自动调用相应模块完成任务，无需手动运行脚本。
+
+### 方式二：命令行
+
 ```bash
 pip install -r requirements.txt
 python main.py <教材路径> <实验数量> [--base-token TOKEN] [--api-key KEY]
