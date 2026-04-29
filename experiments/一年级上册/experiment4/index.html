@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>透视眼设计工坊</title>
+  <style>
+    :root {
+      --ink: #1f3040;
+      --muted: #647789;
+      --panel: rgba(255, 255, 255, 0.93);
+      --line: rgba(31, 48, 64, 0.12);
+      --accent: #ff8b44;
+      --accent-2: #35a789;
+      --accent-3: #4b7fff;
+      --shadow: 0 24px 60px rgba(28, 43, 63, 0.14);
+      --radius: 26px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 10%, rgba(255, 139, 68, 0.18), transparent 26%),
+        radial-gradient(circle at 92% 14%, rgba(75, 127, 255, 0.18), transparent 24%),
+        linear-gradient(180deg, #fdf8f1 0%, #f4fbff 48%, #eff7f2 100%);
+    }
+
+    .page {
+      width: min(1340px, calc(100vw - 24px));
+      margin: 16px auto 24px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero,
+    .shell,
+    .footer-card {
+      background: var(--panel);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      padding: 20px 24px;
+      display: grid;
+      gap: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -42px;
+      top: -44px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(53, 167, 137, 0.18), transparent 70%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 139, 68, 0.12);
+      color: #b35c24;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 980px;
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .hero-meta span {
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: rgba(31, 48, 64, 0.05);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .shell {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .guide-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(255, 139, 68, 0.12), rgba(75, 127, 255, 0.08));
+      border: 1px solid rgba(255, 139, 68, 0.16);
+    }
+
+    .guide-button {
+      appearance: none;
+      border: 0;
+      border-radius: 18px;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, var(--accent), #ffb764);
+      color: white;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 24px rgba(255, 139, 68, 0.24);
+    }
+
+    .guide-button:hover,
+    .guide-button:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .guide-text {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .progress-wrap {
+      display: grid;
+      gap: 10px;
+      flex: 1;
+      min-width: min(720px, 100%);
+    }
+
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .progress-bar {
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(31, 48, 64, 0.08);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 24%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), #ffcb63);
+      transition: width 220ms ease;
+    }
+
+    .score-card {
+      padding: 12px 16px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(75, 127, 255, 0.12), rgba(53, 167, 137, 0.12));
+      font-weight: 700;
+    }
+
+    .workshop {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .panel-title h2,
+    .panel-title h3 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(75, 127, 255, 0.1);
+      color: var(--accent-3);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .copy {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mini-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(31, 48, 64, 0.05);
+      display: grid;
+      gap: 8px;
+    }
+
+    .mini-card strong {
+      font-size: 17px;
+    }
+
+    .mini-card span {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .component-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .component-card {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    .component-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .component-head strong {
+      font-size: 20px;
+    }
+
+    .component-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 16px;
+    }
+
+    .toggle-btn {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: rgba(31, 48, 64, 0.08);
+      color: var(--ink);
+      transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+    }
+
+    .toggle-btn:hover,
+    .toggle-btn:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .toggle-btn.active {
+      background: linear-gradient(135deg, var(--accent-2), #74d5b8);
+      color: white;
+    }
+
+    .control-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .slider-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    .slider-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      font-size: 16px;
+      color: var(--muted);
+    }
+
+    .slider-group strong {
+      font-size: 18px;
+      color: var(--ink);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent-3);
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(31, 48, 64, 0.05);
+      display: grid;
+      gap: 8px;
+    }
+
+    .metric-card strong {
+      font-size: 24px;
+    }
+
+    .metric-card span {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .feedback {
+      padding: 14px 16px;
+      border-radius: 18px;
+      display: none;
+      line-height: 1.7;
+      font-size: 17px;
+      border: 1px solid var(--line);
+    }
+
+    .feedback.show {
+      display: block;
+    }
+
+    .feedback.success {
+      background: rgba(53, 167, 137, 0.08);
+      border-color: rgba(53, 167, 137, 0.18);
+      color: #16644f;
+    }
+
+    .feedback.error {
+      background: rgba(255, 139, 68, 0.08);
+      border-color: rgba(255, 139, 68, 0.18);
+      color: #9f4d1b;
+    }
+
+    .action-row,
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 16px;
+      padding: 13px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+    }
+
+    .btn:hover,
+    .btn:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      color: white;
+      background: linear-gradient(135deg, var(--accent), #ffc65f);
+      box-shadow: 0 12px 24px rgba(255, 139, 68, 0.22);
+    }
+
+    .btn-accent {
+      color: white;
+      background: linear-gradient(135deg, var(--accent-2), #73d7b8);
+      box-shadow: 0 12px 24px rgba(53, 167, 137, 0.22);
+    }
+
+    .btn-secondary {
+      color: var(--ink);
+      background: rgba(31, 48, 64, 0.08);
+    }
+
+    .btn[disabled] {
+      cursor: not-allowed;
+      opacity: 0.52;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .stage {
+      border-radius: 24px;
+      border: 1px solid rgba(31, 48, 64, 0.08);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.4), transparent 28%),
+        linear-gradient(180deg, #fbfdff, #f0f7ff);
+      min-height: 620px;
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .stage-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .stage-head h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .round-pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(75, 127, 255, 0.1);
+      color: var(--accent-3);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .box-stage {
+      position: relative;
+      min-height: 420px;
+      border-radius: 26px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 16%, rgba(255,255,255,0.38), transparent 22%),
+        linear-gradient(180deg, #f7e7cc, #ebd1ab);
+      border: 1px solid rgba(111, 80, 46, 0.18);
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .box-body {
+      position: relative;
+      width: min(100%, 560px);
+      aspect-ratio: 1.18;
+      border-radius: 28px;
+      background: linear-gradient(180deg, #8b603d, #6f4a2e 74%, #5a3a25);
+      box-shadow:
+        inset 0 0 0 4px rgba(255, 255, 255, 0.08),
+        0 18px 30px rgba(79, 53, 31, 0.18);
+      overflow: hidden;
+    }
+
+    .box-lid {
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      top: 6%;
+      height: 26px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .box-window {
+      position: absolute;
+      left: 14%;
+      right: 14%;
+      top: 18%;
+      bottom: 14%;
+      border-radius: 26px;
+      background: linear-gradient(180deg, #1b2331, #121821);
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .object-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .dark-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at center, rgba(255,255,255,0), rgba(7, 10, 16, 0.92) 70%);
+      transition: opacity 220ms ease;
+      pointer-events: none;
+    }
+
+    .focus-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      transition: background 220ms ease;
+    }
+
+    .peephole-ring {
+      position: absolute;
+      width: 116px;
+      height: 116px;
+      border-radius: 50%;
+      border: 6px solid rgba(255, 255, 255, 0.84);
+      box-shadow: 0 0 0 999px rgba(6, 8, 14, 0.74);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 220ms ease, left 220ms ease, top 220ms ease;
+    }
+
+    .lamp-strip {
+      position: absolute;
+      left: 18%;
+      right: 18%;
+      top: 10%;
+      height: 14px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(255, 245, 175, 0.2), rgba(255, 239, 132, 0.88), rgba(255, 245, 175, 0.2));
+      box-shadow: 0 0 18px rgba(255, 236, 147, 0.45);
+      opacity: 0;
+      transition: opacity 220ms ease, filter 220ms ease;
+    }
+
+    .magnifier-glass {
+      position: absolute;
+      width: 148px;
+      height: 148px;
+      border-radius: 50%;
+      border: 8px solid rgba(255, 255, 255, 0.78);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 20px rgba(255,255,255,0.1);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 220ms ease, left 220ms ease, top 220ms ease;
+    }
+
+    .magnifier-handle {
+      position: absolute;
+      width: 14px;
+      height: 74px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.82);
+      transform-origin: top center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 220ms ease, left 220ms ease, top 220ms ease;
+    }
+
+    .blueprint {
+      border-radius: 24px;
+      background:
+        linear-gradient(180deg, #173254, #0f2540);
+      color: white;
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      min-height: 420px;
+    }
+
+    .blueprint h4 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .blueprint p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.65;
+      font-size: 16px;
+    }
+
+    .blueprint-canvas-wrap {
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 10px;
+    }
+
+    .blueprint-canvas {
+      width: 100%;
+      aspect-ratio: 1;
+      display: block;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .feature-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .feature-item span {
+      font-size: 16px;
+    }
+
+    .feature-item strong {
+      font-size: 15px;
+      color: #a9d7ff;
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .choice-btn {
+      appearance: none;
+      border: 2px solid rgba(31, 48, 64, 0.1);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      color: var(--ink);
+      padding: 16px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: left;
+      display: grid;
+      gap: 8px;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .choice-btn:hover,
+    .choice-btn:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(255, 139, 68, 0.34);
+      box-shadow: 0 12px 20px rgba(31, 48, 64, 0.08);
+    }
+
+    .choice-btn.selected {
+      border-color: rgba(255, 139, 68, 0.58);
+      background: rgba(255, 139, 68, 0.08);
+    }
+
+    .choice-btn strong {
+      display: grid;
+      gap: 4px;
+      font-size: 20px;
+    }
+
+    .choice-btn strong small {
+      font-size: 14px;
+      color: #5d77b4;
+      font-weight: 700;
+    }
+
+    .choice-btn span {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.55;
+      font-weight: 600;
+    }
+
+    .footer-card {
+      padding: 22px 24px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .footer-card h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .footer-card ul {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .footer-card li {
+      color: var(--muted);
+      line-height: 1.72;
+    }
+
+    .footer-card {
+      display: none;
+    }
+
+    .summary-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 27, 40, 0.58);
+      display: none;
+      place-items: center;
+      padding: 20px;
+      z-index: 20;
+    }
+
+    .summary-modal.show {
+      display: grid;
+    }
+
+    .summary-card {
+      width: min(760px, 100%);
+      background: #fffef9;
+      border-radius: 28px;
+      box-shadow: 0 28px 64px rgba(17, 27, 40, 0.28);
+      padding: 28px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .summary-card h2,
+    .summary-card p {
+      margin: 0;
+    }
+
+    .summary-card p {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .badge-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    .badge {
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(31, 48, 64, 0.05);
+      display: grid;
+      gap: 8px;
+    }
+
+    .badge strong {
+      font-size: 28px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 980px) {
+      .workshop,
+      .preview-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .page {
+        width: min(100vw - 16px, 100%);
+        margin: 12px auto 22px;
+      }
+
+      .hero,
+      .shell,
+      .footer-card,
+      .summary-card {
+        padding: 18px;
+      }
+
+      .guide-bar {
+        align-items: flex-start;
+      }
+
+      .info-grid,
+      .metric-grid,
+      .choice-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <span class="eyebrow">一年级上册 · 第七课 · 线上实验 04</span>
+      <h1>透视眼设计工坊</h1>
+      <p>先装组件，再调亮度、角度和镜片，把盒子里的物体看清。</p>
+      <div class="hero-meta">
+        <span>先装组件</span>
+        <span>再调参数</span>
+        <span>最后猜物体</span>
+      </div>
+    </section>
+
+    <section class="shell">
+      <div class="guide-bar">
+        <button class="guide-button" id="tutorialButton" type="button">🔊 听老师讲规则</button>
+        <span class="guide-text" id="tutorialText">先装组件，再点检测。看清度到 75 以上，就去猜盒子里的东西。</span>
+      </div>
+
+      <div class="topbar">
+        <div class="progress-wrap">
+          <div class="progress-head">
+            <span id="progressText">当前进度：先把探测器装起来</span>
+            <span id="tipText">看清度到 75 以上，再提交答案</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+        <div class="score-card" id="scoreCard">当前得分：0 / 100</div>
+      </div>
+
+      <div class="workshop">
+        <div class="panel">
+          <div class="panel-title">
+            <h2>设计控制台</h2>
+            <span class="chip">组件 + 调参</span>
+          </div>
+          <p class="copy">装组件，拉滑块，再点检测。</p>
+
+          <div class="info-grid">
+            <div class="mini-card">
+              <strong>先做什么</strong>
+              <span>观察孔、灯光、镜片，至少装两样再试。</span>
+            </div>
+            <div class="mini-card">
+              <strong>怎么过关</strong>
+              <span>看清度够高后，选出最像的物体。</span>
+            </div>
+          </div>
+
+          <div class="component-list">
+            <div class="component-card">
+              <div class="component-head">
+                <strong>观察孔</strong>
+                <button class="toggle-btn" id="togglePeephole" type="button">安装</button>
+              </div>
+              <p>先看到里面，但单独用它还不够。</p>
+            </div>
+
+            <div class="component-card">
+              <div class="component-head">
+                <strong>盒内灯光</strong>
+                <button class="toggle-btn" id="toggleLamp" type="button">安装</button>
+              </div>
+              <p>把盒子照亮，轮廓会更明显。</p>
+            </div>
+
+            <div class="component-card">
+              <div class="component-head">
+                <strong>放大镜片</strong>
+                <button class="toggle-btn" id="toggleMagnifier" type="button">安装</button>
+              </div>
+              <p>看细节更方便，但强度不合适会发虚。</p>
+            </div>
+          </div>
+
+          <div class="control-grid">
+            <div class="slider-group">
+              <div class="slider-row">
+                <strong>灯光亮度</strong>
+                <span id="brightnessValue">40</span>
+              </div>
+              <input id="brightnessRange" type="range" min="0" max="100" value="40">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-row">
+                <strong>观察角度</strong>
+                <span id="angleValue">55</span>
+              </div>
+              <input id="angleRange" type="range" min="0" max="100" value="55">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-row">
+                <strong>镜片强度</strong>
+                <span id="lensValue">45</span>
+              </div>
+              <input id="lensRange" type="range" min="0" max="100" value="45">
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <div class="metric-card">
+              <strong id="lightScore">12</strong>
+              <span>亮度分：够不够亮</span>
+            </div>
+            <div class="metric-card">
+              <strong id="focusScore">10</strong>
+              <span>对焦分：镜片合不合适</span>
+            </div>
+            <div class="metric-card">
+              <strong id="angleScore">18</strong>
+              <span>角度分：有没有对准目标</span>
+            </div>
+          </div>
+
+          <div class="feedback" id="feedbackBox"></div>
+
+          <div class="action-row">
+            <button class="btn btn-accent" id="analyzeButton" type="button">检测当前方案</button>
+            <button class="btn btn-primary" id="submitAnswerButton" type="button" disabled>提交识别结果</button>
+            <button class="btn btn-secondary" id="resetButton" type="button">重置方案</button>
+          </div>
+        </div>
+
+        <div class="panel stage">
+          <div class="stage-head">
+            <h3>透视眼实验台</h3>
+            <span class="round-pill" id="clarityPill">当前看清度：24 / 100</span>
+          </div>
+
+          <div class="preview-grid">
+            <div class="box-stage">
+              <div class="box-body">
+                <div class="box-lid"></div>
+                <div class="box-window" id="boxWindow">
+                  <canvas class="object-canvas" id="objectCanvas" width="620" height="520"></canvas>
+                  <div class="lamp-strip" id="lampStrip"></div>
+                  <div class="focus-overlay" id="focusOverlay"></div>
+                  <div class="dark-overlay" id="darkOverlay"></div>
+                  <div class="peephole-ring" id="peepholeRing"></div>
+                  <div class="magnifier-glass" id="magnifierGlass"></div>
+                  <div class="magnifier-handle" id="magnifierHandle"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="blueprint">
+              <h4>设计草图</h4>
+              <p>这里会显示你现在装好的方案。</p>
+              <div class="blueprint-canvas-wrap">
+                <canvas class="blueprint-canvas" id="blueprintCanvas" width="260" height="260"></canvas>
+              </div>
+              <div class="feature-list">
+                <div class="feature-item">
+                  <span>观察孔</span>
+                  <strong id="featurePeephole">未安装</strong>
+                </div>
+                <div class="feature-item">
+                  <span>盒内灯光</span>
+                  <strong id="featureLamp">未安装</strong>
+                </div>
+                <div class="feature-item">
+                  <span>放大镜片</span>
+                  <strong id="featureMagnifier">未安装</strong>
+                </div>
+                <div class="feature-item">
+                  <span>隐藏物体状态</span>
+                  <strong id="featureVisibility">轮廓模糊</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 style="margin:0 0 12px 0;font-size:18px;">猜一猜盒中物体是什么</h3>
+            <div class="choice-grid" id="choiceGrid"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="footer-card">
+      <h3>教师观察点</h3>
+      <ul>
+        <li>学生是否理解“组件要配合使用”。</li>
+        <li>学生是否会根据反馈主动调参数。</li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="summary-modal" id="summaryModal" aria-hidden="true">
+    <div class="summary-card">
+      <span class="eyebrow">实验完成</span>
+      <h2>你完成了“透视眼设计工坊”</h2>
+      <p id="summaryText"></p>
+      <div class="badge-grid">
+        <div class="badge">
+          <span>最终得分</span>
+          <strong id="finalScore">0</strong>
+        </div>
+        <div class="badge">
+          <span>看清度</span>
+          <strong id="finalClarity">0</strong>
+        </div>
+        <div class="badge">
+          <span>设计方案</span>
+          <strong id="finalDesign">基础版</strong>
+        </div>
+        <div class="badge">
+          <span>识别结果</span>
+          <strong id="finalAnswer">未完成</strong>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary" id="restartButton" type="button">重新设计</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const objectData = {
+      answer: "手电筒",
+      choices: [
+        { label: "手电筒", hint: "有圆形灯头和细长手柄" },
+        { label: "小火车", hint: "应该会看到车轮和车身" },
+        { label: "望远镜", hint: "通常像两个并排的圆筒" },
+        { label: "小水壶", hint: "应该会有壶嘴或把手" }
+      ]
+    };
+
+    const progressText = document.getElementById("progressText");
+    const tipText = document.getElementById("tipText");
+    const progressFill = document.getElementById("progressFill");
+    const scoreCard = document.getElementById("scoreCard");
+    const tutorialButton = document.getElementById("tutorialButton");
+    const tutorialText = document.getElementById("tutorialText");
+    const togglePeephole = document.getElementById("togglePeephole");
+    const toggleLamp = document.getElementById("toggleLamp");
+    const toggleMagnifier = document.getElementById("toggleMagnifier");
+    const brightnessRange = document.getElementById("brightnessRange");
+    const angleRange = document.getElementById("angleRange");
+    const lensRange = document.getElementById("lensRange");
+    const brightnessValue = document.getElementById("brightnessValue");
+    const angleValue = document.getElementById("angleValue");
+    const lensValue = document.getElementById("lensValue");
+    const lightScore = document.getElementById("lightScore");
+    const focusScore = document.getElementById("focusScore");
+    const angleScore = document.getElementById("angleScore");
+    const feedbackBox = document.getElementById("feedbackBox");
+    const analyzeButton = document.getElementById("analyzeButton");
+    const submitAnswerButton = document.getElementById("submitAnswerButton");
+    const resetButton = document.getElementById("resetButton");
+    const clarityPill = document.getElementById("clarityPill");
+    const objectCanvas = document.getElementById("objectCanvas");
+    const objectCtx = objectCanvas.getContext("2d");
+    const blueprintCanvas = document.getElementById("blueprintCanvas");
+    const blueprintCtx = blueprintCanvas.getContext("2d");
+    const darkOverlay = document.getElementById("darkOverlay");
+    const focusOverlay = document.getElementById("focusOverlay");
+    const peepholeRing = document.getElementById("peepholeRing");
+    const lampStrip = document.getElementById("lampStrip");
+    const magnifierGlass = document.getElementById("magnifierGlass");
+    const magnifierHandle = document.getElementById("magnifierHandle");
+    const featurePeephole = document.getElementById("featurePeephole");
+    const featureLamp = document.getElementById("featureLamp");
+    const featureMagnifier = document.getElementById("featureMagnifier");
+    const featureVisibility = document.getElementById("featureVisibility");
+    const choiceGrid = document.getElementById("choiceGrid");
+    const summaryModal = document.getElementById("summaryModal");
+    const summaryText = document.getElementById("summaryText");
+    const finalScore = document.getElementById("finalScore");
+    const finalClarity = document.getElementById("finalClarity");
+    const finalDesign = document.getElementById("finalDesign");
+    const finalAnswer = document.getElementById("finalAnswer");
+    const restartButton = document.getElementById("restartButton");
+
+    const state = {
+      hasPeephole: false,
+      hasLamp: false,
+      hasMagnifier: false,
+      brightness: 40,
+      angle: 55,
+      lens: 45,
+      clarity: 24,
+      score: 0,
+      designScore: 0,
+      answerScore: 0,
+      selectedAnswer: "",
+      analyzed: false,
+      completed: false
+    };
+
+    function setFeedback(type, html) {
+      feedbackBox.className = `feedback show ${type}`;
+      feedbackBox.innerHTML = html;
+    }
+
+    function clearFeedback() {
+      feedbackBox.className = "feedback";
+      feedbackBox.innerHTML = "";
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function getChoicePinyin(label) {
+      const map = {
+        "手电筒": "shǒu diàn tǒng",
+        "小火车": "xiǎo huǒ chē",
+        "望远镜": "wàng yuǎn jìng",
+        "小水壶": "xiǎo shuǐ hú"
+      };
+      return map[label] || "";
+    }
+
+    function pickTutorialVoice(synth) {
+      const voices = synth.getVoices();
+      if (!voices.length) return null;
+      const preferred = [
+        "Xiaoxiao",
+        "Xiaoyi",
+        "Yunxi",
+        "Yaoyao",
+        "Meijia",
+        "Sin-ji",
+        "Tingting"
+      ];
+      return (
+        voices.find((voice) => preferred.some((key) => voice.name.includes(key))) ||
+        voices.find((voice) => /zh|chinese|mandarin/i.test(`${voice.name} ${voice.lang}`)) ||
+        null
+      );
+    }
+
+    function speakTutorial() {
+      if (!("speechSynthesis" in window)) {
+        tutorialText.textContent = "这个浏览器暂时不能播报，请直接看按钮旁边的提示。";
+        return;
+      }
+      const synth = window.speechSynthesis;
+      const utterance = new SpeechSynthesisUtterance(
+        "先装观察孔、灯光和镜片，再慢慢调亮度、角度和镜片强度。点一下检测当前方案。看清度到了七十五以上，再去选盒子里的物体。"
+      );
+      const voice = pickTutorialVoice(synth);
+      if (voice) {
+        utterance.voice = voice;
+      }
+      utterance.lang = "zh-CN";
+      utterance.rate = 0.72;
+      utterance.pitch = 1.03;
+      synth.cancel();
+      synth.speak(utterance);
+    }
+
+    function updateLabels() {
+      brightnessValue.textContent = state.brightness;
+      angleValue.textContent = state.angle;
+      lensValue.textContent = state.lens;
+    }
+
+    function syncScore() {
+      state.designScore = state.analyzed ? Math.round(state.clarity * 0.7) : 0;
+      state.score = clamp(state.designScore + state.answerScore, 0, 100);
+    }
+
+    function computeClarity() {
+      const peepholeBase = state.hasPeephole ? 18 : 0;
+      const lampBase = state.hasLamp ? 12 : 0;
+      const magnifierBase = state.hasMagnifier ? 10 : 0;
+
+      const brightnessPart = state.hasLamp
+        ? 10 + Math.max(0, 28 - Math.abs(state.brightness - 74))
+        : Math.max(0, 4 - Math.abs(state.brightness - 50) / 8);
+
+      const anglePart = 8 + Math.max(0, 28 - Math.abs(state.angle - 63));
+      const focusPart = state.hasMagnifier
+        ? 8 + Math.max(0, 24 - Math.abs(state.lens - 58))
+        : Math.max(0, 3 - Math.abs(state.lens - 50) / 10);
+
+      const synergy =
+        (state.hasPeephole ? 6 : 0) +
+        (state.hasLamp && state.hasMagnifier ? 6 : 0) +
+        (state.hasLamp && state.brightness > 60 ? 4 : 0);
+
+      const total = clamp(
+        Math.round(peepholeBase + lampBase + magnifierBase + brightnessPart + anglePart + focusPart + synergy - 24),
+        0,
+        100
+      );
+
+      const lightValue = clamp(Math.round(brightnessPart + lampBase), 0, 40);
+      const focusValue = clamp(Math.round(focusPart + magnifierBase), 0, 35);
+      const angleValue = clamp(Math.round(anglePart + peepholeBase / 2), 0, 35);
+
+      return { total, lightValue, focusValue, angleValue };
+    }
+
+    function drawHiddenObject() {
+      objectCtx.clearRect(0, 0, objectCanvas.width, objectCanvas.height);
+      objectCtx.save();
+      objectCtx.translate(310, 264);
+      objectCtx.rotate(-0.18);
+
+      objectCtx.fillStyle = "#f4c44c";
+      objectCtx.beginPath();
+      objectCtx.arc(-60, -38, 76, 0, Math.PI * 2);
+      objectCtx.fill();
+
+      objectCtx.fillStyle = "#fff1b8";
+      objectCtx.beginPath();
+      objectCtx.arc(-68, -44, 36, 0, Math.PI * 2);
+      objectCtx.fill();
+
+      objectCtx.fillStyle = "#52667d";
+      objectCtx.fillRect(-28, -28, 178, 56);
+      objectCtx.fillStyle = "#405366";
+      objectCtx.fillRect(104, -36, 70, 72);
+
+      objectCtx.fillStyle = "#2e3d4d";
+      objectCtx.beginPath();
+      objectCtx.arc(176, 0, 18, 0, Math.PI * 2);
+      objectCtx.fill();
+
+      objectCtx.fillStyle = "#9ab3c7";
+      objectCtx.beginPath();
+      objectCtx.arc(128, 0, 14, 0, Math.PI * 2);
+      objectCtx.fill();
+
+      objectCtx.restore();
+    }
+
+    function drawBlueprint() {
+      blueprintCtx.clearRect(0, 0, blueprintCanvas.width, blueprintCanvas.height);
+      blueprintCtx.fillStyle = "rgba(255,255,255,0.04)";
+      blueprintCtx.fillRect(0, 0, blueprintCanvas.width, blueprintCanvas.height);
+      blueprintCtx.strokeStyle = "rgba(170, 216, 255, 0.18)";
+      blueprintCtx.lineWidth = 1;
+      for (let x = 16; x < blueprintCanvas.width; x += 24) {
+        blueprintCtx.beginPath();
+        blueprintCtx.moveTo(x, 0);
+        blueprintCtx.lineTo(x, blueprintCanvas.height);
+        blueprintCtx.stroke();
+      }
+      for (let y = 16; y < blueprintCanvas.height; y += 24) {
+        blueprintCtx.beginPath();
+        blueprintCtx.moveTo(0, y);
+        blueprintCtx.lineTo(blueprintCanvas.width, y);
+        blueprintCtx.stroke();
+      }
+
+      blueprintCtx.strokeStyle = "#a8d7ff";
+      blueprintCtx.lineWidth = 4;
+      blueprintCtx.strokeRect(36, 54, 188, 134);
+      blueprintCtx.fillStyle = "rgba(168, 215, 255, 0.08)";
+      blueprintCtx.fillRect(36, 54, 188, 134);
+
+      if (state.hasPeephole) {
+        blueprintCtx.beginPath();
+        blueprintCtx.arc(70 + state.angle * 1.1, 96, 22, 0, Math.PI * 2);
+        blueprintCtx.stroke();
+      }
+
+      if (state.hasLamp) {
+        blueprintCtx.lineWidth = 6;
+        blueprintCtx.beginPath();
+        blueprintCtx.moveTo(72, 72);
+        blueprintCtx.lineTo(188, 72);
+        blueprintCtx.stroke();
+      }
+
+      if (state.hasMagnifier) {
+        const x = 82 + state.lens * 1.2;
+        blueprintCtx.lineWidth = 5;
+        blueprintCtx.beginPath();
+        blueprintCtx.arc(x, 146, 26, 0, Math.PI * 2);
+        blueprintCtx.stroke();
+        blueprintCtx.beginPath();
+        blueprintCtx.moveTo(x + 18, 166);
+        blueprintCtx.lineTo(x + 44, 194);
+        blueprintCtx.stroke();
+      }
+
+      blueprintCtx.fillStyle = "#ffd993";
+      blueprintCtx.font = "12px Segoe UI";
+      blueprintCtx.fillText("盒子前视图", 36, 36);
+      blueprintCtx.fillStyle = "#b7dfff";
+      blueprintCtx.fillText(`亮度 ${state.brightness}`, 36, 214);
+      blueprintCtx.fillText(`角度 ${state.angle}`, 36, 232);
+      blueprintCtx.fillText(`镜片 ${state.lens}`, 36, 250);
+    }
+
+    function renderChoices() {
+      choiceGrid.innerHTML = "";
+      objectData.choices.forEach((choice) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "choice-btn";
+        if (state.selectedAnswer === choice.label) {
+          button.classList.add("selected");
+        }
+        const pinyin = getChoicePinyin(choice.label);
+        button.innerHTML = `<strong>${choice.label}${pinyin ? `<small>${pinyin}</small>` : ""}</strong><span>${choice.hint}</span>`;
+        button.addEventListener("click", () => {
+          state.selectedAnswer = choice.label;
+          renderChoices();
+          submitAnswerButton.disabled = !(state.analyzed && state.clarity >= 75 && state.selectedAnswer);
+        });
+        choiceGrid.appendChild(button);
+      });
+    }
+
+    function updateProgress() {
+      const width = clamp(24 + state.clarity * 0.76, 24, 100);
+      progressFill.style.width = `${width}%`;
+      progressText.textContent = state.clarity >= 75
+        ? "当前进度：已经能看清大部分轮廓"
+        : "当前进度：继续把画面调清楚";
+      tipText.textContent = state.clarity >= 75
+        ? "现在可以去猜盒中的物体"
+        : "继续调到 75 以上，再提交答案";
+      tutorialText.textContent = state.clarity >= 75
+        ? "已经能看清不少了。现在可以边看图，边选最像的物体。"
+        : "先装组件，再点检测。看清度到 75 以上，就去猜盒子里的东西。";
+    }
+
+    function renderState() {
+      updateLabels();
+      const scores = computeClarity();
+      state.clarity = scores.total;
+      lightScore.textContent = scores.lightValue;
+      focusScore.textContent = scores.focusValue;
+      angleScore.textContent = scores.angleValue;
+      syncScore();
+      clarityPill.textContent = `当前看清度：${state.clarity} / 100`;
+      scoreCard.textContent = `当前得分：${state.score} / 100`;
+
+      togglePeephole.classList.toggle("active", state.hasPeephole);
+      togglePeephole.textContent = state.hasPeephole ? "已安装" : "安装";
+      toggleLamp.classList.toggle("active", state.hasLamp);
+      toggleLamp.textContent = state.hasLamp ? "已安装" : "安装";
+      toggleMagnifier.classList.toggle("active", state.hasMagnifier);
+      toggleMagnifier.textContent = state.hasMagnifier ? "已安装" : "安装";
+
+      featurePeephole.textContent = state.hasPeephole ? "已安装" : "未安装";
+      featureLamp.textContent = state.hasLamp ? "已安装" : "未安装";
+      featureMagnifier.textContent = state.hasMagnifier ? "已安装" : "未安装";
+      featureVisibility.textContent =
+        state.clarity >= 85 ? "已经很清楚" :
+        state.clarity >= 75 ? "可以辨认" :
+        state.clarity >= 55 ? "能看到轮廓" : "轮廓模糊";
+
+      darkOverlay.style.opacity = `${clamp(1 - state.clarity / 100, 0.06, 0.92)}`;
+      const blur = clamp(14 - state.clarity / 8, 0, 14);
+      const vignette = clamp(0.9 - state.clarity / 130, 0.06, 0.9);
+      focusOverlay.style.background = `
+        radial-gradient(circle at ${20 + state.angle * 0.6}% ${26 + state.angle * 0.34}%,
+        rgba(255,255,255,0) 0,
+        rgba(255,255,255,0) ${state.hasPeephole ? 14 : 4}%,
+        rgba(9,11,18,${vignette}) ${state.hasPeephole ? 26 : 14}%)
+      `;
+      objectCanvas.style.filter = `blur(${blur}px) brightness(${0.5 + state.brightness / 90})`;
+
+      peepholeRing.style.opacity = state.hasPeephole ? "1" : "0";
+      peepholeRing.style.left = `${18 + state.angle * 0.54}%`;
+      peepholeRing.style.top = `${22 + state.angle * 0.24}%`;
+
+      lampStrip.style.opacity = state.hasLamp ? "1" : "0";
+      lampStrip.style.filter = `brightness(${0.4 + state.brightness / 50})`;
+
+      magnifierGlass.style.opacity = state.hasMagnifier ? "1" : "0";
+      magnifierHandle.style.opacity = state.hasMagnifier ? "1" : "0";
+      const magLeft = 24 + state.lens * 0.42;
+      const magTop = 32 + state.angle * 0.26;
+      magnifierGlass.style.left = `${magLeft}%`;
+      magnifierGlass.style.top = `${magTop}%`;
+      magnifierHandle.style.left = `${magLeft + 11}%`;
+      magnifierHandle.style.top = `${magTop + 22}%`;
+      magnifierHandle.style.transform = `rotate(${36 + state.lens * 0.12}deg)`;
+
+      drawBlueprint();
+      renderChoices();
+      updateProgress();
+      submitAnswerButton.disabled = !(state.analyzed && state.clarity >= 75 && state.selectedAnswer);
+    }
+
+    function analyzePlan() {
+      state.analyzed = true;
+      const parts = [];
+      if (!state.hasPeephole) parts.push("先装观察孔");
+      if (!state.hasLamp) parts.push("补上盒内灯光");
+      if (!state.hasMagnifier) parts.push("试试放大镜片");
+
+      if (state.clarity >= 85) {
+        setFeedback("success", "方案非常好。现在已经可以清楚看见盒中物体，尝试在下方选择答案。");
+      } else if (state.clarity >= 75) {
+        setFeedback("success", "方案已经达到识别条件。图像还可以更好，但已经足够判断物体了。");
+      } else {
+        const tip = parts.length
+          ? `还可以继续优化：${parts.join("、")}。`
+          : "继续微调亮度、角度和镜片强度，让物体更清楚。";
+        setFeedback("error", `当前看清度还不够高。${tip}`);
+      }
+      renderState();
+    }
+
+    function submitAnswer() {
+      if (!(state.analyzed && state.clarity >= 75 && state.selectedAnswer)) {
+        return;
+      }
+
+      if (state.selectedAnswer === objectData.answer) {
+        state.completed = true;
+        state.answerScore = 30;
+        renderState();
+        showSummary(true);
+      } else {
+        state.answerScore = 0;
+        renderState();
+        setFeedback("error", "这个结果不对。再观察一下圆形灯头和细长手柄，看看是不是更像别的物体。");
+      }
+    }
+
+    function resetDesign() {
+      state.hasPeephole = false;
+      state.hasLamp = false;
+      state.hasMagnifier = false;
+      state.brightness = 40;
+      state.angle = 55;
+      state.lens = 45;
+      state.clarity = 24;
+      state.score = 0;
+      state.designScore = 0;
+      state.answerScore = 0;
+      state.selectedAnswer = "";
+      state.analyzed = false;
+      state.completed = false;
+      clearFeedback();
+      renderState();
+    }
+
+    function showSummary(success) {
+      summaryModal.classList.add("show");
+      summaryModal.setAttribute("aria-hidden", "false");
+      finalScore.textContent = String(state.score);
+      finalClarity.textContent = String(state.clarity);
+      finalDesign.textContent =
+        state.clarity >= 90 ? "完整透视眼" :
+        state.clarity >= 75 ? "可用透视眼" : "基础透视眼";
+      finalAnswer.textContent = success ? objectData.answer : "未完成";
+      summaryText.textContent = success
+        ? "你已经成功设计出一套可用的透视眼。这个实验的总分是 100 分，其中方案调试占 70 分，识别结果占 30 分。"
+        : "这次还没有完全看清。可以继续调整组件和参数，再试一次。";
+    }
+
+    togglePeephole.addEventListener("click", () => {
+      state.hasPeephole = !state.hasPeephole;
+      clearFeedback();
+      renderState();
+    });
+    toggleLamp.addEventListener("click", () => {
+      state.hasLamp = !state.hasLamp;
+      clearFeedback();
+      renderState();
+    });
+    toggleMagnifier.addEventListener("click", () => {
+      state.hasMagnifier = !state.hasMagnifier;
+      clearFeedback();
+      renderState();
+    });
+
+    brightnessRange.addEventListener("input", (event) => {
+      state.brightness = Number(event.target.value);
+      renderState();
+    });
+    angleRange.addEventListener("input", (event) => {
+      state.angle = Number(event.target.value);
+      renderState();
+    });
+    lensRange.addEventListener("input", (event) => {
+      state.lens = Number(event.target.value);
+      renderState();
+    });
+
+    analyzeButton.addEventListener("click", analyzePlan);
+    submitAnswerButton.addEventListener("click", submitAnswer);
+    resetButton.addEventListener("click", resetDesign);
+    tutorialButton.addEventListener("click", speakTutorial);
+    restartButton.addEventListener("click", () => {
+      summaryModal.classList.remove("show");
+      summaryModal.setAttribute("aria-hidden", "true");
+      resetDesign();
+    });
+
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.addEventListener?.("voiceschanged", () => {});
+    }
+
+    drawHiddenObject();
+    renderState();
+  </script>
+</body>
+</html>
+    .stage {
+      order: -1;
+    }

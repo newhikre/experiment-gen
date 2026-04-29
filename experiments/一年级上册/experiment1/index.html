@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>感官线索找一找</title>
+  <style>
+    :root {
+      --bg: #fff8e8;
+      --panel: rgba(255, 255, 255, 0.92);
+      --ink: #243041;
+      --muted: #5f6b7a;
+      --accent: #ff7d45;
+      --accent-2: #2aa889;
+      --accent-3: #4d79ff;
+      --line: rgba(36, 48, 65, 0.12);
+      --shadow: 0 18px 48px rgba(36, 48, 65, 0.12);
+      --radius: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(255, 194, 110, 0.45), transparent 26%),
+        radial-gradient(circle at top right, rgba(77, 121, 255, 0.2), transparent 24%),
+        linear-gradient(180deg, #fff9ee 0%, #fff2d7 100%);
+    }
+
+    .page {
+      width: min(1340px, calc(100vw - 24px));
+      margin: 18px auto 24px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero,
+    .board {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero {
+      padding: 20px 24px;
+      display: grid;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -24px;
+      top: -24px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 125, 69, 0.28), transparent 70%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 125, 69, 0.14);
+      color: #a74a1e;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 980px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .hero-meta span {
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: rgba(36, 48, 65, 0.05);
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .board {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .status {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .guide-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(255, 125, 69, 0.1), rgba(77, 121, 255, 0.08));
+      border: 1px solid rgba(255, 125, 69, 0.12);
+    }
+
+    .guide-button {
+      appearance: none;
+      border: 0;
+      border-radius: 18px;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, #ff7d45, #ffb052);
+      color: white;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 24px rgba(255, 125, 69, 0.24);
+    }
+
+    .guide-button:hover,
+    .guide-button:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .guide-text {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .progress-wrap {
+      display: grid;
+      gap: 10px;
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .progress-bar {
+      height: 14px;
+      background: rgba(36, 48, 65, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 20%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), #ffb052);
+      transition: width 240ms ease;
+    }
+
+    .score-pill {
+      padding: 12px 18px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(42, 168, 137, 0.16), rgba(77, 121, 255, 0.12));
+      font-weight: 700;
+    }
+
+    .experiment-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.78);
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .compact-panel {
+      justify-items: center;
+      gap: 16px;
+    }
+
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .panel-title h2,
+    .panel-title h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(77, 121, 255, 0.11);
+      color: var(--accent-3);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .visual-clue {
+      position: relative;
+      min-height: 250px;
+      border-radius: 24px;
+      overflow: hidden;
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(255, 240, 226, 0.92));
+      border: 1px solid rgba(36, 48, 65, 0.08);
+      display: grid;
+      place-items: center;
+    }
+
+    .visual-clue canvas {
+      width: min(100%, 420px);
+      max-width: 420px;
+      aspect-ratio: 1;
+      border-radius: 22px;
+      box-shadow: inset 0 0 0 1px rgba(36, 48, 65, 0.06);
+      background: #fffefc;
+    }
+
+    .sound-button {
+      appearance: none;
+      border: 0;
+      border-radius: 22px;
+      background: linear-gradient(135deg, var(--accent-3), #6ca0ff);
+      color: white;
+      padding: 16px 26px;
+      min-width: 88px;
+      min-height: 72px;
+      font-size: 34px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+      box-shadow: 0 10px 24px rgba(77, 121, 255, 0.22);
+    }
+
+    .sound-button:hover,
+    .sound-button:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .choices {
+      display: grid;
+      gap: 16px;
+    }
+
+    .candidate-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .candidate {
+      border: 2px dashed rgba(36, 48, 65, 0.12);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 18px 14px;
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      cursor: grab;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+      user-select: none;
+    }
+
+    .candidate:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 125, 69, 0.45);
+      box-shadow: 0 10px 20px rgba(36, 48, 65, 0.08);
+    }
+
+    .candidate.dragging {
+      opacity: 0.55;
+      transform: scale(0.98);
+    }
+
+    .candidate-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 20px;
+      display: grid;
+      place-items: center;
+      font-size: 38px;
+      background: linear-gradient(145deg, #fff7ea, #ffefe1);
+    }
+
+    .candidate-label {
+      font-weight: 700;
+      font-size: 22px;
+      line-height: 1.15;
+      text-align: center;
+    }
+
+    .candidate-pinyin {
+      font-size: 15px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.4;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .candidate-sub {
+      display: none;
+    }
+
+    .drop-zone {
+      min-height: 162px;
+      border-radius: 28px;
+      border: 3px dashed rgba(42, 168, 137, 0.35);
+      background:
+        radial-gradient(circle at top left, rgba(42, 168, 137, 0.08), transparent 38%),
+        rgba(244, 255, 251, 0.96);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      text-align: center;
+      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+    }
+
+    .drop-zone.active {
+      border-color: var(--accent-2);
+      transform: scale(1.01);
+      background:
+        radial-gradient(circle at top left, rgba(42, 168, 137, 0.14), transparent 42%),
+        rgba(239, 255, 249, 1);
+    }
+
+    .drop-zone.filled {
+      border-style: solid;
+    }
+
+    .drop-zone strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 28px;
+    }
+
+    .dropped-card {
+      width: min(320px, 100%);
+      padding: 18px;
+      border-radius: 22px;
+      background: white;
+      border: 1px solid rgba(36, 48, 65, 0.08);
+      display: grid;
+      gap: 8px;
+      box-shadow: 0 10px 24px rgba(36, 48, 65, 0.08);
+      text-align: center;
+    }
+
+    .dropped-card .candidate-icon {
+      margin-inline: auto;
+    }
+
+    .dropped-card strong {
+      font-size: 22px;
+    }
+
+    .dropped-card .candidate-pinyin {
+      font-size: 15px;
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 16px;
+      padding: 14px 18px;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+    }
+
+    .btn:hover,
+    .btn:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      color: white;
+      background: linear-gradient(135deg, var(--accent), #ffab47);
+      box-shadow: 0 12px 24px rgba(255, 125, 69, 0.22);
+    }
+
+    .btn-secondary {
+      color: var(--ink);
+      background: rgba(36, 48, 65, 0.08);
+    }
+
+    .btn[disabled] {
+      cursor: not-allowed;
+      opacity: 0.5;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .feedback {
+      padding: 16px 18px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      display: none;
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    .feedback.show {
+      display: block;
+    }
+
+    .feedback.success {
+      background: rgba(42, 168, 137, 0.08);
+      color: #12634d;
+      border-color: rgba(42, 168, 137, 0.22);
+    }
+
+    .feedback.error {
+      background: rgba(255, 125, 69, 0.08);
+      color: #943d17;
+      border-color: rgba(255, 125, 69, 0.24);
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(25, 31, 40, 0.58);
+      display: none;
+      place-items: center;
+      padding: 20px;
+      z-index: 20;
+    }
+
+    .modal.show {
+      display: grid;
+    }
+
+    .modal-card {
+      width: min(720px, 100%);
+      background: #fffef8;
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: 0 20px 56px rgba(24, 28, 36, 0.28);
+      display: grid;
+      gap: 18px;
+    }
+
+    .modal-card h2,
+    .modal-card p {
+      margin: 0;
+    }
+
+    .modal-card p {
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px;
+    }
+
+    .summary-item {
+      border-radius: 20px;
+      padding: 16px;
+      background: rgba(36, 48, 65, 0.05);
+      display: grid;
+      gap: 8px;
+    }
+
+    .summary-item strong {
+      font-size: 28px;
+    }
+
+    @media (max-width: 980px) {
+      .compact-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .candidate-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 680px) {
+      .page {
+        width: min(100vw - 18px, 100%);
+        margin: 12px auto 24px;
+      }
+
+      .hero,
+      .board,
+      .modal-card {
+        padding: 18px;
+      }
+
+      .progress-top,
+      .status {
+        gap: 10px;
+      }
+
+      .candidate-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <span class="eyebrow">一年级上册 · 第一单元 · 线上实验 01</span>
+      <h1>感官线索找一找</h1>
+      <p>看局部小图，听声音提示，再把正确卡片拖进答案区。</p>
+      <div class="hero-meta">
+        <span>看图</span>
+        <span>听声</span>
+        <span>拖卡片</span>
+      </div>
+    </section>
+
+    <section class="board">
+      <div class="status">
+        <div class="progress-wrap">
+          <div class="progress-top">
+            <span id="roundLabel">第 1 关 / 共 5 关</span>
+          </div>
+          <div class="progress-bar" aria-hidden="true">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+        <div class="score-pill" id="scoreLabel">当前得分：0</div>
+      </div>
+
+      <div class="guide-bar">
+        <button class="guide-button" id="tutorialButton" type="button">🔊 听老师讲规则</button>
+        <span class="guide-text" id="tutorialText">先听规则，再点蓝色按钮听物品声音。</span>
+      </div>
+
+      <div class="experiment-grid">
+        <div class="panel compact-panel">
+          <div class="visual-clue">
+            <canvas id="clueCanvas" width="360" height="360" aria-label="局部图片线索"></canvas>
+          </div>
+        </div>
+
+        <div class="panel choices">
+          <div class="action-row">
+            <button class="sound-button" id="playSoundButton" type="button" aria-label="播放声音">🔊</button>
+          </div>
+
+          <div class="candidate-grid" id="candidateGrid"></div>
+
+          <div class="drop-zone" id="dropZone" aria-live="polite">
+            <div id="dropZonePlaceholder">
+              <strong>答案区</strong>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button class="btn btn-primary" id="checkAnswerButton" type="button" disabled>提交答案</button>
+            <button class="btn btn-secondary" id="nextRoundButton" type="button" disabled>下一关</button>
+          </div>
+
+          <div class="feedback" id="feedbackBox"></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="modal" id="resultModal" aria-hidden="true">
+    <div class="modal-card">
+      <span class="eyebrow">实验完成</span>
+      <h2>你已经完成“感官线索找一找”</h2>
+      <p id="resultSummaryText"></p>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <span>总得分</span>
+          <strong id="resultScore">0</strong>
+        </div>
+        <div class="summary-item">
+          <span>答对关卡</span>
+          <strong id="resultCorrect">0/5</strong>
+        </div>
+        <div class="summary-item">
+          <span>最强线索</span>
+          <strong id="resultFocus">声音</strong>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary" id="restartButton" type="button">重新开始</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const rounds = [
+      {
+        id: "umbrella",
+        name: "雨伞",
+        emoji: "☂️",
+        subtitle: "下雨天的小帮手",
+        imageType: "umbrella",
+        magnifier: "放大看到了弯弯的伞边和一小截伞柄",
+        textHint: "它常常和下雨天一起出现，打开后像一朵大花。",
+        soundLabel: "雨点落在伞面上的声音",
+        soundType: "rain",
+        answerId: "umbrella",
+        difficulty: "入门",
+        tip: "先听雨声线索，再看弯弯的图形",
+        choices: [
+          { id: "umbrella", label: "雨伞", emoji: "☂️", subtitle: "下雨天会张开" },
+          { id: "balloon", label: "气球", emoji: "🎈", subtitle: "轻轻飘起来" },
+          { id: "banana", label: "香蕉", emoji: "🍌", subtitle: "弯弯香香的" },
+          { id: "hat", label: "帽子", emoji: "🧢", subtitle: "戴在头上" }
+        ]
+      },
+      {
+        id: "alarm-clock",
+        name: "闹钟",
+        emoji: "⏰",
+        subtitle: "提醒起床的好帮手",
+        imageType: "clock",
+        magnifier: "放大看到了圆圆的钟面和两根指针",
+        textHint: "每天早上它最喜欢大声提醒大家起床。",
+        soundLabel: "闹钟叮铃铃的提醒声",
+        soundType: "alarm",
+        answerId: "alarm-clock",
+        difficulty: "入门",
+        tip: "听听重复的铃声，再观察圆形表盘",
+        choices: [
+          { id: "alarm-clock", label: "闹钟", emoji: "⏰", subtitle: "会提醒时间" },
+          { id: "plate", label: "盘子", emoji: "🍽️", subtitle: "装食物的圆盘" },
+          { id: "sun", label: "太阳", emoji: "☀️", subtitle: "天上的大光球" },
+          { id: "wheel", label: "车轮", emoji: "🛞", subtitle: "会滚动" }
+        ]
+      },
+      {
+        id: "book",
+        name: "图书",
+        emoji: "📘",
+        subtitle: "打开就能看到故事",
+        imageType: "book",
+        magnifier: "放大看到了书角、书页和一部分封面颜色",
+        textHint: "它静静放在书包里，打开后会有很多页，还能讲故事。",
+        soundLabel: "翻动书页的沙沙声",
+        soundType: "book",
+        answerId: "book",
+        difficulty: "普通",
+        tip: "这次声音更轻，要把图片和文字一起看",
+        choices: [
+          { id: "book", label: "图书", emoji: "📘", subtitle: "有很多页" },
+          { id: "tablet", label: "平板", emoji: "📱", subtitle: "可以点来点去" },
+          { id: "window", label: "窗户", emoji: "🪟", subtitle: "能看外面" },
+          { id: "box", label: "盒子", emoji: "📦", subtitle: "可以装东西" }
+        ]
+      },
+      {
+        id: "doorbell",
+        name: "门铃",
+        emoji: "🔔",
+        subtitle: "会叮咚响的提醒器",
+        imageType: "doorbell",
+        magnifier: "放大看到了圆弧形铃身和下面的小铃舌",
+        textHint: "它常常装在门边，有人来时会先响起来提醒大家。",
+        soundLabel: "门铃叮咚响起的声音",
+        soundType: "doorbell",
+        answerId: "doorbell",
+        difficulty: "普通",
+        tip: "这关要注意弧形轮廓和下面的小挂坠",
+        choices: [
+          { id: "doorbell", label: "门铃", emoji: "🔔", subtitle: "会叮咚响" },
+          { id: "key", label: "钥匙", emoji: "🔑", subtitle: "能开门锁" },
+          { id: "cup", label: "杯子", emoji: "🥤", subtitle: "可以装水" },
+          { id: "clock", label: "挂钟", emoji: "🕰️", subtitle: "会显示时间" }
+        ]
+      },
+      {
+        id: "bicycle",
+        name: "自行车",
+        emoji: "🚲",
+        subtitle: "踩着轮子向前走",
+        imageType: "bicycle",
+        magnifier: "放大看到了圆轮子和细细的车架",
+        textHint: "它有两个轮子，骑起来会向前走，停下时要扶稳。",
+        soundLabel: "自行车铃声和轻微轮子转动声",
+        soundType: "bicycle",
+        answerId: "bicycle",
+        difficulty: "挑战",
+        tip: "最后一关，把轮子形状和铃声结合起来",
+        choices: [
+          { id: "bicycle", label: "自行车", emoji: "🚲", subtitle: "两个轮子会转" },
+          { id: "scooter", label: "滑板车", emoji: "🛴", subtitle: "站着滑行" },
+          { id: "glasses", label: "眼镜", emoji: "👓", subtitle: "也有两个圆圈" },
+          { id: "train", label: "火车", emoji: "🚆", subtitle: "长长的一列车" }
+        ]
+      }
+    ];
+
+    const canvas = document.getElementById("clueCanvas");
+    const ctx = canvas.getContext("2d");
+    const candidateGrid = document.getElementById("candidateGrid");
+    const dropZone = document.getElementById("dropZone");
+    const feedbackBox = document.getElementById("feedbackBox");
+    const checkAnswerButton = document.getElementById("checkAnswerButton");
+    const nextRoundButton = document.getElementById("nextRoundButton");
+    const playSoundButton = document.getElementById("playSoundButton");
+    const tutorialButton = document.getElementById("tutorialButton");
+    const tutorialText = document.getElementById("tutorialText");
+    const progressFill = document.getElementById("progressFill");
+    const roundLabel = document.getElementById("roundLabel");
+    const scoreLabel = document.getElementById("scoreLabel");
+    const resultModal = document.getElementById("resultModal");
+    const resultSummaryText = document.getElementById("resultSummaryText");
+    const resultScore = document.getElementById("resultScore");
+    const resultCorrect = document.getElementById("resultCorrect");
+    const resultFocus = document.getElementById("resultFocus");
+    const restartButton = document.getElementById("restartButton");
+
+    let audioContext;
+    let currentRound = 0;
+    let score = 0;
+    let correctCount = 0;
+    let selectedChoiceId = null;
+    let answered = false;
+    let soundPlays = 0;
+
+    function getChoicePinyin(choiceId) {
+      const map = {
+        umbrella: "yǔ sǎn",
+        balloon: "qì qiú",
+        banana: "xiāng jiāo",
+        hat: "mào zi",
+        "alarm-clock": "nào zhōng",
+        plate: "pán zi",
+        sun: "tài yáng",
+        wheel: "chē lún",
+        book: "tú shū",
+        tablet: "píng bǎn",
+        window: "chuāng hu",
+        box: "hé zi",
+        doorbell: "mén líng",
+        key: "yào shi",
+        cup: "bēi zi",
+        clock: "guà zhōng",
+        fox: "hú li",
+        rabbit: "tù zi",
+        bear: "xiǎo xióng",
+        bicycle: "zì xíng chē",
+        scooter: "huá bǎn chē",
+        glasses: "yǎn jìng",
+        train: "huǒ chē"
+      };
+      return map[choiceId] || "";
+    }
+
+    function pickTutorialVoice(synth) {
+      const voices = synth.getVoices ? synth.getVoices() : [];
+      const preferredNames = [
+        "Xiaoxiao",
+        "Xiaoyi",
+        "Yunxi",
+        "Yaoyao",
+        "Meijia",
+        "Sin-ji",
+        "Tingting"
+      ];
+      return (
+        voices.find((voice) => preferredNames.some((name) => voice.name.includes(name))) ||
+        voices.find((voice) => voice.lang && voice.lang.toLowerCase().includes("zh")) ||
+        null
+      );
+    }
+
+    function speakTutorial() {
+      const synth = window.speechSynthesis;
+      const round = rounds[currentRound];
+      const text = `小朋友们，来听这一关怎么玩。先看中间的小图，再点蓝色按钮听声音。觉得哪一张卡片最对，就把它拖到答案区。放好以后，再点提交答案。`;
+      tutorialText.textContent = "正在播报这一关的玩法。";
+
+      if (!synth) {
+        tutorialText.textContent = "当前浏览器不支持语音播报。";
+        return;
+      }
+
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "zh-CN";
+      const preferredVoice = pickTutorialVoice(synth);
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+      utterance.rate = 0.72;
+      utterance.pitch = 1.03;
+      utterance.volume = 1;
+      utterance.onend = () => {
+        tutorialText.textContent = "规则播报完成，可以开始操作。";
+      };
+      utterance.onerror = () => {
+        tutorialText.textContent = "语音播报没有成功，请再点一次。";
+      };
+      synth.speak(utterance);
+    }
+
+    function drawScene(type) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.fillStyle = "#fff7ef";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "rgba(36, 48, 65, 0.08)";
+      ctx.lineWidth = 1;
+      for (let x = 20; x < canvas.width; x += 28) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 20; y < canvas.height; y += 28) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      switch (type) {
+        case "umbrella":
+          ctx.translate(180, 190);
+          ctx.fillStyle = "#ff7d45";
+          ctx.beginPath();
+          ctx.arc(0, 0, 105, Math.PI, 0, false);
+          ctx.lineTo(105, 0);
+          ctx.quadraticCurveTo(78, 24, 52, 0);
+          ctx.quadraticCurveTo(26, 24, 0, 0);
+          ctx.quadraticCurveTo(-26, 24, -52, 0);
+          ctx.quadraticCurveTo(-78, 24, -105, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = "#243041";
+          ctx.lineWidth = 8;
+          ctx.beginPath();
+          ctx.moveTo(0, -2);
+          ctx.lineTo(0, 122);
+          ctx.quadraticCurveTo(0, 148, 28, 148);
+          ctx.stroke();
+          break;
+        case "clock":
+          ctx.translate(180, 180);
+          ctx.fillStyle = "#fff";
+          ctx.strokeStyle = "#243041";
+          ctx.lineWidth = 12;
+          ctx.beginPath();
+          ctx.arc(0, 0, 108, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = "#ffb052";
+          ctx.fillRect(-56, -134, 40, 28);
+          ctx.fillRect(16, -134, 40, 28);
+          ctx.strokeStyle = "#243041";
+          ctx.lineWidth = 8;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(0, -58);
+          ctx.moveTo(0, 0);
+          ctx.lineTo(48, 12);
+          ctx.stroke();
+          break;
+        case "book":
+          ctx.translate(70, 84);
+          ctx.fillStyle = "#4d79ff";
+          ctx.fillRect(0, 0, 220, 180);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(114, 0, 12, 180);
+          ctx.fillStyle = "#dbe5ff";
+          ctx.fillRect(14, 18, 90, 140);
+          ctx.fillRect(138, 18, 70, 140);
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, 0, 10, 180);
+          break;
+        case "doorbell":
+          ctx.translate(180, 188);
+          ctx.fillStyle = "#ffcf68";
+          ctx.beginPath();
+          ctx.moveTo(-92, 42);
+          ctx.quadraticCurveTo(-90, -84, 0, -136);
+          ctx.quadraticCurveTo(90, -84, 92, 42);
+          ctx.closePath();
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(0, -138, 18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#243041";
+          ctx.beginPath();
+          ctx.arc(0, 26, 16, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "#e6a93c";
+          ctx.lineWidth = 10;
+          ctx.beginPath();
+          ctx.moveTo(-62, 10);
+          ctx.quadraticCurveTo(0, 42, 62, 10);
+          ctx.stroke();
+          break;
+        case "bicycle":
+          ctx.translate(180, 206);
+          ctx.strokeStyle = "#243041";
+          ctx.lineWidth = 10;
+          ctx.beginPath();
+          ctx.arc(-86, 24, 66, 0, Math.PI * 2);
+          ctx.arc(86, 24, 66, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.strokeStyle = "#2aa889";
+          ctx.beginPath();
+          ctx.moveTo(-86, 24);
+          ctx.lineTo(-14, -46);
+          ctx.lineTo(24, 24);
+          ctx.lineTo(-44, 24);
+          ctx.lineTo(-14, -46);
+          ctx.lineTo(44, -46);
+          ctx.lineTo(86, 24);
+          ctx.stroke();
+          ctx.strokeStyle = "#243041";
+          ctx.beginPath();
+          ctx.moveTo(44, -46);
+          ctx.lineTo(68, -86);
+          ctx.moveTo(-14, -46);
+          ctx.lineTo(-6, -90);
+          ctx.lineTo(32, -90);
+          ctx.stroke();
+          break;
+      }
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = "rgba(255,255,255,0.26)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const clipMap = {
+        umbrella: { x: 74, y: 92, w: 180, h: 168 },
+        clock: { x: 82, y: 72, w: 170, h: 170 },
+        book: { x: 86, y: 84, w: 142, h: 160 },
+        doorbell: { x: 88, y: 34, w: 182, h: 188 },
+        bicycle: { x: 66, y: 108, w: 208, h: 156 }
+      };
+
+      const clip = clipMap[type];
+      ctx.clearRect(clip.x, clip.y, clip.w, clip.h);
+      ctx.strokeStyle = "#ff7d45";
+      ctx.lineWidth = 6;
+      ctx.strokeRect(clip.x + 2, clip.y + 2, clip.w - 4, clip.h - 4);
+      ctx.restore();
+    }
+
+    function renderChoices(round) {
+      candidateGrid.innerHTML = "";
+      round.choices.forEach((choice) => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "candidate";
+        card.draggable = true;
+        card.dataset.choiceId = choice.id;
+        card.innerHTML = `
+          <span class="candidate-icon" aria-hidden="true">${choice.emoji}</span>
+          <span class="candidate-label">${choice.label}</span>
+          <span class="candidate-pinyin">${getChoicePinyin(choice.id)}</span>
+          <span class="candidate-sub">${choice.subtitle}</span>
+        `;
+
+        card.addEventListener("click", () => setSelectedChoice(choice.id));
+        card.addEventListener("dragstart", (event) => {
+          card.classList.add("dragging");
+          event.dataTransfer.setData("text/plain", choice.id);
+        });
+        card.addEventListener("dragend", () => {
+          card.classList.remove("dragging");
+        });
+
+        candidateGrid.appendChild(card);
+      });
+    }
+
+    function renderDropZone() {
+      dropZone.classList.toggle("filled", Boolean(selectedChoiceId));
+      if (!selectedChoiceId) {
+        dropZone.innerHTML = `
+          <div id="dropZonePlaceholder">
+            <strong>答案区</strong>
+          </div>
+        `;
+        checkAnswerButton.disabled = true;
+        return;
+      }
+
+      const round = rounds[currentRound];
+      const choice = round.choices.find((item) => item.id === selectedChoiceId);
+      dropZone.innerHTML = `
+        <div class="dropped-card">
+          <span class="candidate-icon" aria-hidden="true">${choice.emoji}</span>
+          <strong>${choice.label}</strong>
+          <span class="candidate-pinyin">${getChoicePinyin(choice.id)}</span>
+          <p>${choice.subtitle}</p>
+        </div>
+      `;
+      checkAnswerButton.disabled = false;
+    }
+
+    function setSelectedChoice(choiceId) {
+      if (answered) {
+        return;
+      }
+      selectedChoiceId = choiceId;
+      renderDropZone();
+    }
+
+    function setFeedback(type, html) {
+      feedbackBox.className = `feedback show ${type}`;
+      feedbackBox.innerHTML = html;
+    }
+
+    function clearFeedback() {
+      feedbackBox.className = "feedback";
+      feedbackBox.innerHTML = "";
+    }
+
+    function renderRound() {
+      const round = rounds[currentRound];
+      roundLabel.textContent = `第 ${currentRound + 1} 关 / 共 ${rounds.length} 关`;
+      tutorialText.textContent = `第 ${currentRound + 1} 关：先看图片，再点喇叭听声音。`;
+      scoreLabel.textContent = `当前得分：${score}`;
+      progressFill.style.width = `${((currentRound) / rounds.length) * 100 + 20}%`;
+      selectedChoiceId = null;
+      answered = false;
+      soundPlays = 0;
+      clearFeedback();
+      renderChoices(round);
+      renderDropZone();
+      drawScene(round.imageType);
+      nextRoundButton.disabled = true;
+    }
+
+    function updateScore(delta) {
+      score += delta;
+      scoreLabel.textContent = `当前得分：${score}`;
+    }
+
+    function checkAnswer() {
+      if (!selectedChoiceId || answered) {
+        return;
+      }
+
+      answered = true;
+      const round = rounds[currentRound];
+      const isCorrect = selectedChoiceId === round.answerId;
+      if (isCorrect) {
+        correctCount += 1;
+        updateScore(20);
+        setFeedback(
+          "success",
+          `回答正确。<strong>${round.name}</strong>就是答案。<br>你把图片局部和声音线索组合起来了，这就是多种感知线索一起帮助判断。`
+        );
+      } else {
+        setFeedback(
+          "error",
+          `这次还不对。正确答案是<strong>${round.name}</strong>。<br>回头看一看：${round.magnifier}；再听一听声音线索。`
+        );
+      }
+      checkAnswerButton.disabled = true;
+      nextRoundButton.disabled = false;
+    }
+
+    function nextRound() {
+      if (currentRound === rounds.length - 1) {
+        showResult();
+        return;
+      }
+      currentRound += 1;
+      renderRound();
+    }
+
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === "suspended") {
+        return audioContext.resume();
+      }
+      return Promise.resolve();
+    }
+
+    function createNoiseBuffer(durationSeconds) {
+      const length = Math.floor(audioContext.sampleRate * durationSeconds);
+      const buffer = audioContext.createBuffer(1, length, audioContext.sampleRate);
+      const data = buffer.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < length; i += 1) {
+        const white = Math.random() * 2 - 1;
+        last = 0.82 * last + 0.18 * white;
+        data[i] = last;
+      }
+      return buffer;
+    }
+
+    function playNoiseBurst(startTime, duration, options = {}) {
+      const source = audioContext.createBufferSource();
+      source.buffer = createNoiseBuffer(duration + 0.08);
+
+      const filter = audioContext.createBiquadFilter();
+      filter.type = options.filterType || "bandpass";
+      filter.frequency.setValueAtTime(options.frequency || 1200, startTime);
+      filter.Q.value = options.q || 0.8;
+
+      const gain = audioContext.createGain();
+      const attack = options.attack || 0.005;
+      const peak = options.gain || 0.08;
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.linearRampToValueAtTime(peak, startTime + attack);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioContext.destination);
+      source.start(startTime);
+      source.stop(startTime + duration + 0.06);
+    }
+
+    function playBellStrike(startTime, frequency, duration, gainAmount) {
+      [1, 2.1, 2.9].forEach((multiple, index) => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(frequency * multiple, startTime);
+        gain.gain.setValueAtTime(0.0001, startTime);
+        gain.gain.linearRampToValueAtTime(gainAmount / (index + 1), startTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration + index * 0.06);
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration + index * 0.08);
+      });
+    }
+
+    function playBark(startTime, variant = 0) {
+      const body = audioContext.createOscillator();
+      const snap = audioContext.createOscillator();
+      const growl = audioContext.createOscillator();
+      const formant = audioContext.createBiquadFilter();
+      const lowpass = audioContext.createBiquadFilter();
+      const gain = audioContext.createGain();
+
+      const base = variant === 0 ? 320 : 286;
+      const snapFreq = variant === 0 ? 720 : 650;
+
+      body.type = "sawtooth";
+      snap.type = "square";
+      growl.type = "triangle";
+
+      body.frequency.setValueAtTime(base, startTime);
+      body.frequency.exponentialRampToValueAtTime(base * 0.88, startTime + 0.06);
+      body.frequency.exponentialRampToValueAtTime(base * 0.72, startTime + 0.18);
+      body.frequency.exponentialRampToValueAtTime(base * 0.6, startTime + 0.33);
+
+      snap.frequency.setValueAtTime(snapFreq, startTime);
+      snap.frequency.exponentialRampToValueAtTime(snapFreq * 0.72, startTime + 0.09);
+      snap.frequency.exponentialRampToValueAtTime(snapFreq * 0.5, startTime + 0.2);
+
+      growl.frequency.setValueAtTime(base * 0.48, startTime);
+      growl.frequency.exponentialRampToValueAtTime(base * 0.38, startTime + 0.3);
+
+      formant.type = "bandpass";
+      formant.frequency.setValueAtTime(640, startTime);
+      formant.frequency.exponentialRampToValueAtTime(540, startTime + 0.14);
+      formant.frequency.exponentialRampToValueAtTime(460, startTime + 0.34);
+      formant.Q.setValueAtTime(1.6, startTime);
+
+      lowpass.type = "lowpass";
+      lowpass.frequency.setValueAtTime(1500, startTime);
+      lowpass.frequency.exponentialRampToValueAtTime(1180, startTime + 0.16);
+      lowpass.frequency.exponentialRampToValueAtTime(860, startTime + 0.34);
+
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.linearRampToValueAtTime(0.04, startTime + 0.018);
+      gain.gain.exponentialRampToValueAtTime(0.024, startTime + 0.09);
+      gain.gain.exponentialRampToValueAtTime(0.012, startTime + 0.2);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.36);
+
+      body.connect(formant);
+      snap.connect(formant);
+      growl.connect(formant);
+      formant.connect(lowpass);
+      lowpass.connect(gain);
+      gain.connect(audioContext.destination);
+
+      body.start(startTime);
+      snap.start(startTime);
+      growl.start(startTime + 0.01);
+
+      body.stop(startTime + 0.38);
+      snap.stop(startTime + 0.24);
+      growl.stop(startTime + 0.38);
+    }
+
+    function playSoundEffect(soundType) {
+      return initAudio().then(() => {
+        const now = audioContext.currentTime + 0.03;
+
+        if (soundType === "rain") {
+          for (let i = 0; i < 20; i += 1) {
+            playNoiseBurst(now + i * 0.065, 0.09 + Math.random() * 0.04, {
+              frequency: 1500 + Math.random() * 1100,
+              q: 1.1,
+              gain: 0.022 + Math.random() * 0.018
+            });
+          }
+          for (let i = 0; i < 6; i += 1) {
+            playNoiseBurst(now + 0.08 + i * 0.2, 0.14, {
+              frequency: 760 + Math.random() * 260,
+              q: 0.6,
+              gain: 0.012,
+              filterType: "lowpass"
+            });
+          }
+          return;
+        }
+
+        if (soundType === "alarm") {
+          [0, 0.34, 0.68].forEach((offset, index) => {
+            playBellStrike(now + offset, 840 + index * 18, 0.55, 0.07);
+          });
+          return;
+        }
+
+        if (soundType === "book") {
+          [0, 0.18, 0.38, 0.62].forEach((offset, index) => {
+            playNoiseBurst(now + offset, 0.16 + index * 0.02, {
+              frequency: 620 + index * 110,
+              q: 0.65,
+              gain: 0.032,
+              filterType: "bandpass"
+            });
+          });
+          return;
+        }
+
+        if (soundType === "doorbell") {
+          playBellStrike(now, 1080, 0.42, 0.06);
+          playBellStrike(now + 0.24, 760, 0.5, 0.055);
+          return;
+        }
+
+        if (soundType === "bicycle") {
+          playBellStrike(now, 1260, 0.44, 0.06);
+          playNoiseBurst(now + 0.12, 0.72, {
+            frequency: 360,
+            q: 0.5,
+            gain: 0.014,
+            filterType: "lowpass"
+          });
+          playNoiseBurst(now + 0.52, 0.34, {
+            frequency: 920,
+            q: 1.2,
+            gain: 0.012,
+            filterType: "bandpass"
+          });
+        }
+      });
+    }
+
+    function playSoundHint() {
+      const round = rounds[currentRound];
+      soundPlays += 1;
+      playSoundEffect(round.soundType);
+    }
+
+    function showResult() {
+      resultModal.classList.add("show");
+      resultModal.setAttribute("aria-hidden", "false");
+      resultScore.textContent = String(score);
+      resultCorrect.textContent = `${correctCount}/${rounds.length}`;
+      resultFocus.textContent = "图片 + 声音";
+      resultSummaryText.textContent =
+        correctCount >= 4
+          ? "你已经能熟练利用多种线索判断物品，说明你理解了“感知世界”不只靠看，还可以听和联想。"
+          : "你已经完成全部关卡。下次可以先听声音，再看局部图片，组合判断会更稳。";
+    }
+
+    function restart() {
+      currentRound = 0;
+      score = 0;
+      correctCount = 0;
+      resultModal.classList.remove("show");
+      resultModal.setAttribute("aria-hidden", "true");
+      renderRound();
+    }
+
+    dropZone.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      if (!answered) {
+        dropZone.classList.add("active");
+      }
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("active");
+    });
+
+    dropZone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      dropZone.classList.remove("active");
+      if (answered) {
+        return;
+      }
+      const choiceId = event.dataTransfer.getData("text/plain");
+      if (choiceId) {
+        setSelectedChoice(choiceId);
+      }
+    });
+
+    checkAnswerButton.addEventListener("click", checkAnswer);
+    nextRoundButton.addEventListener("click", nextRound);
+    playSoundButton.addEventListener("click", playSoundHint);
+    tutorialButton.addEventListener("click", speakTutorial);
+    restartButton.addEventListener("click", restart);
+
+    renderRound();
+  </script>
+</body>
+</html>

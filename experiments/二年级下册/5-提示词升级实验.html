@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>提示词升级实验</title>
+<style>
+  :root{--ink:#1f2937;--muted:#6b7280;--shadow:0 10px 30px rgba(31,41,55,.08)}
+  *{box-sizing:border-box}
+  html,body{margin:0;font-family:"华文圆体","PingFang SC","Microsoft YaHei",system-ui,sans-serif;color:var(--ink)}
+  body{min-height:100vh;background:
+    radial-gradient(900px 500px at 0% 0%,#faf5ff,transparent 60%),
+    radial-gradient(800px 400px at 100% 100%,#fff1f2,transparent 60%),
+    radial-gradient(600px 400px at 50% 50%,#fef3c7,transparent 70%),
+    #fafafa;padding:28px 20px 80px}
+  .wrap{max-width:1120px;margin:0 auto}
+
+  /* Hero */
+  .hero{background:linear-gradient(135deg,#ec4899,#f97316);color:#fff;border-radius:26px;padding:22px 28px;box-shadow:0 10px 24px rgba(236,72,153,.25);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;position:relative;overflow:hidden}
+  .hero::before{content:"📈";position:absolute;right:30px;bottom:-40px;font-size:180px;opacity:.13}
+  .hero h1{margin:0;font-size:28px;font-weight:800;letter-spacing:1px}
+  .hero-sub{opacity:.92;font-size:14px;margin-top:6px}
+  .hero-badge{background:rgba(255,255,255,.25);backdrop-filter:blur(10px);padding:8px 14px;border-radius:999px;font-size:15px}
+
+  /* Theme picker */
+  .theme-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+  @media(max-width:760px){.theme-row{grid-template-columns:1fr 1fr}}
+  .theme-btn{background:#fff;border-radius:18px;padding:16px 12px;box-shadow:var(--shadow);cursor:pointer;transition:.2s;border:1.5px solid transparent;text-align:center;position:relative}
+  .theme-btn:hover{transform:translateY(-3px)}
+  .theme-btn.on{border-color:#ec4899;box-shadow:0 15px 30px rgba(236,72,153,.2)}
+  .theme-btn .i{font-size:36px}
+  .theme-btn .n{font-weight:800;font-size:15px;margin-top:2px}
+  .theme-btn .d{color:var(--muted);font-size:15px;margin-top:2px}
+
+  /* Goal card */
+  .goal{background:#fff;border-radius:22px;padding:20px 26px;box-shadow:var(--shadow);margin-bottom:20px;display:flex;align-items:center;gap:16px}
+  .goal .emoji{font-size:48px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.15))}
+  .goal h3{margin:0 0 4px;font-size:18px}
+  .goal p{margin:0;color:var(--muted);font-size:14px}
+  .mascot-row{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .mascot{width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,#fef3c7,#fbbf24);display:flex;align-items:center;justify-content:center;font-size:36px;position:relative;transition:.4s}
+  .mascot.lvl2{background:linear-gradient(135deg,#ddd6fe,#8b5cf6);transform:scale(1.08)}
+  .mascot.lvl3{background:linear-gradient(135deg,#fbcfe8,#ec4899);transform:scale(1.18);box-shadow:0 8px 20px rgba(236,72,153,.4)}
+  .mascot-label{font-size:14px;color:var(--muted);text-align:center;margin-top:4px;font-weight:700}
+
+  /* Stage */
+  .stage{background:#fff;border-radius:22px;padding:22px;box-shadow:var(--shadow);margin-bottom:18px;position:relative;overflow:hidden;transition:.3s}
+  .stage.lock{opacity:.55;pointer-events:none;filter:grayscale(.6)}
+  .stage.lock::after{content:"🔒 先完成上一档";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.75);font-size:22px;font-weight:800;color:#6b7280;backdrop-filter:blur(2px)}
+  .stage.best{outline:4px solid #f59e0b;outline-offset:-4px;box-shadow:0 10px 30px rgba(245,158,11,.25)}
+  .stage-head{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .level{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px;flex-shrink:0}
+  .s1 .level{background:linear-gradient(135deg,#cbd5e1,#94a3b8)}
+  .s2 .level{background:linear-gradient(135deg,#a78bfa,#6366f1)}
+  .s3 .level{background:linear-gradient(135deg,#ec4899,#f59e0b)}
+  .stage-title{font-weight:800;font-size:18px}
+  .stage-sub{color:var(--muted);font-size:15px;margin-top:2px}
+  .best-badge{margin-left:auto;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;font-size:14px;padding:6px 12px;border-radius:999px;font-weight:800;display:none}
+  .best .best-badge{display:inline-block}
+
+  .prompt{background:#f9fafb;border-radius:14px;padding:12px 16px;font-size:14px;color:#374151;margin-bottom:14px;border-left:4px solid #a78bfa;position:relative}
+  .prompt-label{font-size:15px;color:#9ca3af;font-weight:700;letter-spacing:.5px;margin-bottom:4px}
+  .out{background:linear-gradient(135deg,#fffbeb,#fef9c3);border-radius:14px;padding:18px 22px;font-size:16px;line-height:1.9;min-height:100px;white-space:pre-wrap;border:1px solid #fde68a;font-family:"华文楷体",serif}
+  .out .placeholder{color:#9ca3af;font-style:italic}
+
+  .checks{display:grid;grid-template-columns:1fr 1fr auto auto;gap:12px;margin-top:14px;align-items:center}
+  @media(max-width:680px){.checks{grid-template-columns:1fr 1fr;gap:10px}}
+  .chk{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;background:#f9fafb;padding:8px 12px;border-radius:10px;transition:.15s;font-size:14px}
+  .chk:hover{background:#f3f4f6}
+  .chk input{width:18px;height:18px;accent-color:#6366f1}
+  .stars{display:flex;gap:2px}
+  .star{font-size:26px;cursor:pointer;color:#d1d5db;transition:.15s}
+  .star.on{color:#f59e0b}.star:hover{transform:scale(1.1)}
+  .run{font-size:15px;padding:10px 20px;border-radius:12px;border:0;cursor:pointer;background:#6366f1;color:#fff;font-weight:700;box-shadow:0 6px 16px rgba(99,102,241,.3);transition:.2s}
+  .run:hover:not(:disabled){transform:translateY(-2px)}
+  .run:disabled{opacity:.5;cursor:not-allowed}
+
+  .meta-strip{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+  .meta-strip .m{background:#f3f4f6;padding:4px 10px;border-radius:999px;font-size:14px;color:#374151}
+
+  /* Summary */
+  .summary{background:#fff;border-radius:22px;padding:24px;box-shadow:var(--shadow);margin-top:18px;display:none}
+  .summary h3{margin:0;font-size:18px;text-align:center}
+  .scorerow{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
+  @media(max-width:680px){.scorerow{grid-template-columns:1fr}}
+  .score-card{padding:18px;border-radius:16px;background:#f9fafb;text-align:center;position:relative;transition:.3s;border:2px solid transparent}
+  .score-card.best-card{background:linear-gradient(135deg,#fef3c7,#fde68a);transform:scale(1.05);border-color:#f59e0b}
+  .score-card.best-card::before{content:"🏆";position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:36px}
+  .score-card .big{font-size:32px;font-weight:800;line-height:1;margin:4px 0}
+  .score-card .label{font-size:15px;color:#6b7280}
+  .score-card .breakdown{font-size:15px;color:#9ca3af;margin-top:6px}
+
+  .loading{display:inline-block;width:18px;height:18px;border:1.5px solid #e5e7eb;border-top-color:#6366f1;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div>
+      <h1 data-pinyin>📈 提示词升级实验</h1>
+      <div class="hero-sub" data-pinyin>三档指令递进解锁——看看加了要求后，AI 能变得多厉害</div>
+    </div>
+    <div class="hero-badge" data-pinyin>第二单元 · 第六课</div>
+  </div>
+
+  <!-- Theme picker -->
+  <div class="theme-row" id="themeRow"></div>
+
+  <div class="goal">
+    <div class="emoji" id="gEmoji">🌸</div>
+    <div>
+      <h3 id="gTitle" data-pinyin>今天的目标：让 AI 写一首关于"春天"的儿童诗</h3>
+      <p data-pinyin>我们会依次用三档指令 —— <b>超简单</b> → <b>普通</b> → <b>详细</b>，看看哪档 AI 写得最好。</p>
+    </div>
+    <div class="mascot-row">
+      <div>
+        <div class="mascot" id="mascot">🐣</div>
+        <div class="mascot-label" id="mascotLabel" data-pinyin>新手</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage s1" id="s1">
+    <div class="stage-head">
+      <div class="level">1</div>
+      <div><div class="stage-title" data-pinyin>第一档 · 超简单指令</div><div class="stage-sub" data-pinyin>只有几个字，AI 能猜到你想要什么吗？</div></div>
+      <span class="best-badge">🏆 最受欢迎</span>
+    </div>
+    <div class="prompt"><div class="prompt-label">📝 给 AI 的指令</div><div id="p1"></div></div>
+    <div class="out" data-out="1"><span class="placeholder">点按钮开始生成…</span></div>
+    <div class="meta-strip" data-meta="1"></div>
+    <div class="checks">
+      <label class="chk"><input type="checkbox" data-stage="1" data-k="theme"/> <span data-label="theme">紧扣主题</span></label>
+      <label class="chk"><input type="checkbox" data-stage="1" data-k="detail"/> <span data-label="detail">有细节描写</span></label>
+      <div class="stars" data-stage="1"></div>
+      <button class="run" data-stage="1" onclick="run(1)">▶ 生成</button>
+    </div>
+  </div>
+
+  <div class="stage s2 lock" id="s2">
+    <div class="stage-head">
+      <div class="level">2</div>
+      <div><div class="stage-title" data-pinyin>第二档 · 普通指令</div><div class="stage-sub" data-pinyin>加上主题，AI 会更懂你</div></div>
+      <span class="best-badge">🏆 最受欢迎</span>
+    </div>
+    <div class="prompt"><div class="prompt-label">📝 给 AI 的指令</div><div id="p2"></div></div>
+    <div class="out" data-out="2"><span class="placeholder">先完成第一档…</span></div>
+    <div class="meta-strip" data-meta="2"></div>
+    <div class="checks">
+      <label class="chk"><input type="checkbox" data-stage="2" data-k="theme"/> <span data-label="theme">紧扣主题</span></label>
+      <label class="chk"><input type="checkbox" data-stage="2" data-k="detail"/> <span data-label="detail">有细节描写</span></label>
+      <div class="stars" data-stage="2"></div>
+      <button class="run" data-stage="2" onclick="run(2)">▶ 生成</button>
+    </div>
+  </div>
+
+  <div class="stage s3 lock" id="s3">
+    <div class="stage-head">
+      <div class="level">3</div>
+      <div><div class="stage-title" data-pinyin>第三档 · 详细指令</div><div class="stage-sub" data-pinyin>加上场景、要素、字数，AI 几乎变身小作家！</div></div>
+      <span class="best-badge">🏆 最受欢迎</span>
+    </div>
+    <div class="prompt"><div class="prompt-label">📝 给 AI 的指令</div><div id="p3"></div></div>
+    <div class="out" data-out="3"><span class="placeholder">先完成第二档…</span></div>
+    <div class="meta-strip" data-meta="3"></div>
+    <div class="checks">
+      <label class="chk"><input type="checkbox" data-stage="3" data-k="theme"/> <span data-label="theme">紧扣主题</span></label>
+      <label class="chk"><input type="checkbox" data-stage="3" data-k="detail"/> <span data-label="detail">有细节描写</span></label>
+      <div class="stars" data-stage="3"></div>
+      <button class="run" data-stage="3" onclick="run(3)">▶ 生成</button>
+    </div>
+  </div>
+
+  <div class="summary" id="summary">
+    <h3 data-pinyin>🎉 对比结果</h3>
+    <div class="scorerow" id="scores"></div>
+    <div id="recap" style="margin-top:16px;color:#6b7280;font-size:14px;text-align:center;line-height:1.7"></div>
+  </div>
+</div>
+
+<script>
+const THEMES=[
+  {id:"spring",icon:"🌸",title:"春天的儿童诗",labels:{theme:"提到了春天",detail:"写到了花/动物"},
+   p:{1:"写首诗。",2:"写一首关于春天的儿童诗。",3:"请为二年级小朋友写一首关于春天的儿童诗，要出现小花、蝴蝶和风这三样东西，全诗 4 行，要押韵。"},
+   sys:"你是儿童诗作家，按指令写一首适合小学低年级的儿童诗。只输出诗本身，不要标题、不要解释。"},
+  {id:"birthday",icon:"🎂",title:"生日祝福语",labels:{theme:"包含生日祝福",detail:"有具体的画面"},
+   p:{1:"写个祝福。",2:"写一段生日祝福语。",3:"请为 8 岁小朋友写一段温暖的生日祝福语，要提到长大、朋友和愿望，约 40 字，读起来很温馨。"},
+   sys:"你是温暖的祝福语作家，根据指令写一段祝福语，只输出祝福语本身。"},
+  {id:"riddle",icon:"🧩",title:"水果谜语",labels:{theme:"谜底是水果",detail:"有有趣的比喻"},
+   p:{1:"出个谜语。",2:"出一个水果的谜语。",3:"请出一条小学生能猜的谜语，谜底是一种常见水果，谜面要用拟人的方式描述，4 句话，结尾是问号。"},
+   sys:"你是谜语作家，根据要求写一条谜语，最后单独一行给出「谜底：xx」。"},
+  {id:"story",icon:"🐱",title:"小动物短故事",labels:{theme:"有小动物",detail:"有对话或动作"},
+   p:{1:"写个故事。",2:"写一个关于小动物的故事。",3:"请写一个适合小学生的短故事，主角是一只好奇的小猫，故事里要有对话，要在 60-80 字内，结尾让人会心一笑。"},
+   sys:"你是儿童故事作家，按指令写故事，只输出故事本身。"}
+];
+let curTheme=THEMES[0];
+const score={1:null,2:null,3:null};
+
+function renderThemes(){
+  const box=document.getElementById('themeRow');box.innerHTML='';
+  THEMES.forEach(t=>{
+    const el=document.createElement('div');el.className='theme-btn'+(t.id===curTheme.id?' on':'');
+    el.innerHTML=`<div class="i">${t.icon}</div><div class="n">${t.title}</div><div class="d">4 档递进实验</div>`;
+    el.onclick=()=>{curTheme=t;resetAll()};
+    box.appendChild(el);
+  });
+}
+
+function applyTheme(){
+  document.getElementById('gEmoji').textContent=curTheme.icon;
+  document.getElementById('gTitle').textContent='今天的目标：让 AI 帮我们 '+curTheme.title.slice(0,-0);
+  for(const k of [1,2,3])document.getElementById('p'+k).textContent=curTheme.p[k];
+  for(const el of document.querySelectorAll('[data-label]')){
+    const k=el.dataset.label;el.textContent=curTheme.labels[k]||k;
+  }
+}
+
+renderThemes();applyTheme();
+
+function buildStars(){
+  document.querySelectorAll('.stars').forEach(box=>{
+    if(box.querySelector('.star'))return;
+    const s=+box.dataset.stage;
+    for(let i=1;i<=5;i++){
+      const el=document.createElement('span');el.className='star';el.textContent='★';
+      el.onclick=()=>{box.dataset.v=i;box.querySelectorAll('.star').forEach((x,j)=>x.classList.toggle('on',j<i));tally(s)};
+      box.appendChild(el);
+    }
+  });
+}
+buildStars();
+document.querySelectorAll('.chk input').forEach(i=>i.onchange=()=>tally(+i.dataset.stage));
+
+function tally(s){
+  const stars=+document.querySelector(`.stars[data-stage="${s}"]`).dataset.v||0;
+  const chk=document.querySelectorAll(`input[data-stage="${s}"]:checked`).length;
+  if(!score[s])score[s]={};
+  score[s].stars=stars;score[s].chk=chk;
+  if(stars>0&&s<3){
+    const next=document.getElementById('s'+(s+1));
+    next.classList.remove('lock');
+    const out=next.querySelector('.out');if(out.textContent.includes('先完成'))out.innerHTML='<span class="placeholder">点按钮开始生成…</span>';
+  }
+  // Mascot evolves
+  const rated=[1,2,3].filter(k=>score[k]&&score[k].stars>0).length;
+  const m=document.getElementById('mascot');const l=document.getElementById('mascotLabel');
+  m.classList.remove('lvl2','lvl3');
+  if(rated===1){m.textContent='🐥';l.textContent='见习'}
+  else if(rated===2){m.textContent='🐤';l.textContent='熟练';m.classList.add('lvl2')}
+  else if(rated===3){m.textContent='🦜';l.textContent='专家';m.classList.add('lvl3')}
+
+  const allRated=[1,2,3].every(k=>score[k]&&score[k].stars>0);
+  if(allRated)showSummary();
+}
+
+async function run(s){
+  const btn=document.querySelector(`button[data-stage="${s}"]`);btn.disabled=true;btn.textContent='生成中…';
+  const out=document.querySelector(`[data-out="${s}"]`);
+  out.innerHTML='<span class="loading"></span>';
+  const msg=[{role:"system",content:curTheme.sys},{role:"user",content:curTheme.p[s]}];
+  let fullText='';
+  try{await chatStream(msg,t=>{fullText=t;out.textContent=t})}
+  catch(e){out.textContent='（网络出错了，再试一次）';btn.disabled=false;btn.textContent='🔁 重新生成';return}
+  const meta=document.querySelector(`[data-meta="${s}"]`);
+  const words=fullText.replace(/\s/g,'').length;const lines=fullText.split(/\n+/).filter(x=>x.trim()).length;
+  meta.innerHTML=`<span class="m">📏 ${words} 字</span><span class="m">📄 ${lines} 行</span><span class="m">📝 指令 ${curTheme.p[s].length} 字</span>`;
+  btn.disabled=false;btn.textContent='🔁 重新生成';
+}
+
+function showSummary(){
+  const s=document.getElementById('summary');s.style.display='block';
+  const box=document.getElementById('scores');box.innerHTML='';
+  const totals=[1,2,3].map(k=>({k,v:score[k].stars+score[k].chk,stars:score[k].stars,chk:score[k].chk}));
+  const max=Math.max(...totals.map(t=>t.v));
+  totals.forEach(t=>{
+    const best=t.v===max;
+    box.innerHTML+=`<div class="score-card${best?' best-card':''}"><div class="label">第 ${t.k} 档</div><div class="big">${t.v}</div><div class="label">总分</div><div class="breakdown">⭐ ${t.stars} 星 &nbsp;·&nbsp; ✓ ${t.chk} 项</div></div>`;
+  });
+  document.querySelectorAll('.stage').forEach(st=>st.classList.remove('best'));
+  totals.forEach(t=>{if(t.v===max)document.getElementById('s'+t.k).classList.add('best')});
+  const recap=document.getElementById('recap');
+  if(max===totals[2].v)recap.innerHTML='✨ <b>指令越详细，AI 越听话！</b><br/>加上主题、要素、字数要求，AI 就能写得又准又好。';
+  else if(max===totals[0].v)recap.innerHTML='🤔 有意思——最简单的指令反而评分最高？<br/>也许是因为评价标准没有那么严格。再试一个主题看看？';
+  else recap.innerHTML='🌟 普通指令赢了！<br/>有时候不需要太多细节，说清楚主题就够了。';
+}
+
+function resetAll(){
+  for(const k in score)score[k]=null;
+  document.querySelectorAll('.stage').forEach((st,i)=>{if(i>0)st.classList.add('lock');st.classList.remove('best')});
+  document.querySelectorAll('.stars').forEach(b=>{delete b.dataset.v;b.querySelectorAll('.star').forEach(s=>s.classList.remove('on'))});
+  document.querySelectorAll('.chk input').forEach(i=>i.checked=false);
+  document.querySelectorAll('.out').forEach(o=>o.innerHTML='<span class="placeholder">点按钮开始生成…</span>');
+  document.querySelectorAll('.meta-strip').forEach(m=>m.innerHTML='');
+  document.querySelectorAll('.run').forEach(b=>b.textContent='▶ 生成');
+  document.getElementById('summary').style.display='none';
+  const m=document.getElementById('mascot');m.classList.remove('lvl2','lvl3');m.textContent='🐣';
+  document.getElementById('mascotLabel').textContent='新手';
+  renderThemes();applyTheme();
+}
+
+async function chatStream(messages,onDelta){
+  const res=await fetch('https://api.qa.bingotalk.cn/api/v2/comm/vt/aiChat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(messages)});
+  const reader=res.body.getReader();const dec=new TextDecoder();let buf='',full='';
+  while(true){const {value,done}=await reader.read();if(done)break;
+    buf+=dec.decode(value,{stream:true});
+    const parts=buf.replace(/}\s*{/g,'}\n{').split('\n');buf=parts.pop();
+    for(const p of parts){const s=p.trim();if(!s)continue;try{const d=JSON.parse(s);const t=d?.data?.result||'';if(t){full+=t;onDelta(full)}}catch(e){}}
+  }
+  if(buf.trim()){try{const d=JSON.parse(buf);const t=d?.data?.result||'';if(t){full+=t;onDelta(full)}}catch(e){}}
+}
+</script>
+<script>
+/* 给页面中标记了 data-pinyin 的元素自动加拼音（面向二年级小朋友）
+   给需要注音的元素加上 data-pinyin 属性，只有这些元素内的文字才会加拼音。
+*/
+(function () {
+  const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT', 'RUBY', 'RT', 'RP', 'CODE', 'PRE']);
+  const HAS_HAN = /[\u4e00-\u9fa5]/;
+  const HAN_RUN = /^[\u4e00-\u9fa5]+$/;
+  let observer = null;
+
+  function injectStyles() {
+    if (document.getElementById('__pyStyle')) return;
+    const s = document.createElement('style');
+    s.id = '__pyStyle';
+    s.textContent = `
+      ruby { ruby-position: over; ruby-align: center; }
+      ruby > rt {
+        font-size: 0.55em;
+        color: #ec4899;
+        font-weight: 500;
+        font-family: "Microsoft YaHei", system-ui, sans-serif;
+        line-height: 1.1;
+        opacity: 0.92;
+        user-select: none;
+        letter-spacing: 0;
+      }
+      h1 ruby > rt, h2 ruby > rt, h3 ruby > rt { color: inherit; opacity: 0.85; }
+      button ruby > rt, .btn ruby > rt { color: inherit; opacity: 0.9; }
+    `;
+    (document.head || document.documentElement).appendChild(s);
+  }
+
+  function hasPinyinMarker(node) {
+    let el = node.nodeType === 3 ? node.parentNode : node;
+    while (el) {
+      if (el.nodeType !== 1) { el = el.parentNode; continue; }
+      if (el.dataset && el.dataset.pinyin !== undefined) return true;
+      if (el === document.body) break;
+      el = el.parentNode;
+    }
+    return false;
+  }
+
+  function annotateText(node) {
+    if (!hasPinyinMarker(node)) return;
+    const text = node.nodeValue;
+    if (!text || !HAS_HAN.test(text)) return;
+    const parent = node.parentNode;
+    if (!parent) return;
+    const tag = parent.tagName;
+    if (tag && SKIP_TAGS.has(tag)) return;
+
+    const parts = text.split(/([\u4e00-\u9fa5]+)/);
+    if (parts.length <= 1) return;
+
+    const frag = document.createDocumentFragment();
+    for (const part of parts) {
+      if (!part) continue;
+      if (HAN_RUN.test(part)) {
+        let arr;
+        try {
+          arr = window.pinyinPro.pinyin(part, { toneType: 'symbol', type: 'array', nonZh: 'consecutive' });
+        } catch (e) {
+          arr = [];
+        }
+        for (let i = 0; i < part.length; i++) {
+          const r = document.createElement('ruby');
+          r.appendChild(document.createTextNode(part[i]));
+          const rt = document.createElement('rt');
+          rt.textContent = arr[i] || '';
+          r.appendChild(rt);
+          frag.appendChild(r);
+        }
+      } else {
+        frag.appendChild(document.createTextNode(part));
+      }
+    }
+    parent.replaceChild(frag, node);
+  }
+
+  function annotate(node) {
+    if (!node) return;
+    if (node.nodeType === 3) { annotateText(node); return; }
+    if (node.nodeType !== 1) return;
+    const tag = node.tagName;
+    if (SKIP_TAGS.has(tag)) return;
+    const kids = Array.from(node.childNodes);
+    for (const k of kids) annotate(k);
+  }
+
+  function startObserver() {
+    if (!('MutationObserver' in window)) return;
+    observer = new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === 'childList') {
+          for (const n of m.addedNodes) annotate(n);
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function run() {
+    if (!window.pinyinPro || !window.pinyinPro.pinyin) {
+      setTimeout(run, 80);
+      return;
+    }
+    injectStyles();
+    annotate(document.body);
+    startObserver();
+  }
+
+  function bootstrap() {
+    if (window.pinyinPro) { run(); return; }
+    const tryLoad = (urls) => {
+      if (!urls.length) { console.warn('[pinyin] CDN 加载失败，未能注音'); return; }
+      const s = document.createElement('script');
+      s.src = urls[0];
+      s.onload = run;
+      s.onerror = () => tryLoad(urls.slice(1));
+      (document.head || document.documentElement).appendChild(s);
+    };
+    tryLoad([
+      'https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js',
+      'https://unpkg.com/pinyin-pro@3.26.0/dist/index.js',
+      'https://fastly.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js'
+    ]);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrap);
+  } else {
+    bootstrap();
+  }
+})();
+
+</script>
+</body>
+</html>

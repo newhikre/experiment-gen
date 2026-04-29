@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小小指挥官：找出正确指令</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --sky1:#b8e8fc;--sky2:#d9f7be;--sky3:#fff7cc;
+  --green:#52c41a;--green-g:rgba(82,196,26,.35);
+  --red:#ff4d4f;--yellow:#fadb14;--orange:#fa8c16;
+  --pink:#ff85c0;--purple:#b37feb;
+  --card:#ffffffee;
+  --font-fun:'ZCOOL KuaiLe',cursive;
+  --font-body:'Noto Sans SC',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:linear-gradient(175deg,var(--sky1) 0%,#e6f7ff 25%,var(--sky3) 55%,var(--sky2) 100%);min-height:100vh;overflow-x:hidden;position:relative}
+
+/* 背景 */
+.bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.cloud{position:absolute;opacity:.22;width:120px;height:46px;background:#fff;border-radius:46px;animation:drift linear infinite}
+.cloud::before,.cloud::after{content:'';position:absolute;background:#fff;border-radius:50%}
+.cloud::before{width:50px;height:50px;top:-24px;left:18px}
+.cloud::after{width:36px;height:36px;top:-16px;left:56px}
+.cloud:nth-child(1){top:5%;left:-8%;animation-duration:38s}
+.cloud:nth-child(2){top:13%;left:25%;animation-duration:45s;animation-delay:-14s;transform:scale(.7)}
+.cloud:nth-child(3){top:7%;right:5%;animation-duration:40s;animation-delay:-22s;transform:scale(.55)}
+@keyframes drift{from{transform:translateX(-200px)}to{transform:translateX(calc(100vw + 200px))}}
+.sun{position:absolute;top:18px;right:36px;width:66px;height:66px;background:radial-gradient(circle,#ffe066,#ffc53d);border-radius:50%;box-shadow:0 0 40px #ffe06699,0 0 80px #ffe06644;animation:pulse 4s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+
+/* 标题 */
+.header{text-align:center;padding:28px 20px 6px;animation:drop .9s cubic-bezier(.34,1.56,.64,1) both;position:relative;z-index:1}
+@keyframes drop{from{opacity:0;transform:translateY(-60px) scale(.9)}to{opacity:1;transform:none}}
+.header h1{font-family:var(--font-fun);font-size:clamp(26px,6vw,50px);color:#262626;text-shadow:3px 3px 0 var(--yellow),5px 5px 0 rgba(0,0,0,.05);letter-spacing:2px}
+.header .sub{font-size:clamp(14px,2.8vw,20px);color:#595959;font-weight:700;margin-top:4px}
+
+/* 规则 */
+.rules{max-width:720px;margin:10px auto;background:var(--card);backdrop-filter:blur(8px);border-radius:22px;padding:14px 22px;border:3px dashed var(--yellow);text-align:center;font-size:clamp(13px,2.4vw,16px);line-height:2;color:#434343;animation:up .8s .2s both;position:relative;z-index:1}
+.rules b{color:#cf1322}
+@keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+
+/* 主布局 */
+.main{display:flex;flex-wrap:wrap;max-width:1160px;margin:10px auto;padding:0 14px;gap:16px;justify-content:center;position:relative;z-index:1}
+.cards-sec{flex:1 1 480px;min-width:280px}
+.cards-sec h2{font-family:var(--font-fun);font-size:22px;text-align:center;margin-bottom:8px;color:#262626}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(142px,1fr));gap:12px}
+
+/* 卡片 */
+.card{position:relative;background:var(--card);border-radius:22px;padding:20px 12px 24px;text-align:center;font-size:clamp(15px,2.8vw,19px);font-weight:900;color:#262626;cursor:pointer;border:3px solid #e8e8e8;box-shadow:0 4px 16px rgba(0,0,0,.08);transition:transform .22s,border-color .22s,box-shadow .22s;user-select:none}
+.card::after{content:'';position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-top:11px solid #fff;transition:border-top-color .3s}
+.card:hover:not(.done){transform:translateY(-7px) scale(1.07);border-color:var(--purple);box-shadow:0 12px 32px rgba(179,127,235,.3)}
+.card{animation:pop .5s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes pop{from{opacity:0;transform:scale(.4) rotate(-6deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+.card.correct{background:#f6ffed;border-color:var(--green);box-shadow:0 0 24px var(--green-g);animation:cbounce .55s}
+.card.correct::after{border-top-color:#f6ffed}
+@keyframes cbounce{0%{transform:scale(1)}25%{transform:scale(1.18)}55%{transform:scale(.94)}100%{transform:scale(1)}}
+.card.wrong{background:#fff1f0;border-color:var(--red);animation:shake .5s}
+.card.wrong::after{border-top-color:#fff1f0}
+@keyframes shake{0%,100%{transform:translateX(0)}15%{transform:translateX(-10px) rotate(-2deg)}30%{transform:translateX(10px) rotate(2deg)}45%{transform:translateX(-8px)}60%{transform:translateX(8px)}75%{transform:translateX(-4px)}90%{transform:translateX(4px)}}
+.card .badge{position:absolute;top:-12px;right:-12px;font-size:28px;animation:pop .3s both;z-index:2}
+.card.done{cursor:default;pointer-events:none;opacity:.82}
+.card .glow{position:absolute;inset:-4px;border-radius:26px;z-index:-1;animation:glowP 1s ease-out;pointer-events:none}
+@keyframes glowP{0%{box-shadow:0 0 0 0 var(--green-g)}70%{box-shadow:0 0 0 18px transparent}100%{box-shadow:0 0 0 0 transparent}}
+
+/* 右侧 */
+.side{flex:0 1 360px;display:flex;flex-direction:column;gap:14px;min-width:260px}
+
+/* 机器人舞台 */
+.stage{background:linear-gradient(180deg,#e6f7ff 0%,#fffbe6 100%);border-radius:26px;padding:14px 12px 10px;text-align:center;border:3px solid #d9d9d9;box-shadow:0 6px 24px rgba(0,0,0,.08);position:relative;overflow:visible;min-height:280px;display:flex;flex-direction:column;align-items:center}
+.floor{position:absolute;bottom:42px;left:10%;right:10%;height:6px;background:linear-gradient(90deg,transparent,#d9d9d966,transparent);border-radius:50%}
+.shadow-el{position:absolute;bottom:38px;left:50%;transform:translateX(-50%);width:70px;height:12px;background:rgba(0,0,0,.1);border-radius:50%;transition:all .3s}
+
+/* 语音气泡 */
+.speech{display:none;position:absolute;top:6px;right:8px;background:#fff;border:2px solid #d9d9d9;border-radius:18px;padding:6px 14px;font-size:15px;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.1);z-index:20;animation:pop .35s both;white-space:nowrap;max-width:160px}
+.speech::after{content:'';position:absolute;bottom:-8px;left:20px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid #fff}
+.speech.show{display:block}
+
+/* 特效 */
+.fx{position:absolute;pointer-events:none;font-size:22px;z-index:20;animation:fxF 1.2s ease-out forwards}
+@keyframes fxF{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.4)}}
+
+/* ===== CSS 机器人 ===== */
+.bot{position:relative;width:140px;height:190px;margin:6px auto 0;transition:transform .3s}
+
+/* 天线 */
+.ant{position:absolute;top:0;left:50%;transform:translateX(-50%);width:6px;height:20px;background:linear-gradient(180deg,#8c8c8c,#bfbfbf);border-radius:3px;z-index:2}
+.ant::after{content:'';position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#ff4d4f,#cf1322);box-shadow:0 0 8px #ff4d4f88;animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{box-shadow:0 0 8px #ff4d4f88}50%{box-shadow:0 0 20px #ff4d4fcc}}
+
+/* 头 */
+.hd{position:absolute;top:16px;left:50%;transform:translateX(-50%);width:92px;height:74px;background:linear-gradient(150deg,#69c0ff,#40a9ff);border-radius:20px;border:3px solid #1890ff;box-shadow:inset 0 -6px 12px rgba(0,0,0,.08),0 4px 12px rgba(24,144,255,.2);z-index:1}
+.ear{position:absolute;top:22px;width:18px;height:26px;background:linear-gradient(150deg,#91d5ff,#69c0ff);border-radius:8px;border:2px solid #1890ff;z-index:0}
+.ear.l{left:-12px}.ear.r{right:-12px}
+
+/* 屏幕/脸 */
+.scr{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:72px;height:42px;background:linear-gradient(180deg,#0a0a0a,#1a1a1a);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:16px;box-shadow:inset 0 2px 6px rgba(0,0,0,.5)}
+
+/* 眼睛 */
+.eye{width:14px;height:18px;background:radial-gradient(circle at 40% 35%,#95de64,#52c41a);border-radius:50%;box-shadow:0 0 10px #52c41a99;transition:all .3s;position:relative}
+.eye::after{content:'';position:absolute;top:3px;left:3px;width:6px;height:6px;background:#fff;border-radius:50%;opacity:.7}
+.eye{animation:eyeB 4s ease-in-out infinite}
+@keyframes eyeB{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.08)}}
+
+/* 嘴 */
+.mo{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:26px;height:6px;border-bottom:3px solid #52c41a;border-radius:0 0 12px 12px;transition:all .3s}
+
+/* 表情 */
+.bot.happy .eye{background:radial-gradient(circle at 40% 35%,#fff566,#fadb14);box-shadow:0 0 12px #fadb1499;height:16px;width:16px}
+.bot.happy .mo{border-bottom-color:#fadb14;height:12px;width:30px;border-radius:0 0 15px 15px}
+.bot.sad .eye{height:5px;border-radius:3px;background:#ff7875;box-shadow:0 0 8px #ff787566;animation:none}
+.bot.sad .mo{border-bottom:none;border-top:3px solid #ff4d4f;border-radius:10px 10px 0 0;height:6px}
+.bot.sleepy .eye{height:3px;border-radius:2px;background:#8c8c8c;box-shadow:none;animation:none}
+.bot.sleepy .mo{width:14px;height:14px;border:3px solid #8c8c8c;border-radius:50%;border-bottom-color:transparent;border-left-color:transparent;border-right-color:transparent}
+.bot.wow .eye{width:18px;height:18px;background:radial-gradient(circle,#fff566,#faad14);box-shadow:0 0 14px #faad14aa}
+.bot.wow .mo{width:16px;height:16px;border-radius:50%;border:3px solid #ff85c0}
+
+/* 身体 */
+.bd{position:absolute;top:94px;left:50%;transform:translateX(-50%);width:78px;height:64px;background:linear-gradient(150deg,#69c0ff,#1890ff);border-radius:16px;border:3px solid #096dd9;box-shadow:inset 0 -8px 16px rgba(0,0,0,.1),0 4px 12px rgba(24,144,255,.18);z-index:1}
+.ch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#fff566,#fadb14);border:2px solid #d4b106;box-shadow:0 0 14px #fadb1466;animation:glo 3s ease-in-out infinite}
+@keyframes glo{0%,100%{box-shadow:0 0 14px #fadb1466}50%{box-shadow:0 0 28px #fadb14aa}}
+.dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:5px}
+.dots span{width:7px;height:7px;border-radius:50%;background:#bfbfbf;border:1px solid #8c8c8c}
+
+/* 手臂 */
+.arm{position:absolute;top:98px;width:22px;height:54px;z-index:0;background:linear-gradient(180deg,#91d5ff,#69c0ff);border-radius:11px;border:2px solid #1890ff;transform-origin:top center;transition:transform .45s cubic-bezier(.34,1.56,.64,1)}
+.arm.l{left:10px;transform:rotate(8deg)}.arm.r{right:10px;transform:rotate(-8deg)}
+.hand{position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);width:22px;height:20px;background:linear-gradient(150deg,#d9d9d9,#8c8c8c);border-radius:11px;border:2px solid #595959}
+
+/* 腿 */
+.leg{position:absolute;top:158px;width:24px;height:32px;background:linear-gradient(180deg,#8c8c8c,#595959);border-radius:0 0 8px 8px;z-index:0;transform-origin:top center;transition:transform .3s}
+.leg.l{left:32px}.leg.r{right:32px}
+.foot{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:30px;height:10px;background:linear-gradient(180deg,#434343,#262626);border-radius:4px 4px 10px 10px}
+
+/* ===== 动画 ===== */
+.bot.a-spin{animation:rSpin .9s cubic-bezier(.4,0,.2,1)}
+@keyframes rSpin{to{transform:rotate(360deg)}}
+.bot.a-jump{animation:rJump .7s cubic-bezier(.34,1.56,.64,1)}
+@keyframes rJump{0%,100%{transform:translateY(0)}30%{transform:translateY(-45px)}60%{transform:translateY(-12px)}}
+.bot.a-shake{animation:rShake .6s ease-in-out}
+@keyframes rShake{0%,100%{transform:rotate(0)}20%{transform:rotate(-14deg)}40%{transform:rotate(14deg)}60%{transform:rotate(-10deg)}80%{transform:rotate(10deg)}}
+.bot.a-raise .arm.l{transform:rotate(-150deg)}
+.bot.a-raise .arm.r{transform:rotate(150deg)}
+.bot.a-walk{animation:rWalk .9s ease-in-out}
+@keyframes rWalk{0%,100%{transform:translateX(0)}25%{transform:translateX(22px)}50%{transform:translateX(35px)}75%{transform:translateX(12px)}}
+.bot.a-walk .leg.l{animation:stp .4s ease-in-out 2}
+.bot.a-walk .leg.r{animation:stp .4s ease-in-out 2 .2s}
+@keyframes stp{0%,100%{transform:rotate(0)}50%{transform:rotate(28deg)}}
+.bot.a-yawn .arm.l{transform:rotate(-70deg)}
+.bot.a-yawn .arm.r{transform:rotate(30deg)}
+.bot.a-dance{animation:rDance .55s ease-in-out infinite}
+@keyframes rDance{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-22px) rotate(10deg)}50%{transform:translateY(0) rotate(-10deg)}75%{transform:translateY(-22px) rotate(10deg)}}
+.bot.a-dance .arm.l{animation:aL .28s ease-in-out infinite alternate}
+.bot.a-dance .arm.r{animation:aR .28s ease-in-out infinite alternate}
+@keyframes aL{from{transform:rotate(8deg)}to{transform:rotate(-130deg)}}
+@keyframes aR{from{transform:rotate(-8deg)}to{transform:rotate(130deg)}}
+.bot.a-dance .leg.l{animation:lD .35s ease-in-out infinite alternate}
+.bot.a-dance .leg.r{animation:lD .35s ease-in-out infinite alternate .18s}
+@keyframes lD{from{transform:rotate(-12deg)}to{transform:rotate(12deg)}}
+
+.robot-fb{margin-top:8px;font-size:15px;font-weight:700;min-height:44px;color:#434343;line-height:1.6;padding:0 8px}
+
+/* 得分 */
+.score{background:var(--card);border-radius:22px;padding:14px 18px;border:3px solid var(--yellow);box-shadow:0 4px 16px rgba(0,0,0,.06);text-align:center}
+.score .lbl{font-size:14px;color:#8c8c8c;margin-bottom:2px}
+.score .num{font-family:var(--font-fun);font-size:34px;color:var(--green)}
+.stars{font-size:28px;margin-top:4px;min-height:36px;letter-spacing:4px}
+.star-pop{display:inline-block;animation:sPop .45s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes sPop{from{transform:scale(0) rotate(-40deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+
+/* 指令箱 */
+.cmdbox{background:linear-gradient(135deg,#fffbe6,#fff0e0);border-radius:22px;padding:14px 16px;border:3px solid var(--orange);box-shadow:0 4px 16px rgba(0,0,0,.06);min-height:88px}
+.cmdbox h3{font-family:var(--font-fun);font-size:20px;text-align:center;color:#ad4e00;margin-bottom:8px}
+.cmd-tags{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
+.tag{background:linear-gradient(135deg,var(--green),#389e0d);color:#fff;padding:5px 13px;border-radius:30px;font-size:13px;font-weight:700;animation:tagIn .5s cubic-bezier(.34,1.56,.64,1) both;box-shadow:0 2px 8px var(--green-g)}
+@keyframes tagIn{from{opacity:0;transform:translateX(30px) scale(.5)}to{opacity:1;transform:translateX(0) scale(1)}}
+
+/* 按钮 */
+.btn{display:inline-block;padding:14px 44px;font-size:20px;font-weight:900;font-family:var(--font-body);color:#fff;background:linear-gradient(135deg,#b37feb,#ff85c0);border:none;border-radius:50px;cursor:pointer;box-shadow:0 6px 20px rgba(179,127,235,.4);transition:transform .2s,box-shadow .2s;position:relative;z-index:1}
+.btn:hover{transform:scale(1.06);box-shadow:0 10px 28px rgba(179,127,235,.5)}
+.btn-wrap{text-align:center;margin:16px 0;position:relative;z-index:1}
+
+/* ===== 移动端触摸优化 ===== */
+.card{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.btn{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.mode-btn{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+
+.teach{max-width:720px;margin:18px auto;padding:0 14px;position:relative;z-index:1}
+.tcard{background:var(--card);border-radius:22px;padding:18px 22px;border:3px solid var(--pink);box-shadow:0 4px 16px rgba(0,0,0,.06);margin-bottom:14px}
+.tcard h3{font-family:var(--font-fun);font-size:21px;color:#ad4e00;margin-bottom:8px}
+.tcard li{font-size:15px;line-height:2;list-style:none}
+.tcard li::before{content:'💡 '}
+.tcard.hw li::before{content:'📝 '}
+
+/* 庆祝 */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.cbox{background:linear-gradient(135deg,#fffbe6,#ffe3ec,#e6f7ff);border-radius:30px;padding:32px 28px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:cpop .6s cubic-bezier(.34,1.56,.64,1) both;max-width:440px;width:92%;position:relative}
+@keyframes cpop{from{opacity:0;transform:scale(.4) rotate(-8deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+.cbox h2{font-family:var(--font-fun);font-size:30px;color:#ad4e00;margin:10px 0 6px}
+.cbox p{font-size:17px;color:#595959;margin-bottom:14px}
+.cbot{margin:0 auto;width:140px;height:190px;position:relative}
+.rain{position:fixed;inset:0;pointer-events:none;z-index:101;overflow:hidden}
+.fstar{position:absolute;top:-40px;animation:ffall linear forwards;opacity:.9}
+@keyframes ffall{to{transform:translateY(115vh) rotate(400deg);opacity:0}}
+.confetti{position:absolute;top:-30px;border-radius:2px;animation:ffall linear forwards}
+
+@media(max-width:700px){
+  .main{flex-direction:column;padding:0 10px;gap:12px}
+  .side{flex:1 1 auto;min-width:0}
+  .cards-sec{order:2}.side{order:1}
+  .cards-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .card{padding:14px 10px;font-size:15px;border-radius:18px}
+  .stage{min-height:220px;padding:10px 8px 8px}
+  .bot{transform:scale(.78);transform-origin:top center}
+  .speech{font-size:13px;max-width:130px;top:4px;right:4px;padding:5px 10px}
+  .score{padding:12px 14px}
+  .score .num{font-size:28px}
+  .cmdbox{padding:12px 12px}
+  .btn{padding:12px 32px;font-size:18px}
+  .rules{padding:12px 14px;font-size:13px}
+  .header h1{font-size:22px}
+  .header{padding:18px 14px 6px}
+  .cards-sec h2{font-size:18px}
+}
+@media(max-width:400px){
+  .cards-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .card{padding:12px 8px;font-size:14px;border-radius:14px;min-height:52px;display:flex;align-items:center;justify-content:center}
+  .stage{min-height:200px}
+  .bot{transform:scale(.70);transform-origin:top center}
+  .header h1{font-size:20px}
+  .header{padding:14px 10px 4px}
+  .rules{margin:8px 10px;font-size:12px}
+  .score .num{font-size:26px}
+  .btn{padding:11px 26px;font-size:16px}
+  .cbox{padding:22px 16px}
+  .cbox h2{font-size:24px}
+}
+</style>
+</head>
+<body>
+
+<div class="bg"><div class="cloud"></div><div class="cloud"></div><div class="cloud"></div><div class="sun"></div></div>
+
+<div class="header">
+  <h1>🤖 小小指挥官：找出正确指令</h1>
+  <p class="sub">请找出能让机器人行动的指令吧！</p>
+</div>
+
+<div class="rules">
+  <b>🎮 玩法：</b>认真读每个气泡卡片，想一想：这句话能不能让机器人<b>马上做动作</b>？<br>
+  如果能 → 点击它！机器人会执行动作！找出全部正确指令 → 成为<b>"最佳小指挥官"</b>！🏆<br>
+  <span style="color:#8c8c8c;font-size:13px">⚠️ 只是说天气、夸奖、表达喜欢的话，不是指令哦～</span>
+</div>
+
+<div class="main">
+  <div class="cards-sec">
+    <h2>📋 点击你认为是指令的卡片</h2>
+    <div class="cards-grid" id="grid"></div>
+  </div>
+  <div class="side">
+    <div class="stage" id="stage">
+      <div class="speech" id="speech"></div>
+      <div class="bot" id="bot">
+        <div class="ant"></div>
+        <div class="hd">
+          <div class="ear l"></div><div class="ear r"></div>
+          <div class="scr"><div class="eye"></div><div class="eye"></div></div>
+          <div class="mo"></div>
+        </div>
+        <div class="bd"><div class="ch"></div><div class="dots"><span></span><span></span><span></span></div></div>
+        <div class="arm l"><div class="hand"></div></div>
+        <div class="arm r"><div class="hand"></div></div>
+        <div class="leg l"><div class="foot"></div></div>
+        <div class="leg r"><div class="foot"></div></div>
+      </div>
+      <div class="shadow-el"></div>
+      <div class="floor"></div>
+      <div class="robot-fb" id="fb">点击卡片，看看机器人会怎么做！</div>
+    </div>
+    <div class="score">
+      <div class="lbl">已找到正确指令</div>
+      <div class="num"><span id="found">0</span> / <span id="total">6</span></div>
+      <div class="stars" id="stars"></div>
+    </div>
+    <div class="cmdbox">
+      <h3>📦 机器人指令箱</h3>
+      <div class="cmd-tags" id="tags"></div>
+    </div>
+  </div>
+</div>
+<div class="btn-wrap"><button class="btn" onclick="resetGame()">🔄 重新开始</button></div>
+<div class="teach">
+  <div class="tcard"><h3>👩‍🏫 想一想</h3><ul><li>为什么"天气真好"不是指令？</li><li>生活中还有哪些指令？</li><li>怎样说，机器人才能听懂？</li></ul></div>
+  <div class="tcard hw"><h3>🏠 课后小任务</h3><ul><li>回家找出 3 条生活中的指令，写在本子上。</li></ul></div>
+</div>
+<div class="overlay" id="overlay">
+  <div class="cbox">
+    <div class="cbot" id="cbot"></div>
+    <h2>🎉 挑战成功！</h2>
+    <p>你是最佳小指挥官！<br>找到了全部 6 条指令！</p>
+    <div style="font-size:34px;margin-bottom:8px">⭐⭐⭐⭐⭐⭐</div>
+    <button class="btn" onclick="resetGame()">🔄 再来一次</button>
+  </div>
+</div>
+<div class="rain" id="rain"></div>
+
+<script>
+const DATA=[
+  {text:"转个圈！",ok:true,msg:"收到！机器人转了一个圈！",anim:"a-spin",face:"happy",bbl:"转～转～ 🌀",fx:["🌀","✨","💫"]},
+  {text:"打哈欠！",ok:true,msg:"收到！机器人打了个大哈欠！",anim:"a-yawn",face:"sleepy",bbl:"哈欠～ 😪",fx:["😪","💤","😴"]},
+  {text:"天气真好！",ok:false,msg:"再想一想！这只是在说天气，不是指令。",anim:"a-shake",face:"sad",bbl:"我不知道该做什么…",fx:["❓"]},
+  {text:"喵喵叫！",ok:true,msg:"收到！机器人学猫叫！喵～",anim:"a-jump",face:"wow",bbl:"喵～ 🐱",fx:["🐱","🐾","😺"]},
+  {text:"你真可爱！",ok:false,msg:"再想一想！这是在夸奖，不是指令。",anim:"a-shake",face:"sad",bbl:"我不知道该做什么…",fx:["❓"]},
+  {text:"单脚跳！",ok:true,msg:"收到！机器人单脚跳起来了！",anim:"a-jump",face:"happy",bbl:"跳！跳！ 🦘",fx:["⬆️","🦘","✨"]},
+  {text:"我喜欢苹果。",ok:false,msg:"再想一想！这是在表达喜欢，不是指令。",anim:"a-shake",face:"sad",bbl:"我不知道该做什么…",fx:["❓"]},
+  {text:"请举手！",ok:true,msg:"收到！机器人举起了手！",anim:"a-raise",face:"happy",bbl:"✋ 举手！",fx:["✋","🙌","✨"]},
+  {text:"今天是星期一。",ok:false,msg:"再想一想！这是在说日期，不是指令。",anim:"a-shake",face:"sad",bbl:"我不知道该做什么…",fx:["❓"]},
+  {text:"向前走一步！",ok:true,msg:"收到！机器人向前走了一步！",anim:"a-walk",face:"happy",bbl:"走！→ 🚶",fx:["👣","🚶","✨"]}
+];
+const TOT=DATA.filter(c=>c.ok).length;
+let found=0,timer=null;
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]]}return b}
+function init(){
+  found=0;
+  document.getElementById('found').textContent='0';
+  document.getElementById('total').textContent=TOT;
+  document.getElementById('stars').innerHTML='';
+  document.getElementById('tags').innerHTML='';
+  const fb=document.getElementById('fb');fb.textContent='点击卡片，看看机器人会怎么做！';fb.style.color='#434343';
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('rain').innerHTML='';
+  resetBot();render(shuffle(DATA));
+}
+function resetBot(){
+  const b=document.getElementById('bot');b.className='bot';clearTimeout(timer);
+  const s=document.getElementById('speech');s.classList.remove('show');s.textContent='';
+  document.querySelectorAll('.fx').forEach(e=>e.remove());
+}
+function render(cards){
+  const g=document.getElementById('grid');g.innerHTML='';
+  cards.forEach((c,i)=>{
+    const d=document.createElement('div');d.className='card';d.textContent=c.text;
+    d.style.animationDelay=(i*.07)+'s';d.onclick=()=>click(d,c);g.appendChild(d);
+  });
+}
+function click(el,c){
+  if(el.classList.contains('done'))return;
+  el.classList.add('done');resetBot();
+  const bot=document.getElementById('bot'),fb=document.getElementById('fb'),sp=document.getElementById('speech'),st=document.getElementById('stage');
+  if(c.ok){
+    el.classList.add('correct');addB(el,'✅');addG(el);
+    bot.classList.add(c.face,c.anim);fb.textContent=c.msg;fb.style.color='#389e0d';
+    sp.textContent=c.bbl;sp.classList.add('show');spawnFx(st,c.fx);
+    found++;document.getElementById('found').textContent=found;addStar();addTag(c.text);
+    timer=setTimeout(()=>{bot.classList.remove(c.anim);sp.classList.remove('show')},2000);
+    if(found>=TOT)setTimeout(celeb,1400);
+  }else{
+    el.classList.add('wrong');addB(el,'❌');
+    bot.classList.add('sad','a-shake');fb.textContent=c.msg;fb.style.color='#cf1322';
+    sp.textContent=c.bbl;sp.classList.add('show');spawnFx(st,c.fx);
+    timer=setTimeout(()=>{bot.classList.remove('sad','a-shake');sp.classList.remove('show')},1600);
+    setTimeout(()=>{el.classList.remove('done','wrong');el.querySelector('.badge')?.remove()},1600);
+  }
+}
+function addB(el,t){const b=document.createElement('span');b.className='badge';b.textContent=t;el.appendChild(b)}
+function addG(el){const g=document.createElement('div');g.className='glow';el.appendChild(g);setTimeout(()=>g.remove(),1200)}
+function addStar(){const s=document.createElement('span');s.className='star-pop';s.textContent='⭐';document.getElementById('stars').appendChild(s)}
+function addTag(t){const e=document.createElement('span');e.className='tag';e.textContent=t;document.getElementById('tags').appendChild(e)}
+function spawnFx(ct,em){
+  for(let i=0;i<em.length*2;i++){
+    const f=document.createElement('div');f.className='fx';f.textContent=em[i%em.length];
+    f.style.left=(30+Math.random()*50)+'%';f.style.top=(5+Math.random()*35)+'%';
+    f.style.setProperty('--tx',(Math.random()*90-45)+'px');
+    f.style.setProperty('--ty',(-30-Math.random()*70)+'px');
+    f.style.animationDelay=(Math.random()*.35)+'s';f.style.fontSize=(18+Math.random()*16)+'px';
+    ct.appendChild(f);setTimeout(()=>f.remove(),1500);
+  }
+}
+function celeb(){
+  document.getElementById('overlay').classList.add('show');
+  const src=document.getElementById('bot'),clone=src.cloneNode(true);
+  clone.className='bot a-dance happy';clone.style.margin='0 auto';
+  const cb=document.getElementById('cbot');cb.innerHTML='';cb.appendChild(clone);
+  resetBot();document.getElementById('bot').classList.add('a-dance','happy');
+  makeRain();
+}
+function makeRain(){
+  const c=document.getElementById('rain');c.innerHTML='';
+  const em=['⭐','🌟','✨','🎉','🎊','💫','🏆'],co=['#ff4d4f','#fadb14','#52c41a','#b37feb','#ff85c0','#fa8c16','#36cfc9'];
+  for(let i=0;i<55;i++){
+    const s=document.createElement('div');s.className='fstar';s.textContent=em[0|Math.random()*em.length];
+    s.style.left=Math.random()*100+'%';s.style.fontSize=(20+Math.random()*18)+'px';
+    s.style.animationDuration=(2+Math.random()*3)+'s';s.style.animationDelay=(Math.random()*3)+'s';
+    c.appendChild(s);
+    const cf=document.createElement('div');cf.className='confetti';cf.style.left=Math.random()*100+'%';
+    cf.style.background=co[0|Math.random()*co.length];cf.style.width=(6+Math.random()*8)+'px';
+    cf.style.height=(12+Math.random()*18)+'px';cf.style.animationDuration=(2+Math.random()*3)+'s';
+    cf.style.animationDelay=(Math.random()*3)+'s';c.appendChild(cf);
+  }
+}
+function resetGame(){init()}
+window.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>

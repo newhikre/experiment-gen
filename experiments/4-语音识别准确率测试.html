@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>语音识别准确率测试</title>
+<style>
+  :root{--ink:#1f2937;--muted:#6b7280;--shadow:0 10px 30px rgba(31,41,55,.08)}
+  *{box-sizing:border-box}
+  html,body{margin:0;font-family:"华文圆体","PingFang SC","Microsoft YaHei",system-ui,sans-serif;color:var(--ink)}
+  body{min-height:100vh;background:
+    radial-gradient(900px 450px at 0% 0%,#fde68a,transparent 60%),
+    radial-gradient(800px 400px at 100% 100%,#c7d2fe,transparent 60%),
+    radial-gradient(600px 400px at 50% 100%,#bbf7d0,transparent 70%),
+    #fafafa;padding:28px 20px 80px}
+  .wrap{max-width:1180px;margin:0 auto}
+
+  /* Hero */
+  .hero{background:linear-gradient(135deg,#06b6d4,#3b82f6);color:#fff;border-radius:26px;padding:22px 28px;box-shadow:0 20px 40px rgba(59,130,246,.25);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;position:relative;overflow:hidden}
+  .hero::before{content:"🎙️";position:absolute;right:30px;bottom:-30px;font-size:180px;opacity:.15}
+  .hero h1{margin:0;font-size:28px;font-weight:800;letter-spacing:1px}
+  .hero-sub{opacity:.92;font-size:14px;margin-top:6px}
+  .hero-badge{background:rgba(255,255,255,.25);backdrop-filter:blur(10px);padding:8px 14px;border-radius:999px;font-size:13px}
+
+  /* Tips carousel */
+  .tip-strip{background:#fff;border-radius:16px;padding:14px 20px;box-shadow:var(--shadow);margin-bottom:18px;display:flex;gap:14px;align-items:center}
+  .tip-strip .ic{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#fef3c7,#f59e0b);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .tip-strip .tx{flex:1;font-size:14px;color:#374151;line-height:1.5}
+  .tip-strip .nav{display:flex;gap:4px}
+  .tip-strip .nav button{background:#f3f4f6;color:#6b7280;padding:6px 10px;font-size:13px;box-shadow:none}
+
+  .card{background:#fff;border-radius:22px;padding:22px;box-shadow:var(--shadow);margin-bottom:18px}
+  h3{margin:0 0 14px;font-size:18px;font-weight:800}
+
+  /* Sentence picker */
+  .sentences{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+  @media(max-width:720px){.sentences{grid-template-columns:1fr}}
+  .sent-card{padding:14px 16px;background:#f9fafb;border-radius:12px;cursor:pointer;border:2px solid transparent;transition:.15s;font-size:14px;line-height:1.5;display:flex;align-items:center;gap:10px}
+  .sent-card:hover{background:#f3f4f6;transform:translateY(-1px)}
+  .sent-card.on{background:linear-gradient(135deg,#dbeafe,#bfdbfe);border-color:#3b82f6;font-weight:700;color:#1e40af}
+  .sent-card .idx{width:24px;height:24px;border-radius:50%;background:#e5e7eb;color:#6b7280;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+  .sent-card.on .idx{background:#3b82f6;color:#fff}
+
+  /* Target display */
+  .target{font-size:26px;font-weight:800;text-align:center;background:linear-gradient(135deg,#eff6ff,#e0e7ff);padding:26px 20px;border-radius:18px;color:#1e40af;letter-spacing:2px;border:2px dashed #93c5fd;margin-bottom:14px;position:relative}
+  .target::before{content:"🎯";position:absolute;top:-14px;left:20px;background:#fff;padding:2px 10px;border-radius:999px;border:2px solid #93c5fd;font-size:16px}
+  .target-meta{color:#6b7280;font-size:12px;margin-top:8px}
+
+  /* Mode buttons */
+  .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+  @media(max-width:720px){.modes{grid-template-columns:1fr}}
+  .mode{background:#fff;border-radius:16px;padding:18px;border:2px solid #e5e7eb;text-align:center;cursor:pointer;transition:.2s;position:relative;overflow:hidden}
+  .mode:hover:not(.done):not(.rec){transform:translateY(-2px);border-color:#6366f1}
+  .mode.rec{border-color:#ef4444;background:#fef2f2;animation:pulse-rec 1s infinite}
+  @keyframes pulse-rec{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 14px rgba(239,68,68,0)}}
+  .mode.done{background:#f0fdf4;border-color:#86efac}
+  .mode.done::before{content:"✓";position:absolute;top:8px;right:10px;width:22px;height:22px;border-radius:50%;background:#10b981;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}
+  .mode .icon{font-size:46px;margin-bottom:6px}
+  .mode .label{font-size:18px;font-weight:800}
+  .mode .sub{font-size:12px;color:var(--muted);margin-top:4px;min-height:32px}
+
+  /* Waveform */
+  .wave-wrap{margin-top:18px;background:#111827;border-radius:14px;padding:18px;display:none;align-items:center;gap:14px}
+  .wave-wrap.show{display:flex}
+  .wave-canvas{flex:1;height:60px;border-radius:8px;background:#1f2937}
+  .wave-info{color:#fff;font-size:13px;text-align:right}
+  .wave-info .timer{font-size:22px;font-weight:800;color:#fbbf24}
+
+  /* Table */
+  .table{margin-top:8px;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb}
+  .row{display:grid;grid-template-columns:160px 1fr 130px 60px;align-items:stretch;border-bottom:1px solid #f3f4f6}
+  .row:last-child{border-bottom:0}
+  .row.head{background:#f9fafb;font-weight:700;color:var(--muted);font-size:13px}
+  .cell{padding:14px 16px;display:flex;align-items:center;min-height:64px}
+  .cell.way{font-weight:700;gap:8px}
+  .cell.result{font-size:16px;line-height:1.5;flex-wrap:wrap}
+  .cell.acc{justify-content:center;font-size:22px;font-weight:800}
+  .cell.acc.high{color:#10b981}.cell.acc.low{color:#ef4444}.cell.acc.mid{color:#f59e0b}
+  .cell.mark{justify-content:center;font-size:24px}
+  .err{color:#ef4444;background:#fef2f2;padding:1px 4px;border-radius:4px;font-weight:700}
+  .ok{color:#059669}
+  .empty{color:#d1d5db;font-style:italic}
+
+  /* Chart */
+  .chart{display:none}
+  .chart.show{display:block}
+  .bar-row{display:grid;grid-template-columns:120px 1fr 50px;gap:10px;align-items:center;margin-bottom:12px}
+  .bar-l{font-size:14px;font-weight:700}
+  .bar-t{background:#f3f4f6;height:28px;border-radius:14px;overflow:hidden;position:relative}
+  .bar-f{height:100%;border-radius:14px;transition:width 1s cubic-bezier(.17,.67,.16,1);position:relative;display:flex;align-items:center;padding-left:10px;color:#fff;font-weight:800;font-size:13px}
+  .bar-f.g{background:linear-gradient(90deg,#34d399,#10b981)}
+  .bar-f.y{background:linear-gradient(90deg,#fbbf24,#f59e0b)}
+  .bar-f.r{background:linear-gradient(90deg,#f87171,#ef4444)}
+  .bar-pct{text-align:right;font-weight:800}
+
+  .btnline{display:flex;justify-content:space-between;align-items:center;margin-top:18px;flex-wrap:wrap;gap:10px}
+  .resetBtn{background:#9ca3af;color:#fff;border:0;padding:10px 22px;border-radius:12px;font-weight:700;cursor:pointer}
+  .exportBtn{background:#10b981;color:#fff;border:0;padding:10px 22px;border-radius:12px;font-weight:700;cursor:pointer}
+
+  .notice{background:#fef3c7;color:#92400e;padding:12px 16px;border-radius:12px;font-size:14px;margin-top:12px;display:none}
+
+  button{font-size:15px;cursor:pointer}
+  .hint-final{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:14px;padding:14px 18px;margin-top:14px;font-size:14px;color:#065f46;display:none;border-left:4px solid #10b981}
+  .hint-final.show{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div>
+      <h1>🎙️ 语音识别准确率测试</h1>
+      <div class="hero-sub">测测电脑的耳朵有多灵——不同的说话方式准确率一样吗？</div>
+    </div>
+    <div class="hero-badge">第三单元 · 第九课</div>
+  </div>
+
+  <div class="tip-strip">
+    <div class="ic">💡</div>
+    <div class="tx" id="tipText"></div>
+    <div class="nav"><button onclick="tipPrev()">‹</button><button onclick="tipNext()">›</button></div>
+  </div>
+
+  <div class="card">
+    <h3>① 先选一句话来测试</h3>
+    <div class="sentences" id="sentBox"></div>
+
+    <div class="target" id="target">今天的天气真好，我想去公园里看桃花。</div>
+    <div class="target-meta">📏 共 <span id="targetLen">16</span> 个字</div>
+
+    <h3 style="margin-top:20px">② 选一种说话方式，点击录音</h3>
+    <div class="modes">
+      <div class="mode" data-mode="normal" onclick="startRec(this)">
+        <div class="icon">🗣️</div>
+        <div class="label">正常说</div>
+        <div class="sub">不快不慢，清楚地读</div>
+      </div>
+      <div class="mode" data-mode="fast" onclick="startRec(this)">
+        <div class="icon">💨</div>
+        <div class="label">很快地说</div>
+        <div class="sub">嗖——像比赛一样快</div>
+      </div>
+      <div class="mode" data-mode="dialect" onclick="startRec(this)">
+        <div class="icon">🏮</div>
+        <div class="label">家乡话说</div>
+        <div class="sub">用你自己的口音读</div>
+      </div>
+    </div>
+
+    <div class="wave-wrap" id="waveWrap">
+      <canvas class="wave-canvas" id="waveCanvas"></canvas>
+      <div class="wave-info">
+        <div>🔴 录音中</div>
+        <div class="timer" id="recTimer">0.0s</div>
+      </div>
+    </div>
+
+    <div class="notice" id="notice">⚠️ 你的浏览器不支持语音识别，建议用 Chrome 或 Edge。</div>
+  </div>
+
+  <div class="card">
+    <h3>③ 对比一下识别结果</h3>
+    <div class="table">
+      <div class="row head">
+        <div class="cell way">说话方式</div>
+        <div class="cell">识别结果（<span class="err">红色</span> = 识别错的字）</div>
+        <div class="cell acc">准确率</div>
+        <div class="cell mark">评价</div>
+      </div>
+      <div class="row" id="row-normal">
+        <div class="cell way">🗣️ 正常说</div>
+        <div class="cell result"><span class="empty">等待录音…</span></div>
+        <div class="cell acc">—</div>
+        <div class="cell mark"></div>
+      </div>
+      <div class="row" id="row-fast">
+        <div class="cell way">💨 很快地说</div>
+        <div class="cell result"><span class="empty">等待录音…</span></div>
+        <div class="cell acc">—</div>
+        <div class="cell mark"></div>
+      </div>
+      <div class="row" id="row-dialect">
+        <div class="cell way">🏮 家乡话说</div>
+        <div class="cell result"><span class="empty">等待录音…</span></div>
+        <div class="cell acc">—</div>
+        <div class="cell mark"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card chart" id="chartCard">
+    <h3>📊 准确率对比图</h3>
+    <div id="chartBody"></div>
+    <div class="hint-final" id="finalHint"></div>
+    <div class="btnline">
+      <button class="resetBtn" onclick="reset()">🔄 重新测试</button>
+      <button class="exportBtn" onclick="exportResult()">💾 保存结果</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SENTENCES=[
+  "今天的天气真好，我想去公园里看桃花。",
+  "小明在黑板上画了一只会飞的大象。",
+  "妈妈煮了香喷喷的西红柿鸡蛋面。",
+  "我们学校有一棵很老很老的银杏树。",
+  "月亮躲进云里，星星悄悄眨起了眼睛。",
+  "图书馆里，每一本书都藏着一个故事。"
+];
+const TIPS=[
+  "🎯 同一句话，用不同方式说，电脑识别的结果可能差很多！",
+  "💨 说得太快容易糊在一起，电脑会听错。",
+  "🏮 方言口音和普通话不太一样，电脑也在学各种口音。",
+  "🎙️ 录音时尽量在安静的地方，离麦克风近一点。",
+  "🧠 想一想：为什么同学的方言有时候你自己也听不懂？"
+];
+let tipIdx=0;
+function renderTip(){document.getElementById('tipText').textContent=TIPS[tipIdx]}
+function tipNext(){tipIdx=(tipIdx+1)%TIPS.length;renderTip()}
+function tipPrev(){tipIdx=(tipIdx-1+TIPS.length)%TIPS.length;renderTip()}
+renderTip();setInterval(tipNext,7000);
+
+let TARGET=SENTENCES[0];
+const results={};
+let recognizing=false, rec=null, audioCtx=null, analyser=null, rafId=null, mediaStream=null, recStart=0, timerId=null;
+
+function renderSent(){
+  const box=document.getElementById('sentBox');box.innerHTML='';
+  SENTENCES.forEach((s,i)=>{
+    const el=document.createElement('div');el.className='sent-card'+(s===TARGET?' on':'');
+    el.innerHTML=`<div class="idx">${i+1}</div><div>${s}</div>`;
+    el.onclick=()=>{TARGET=s;document.getElementById('target').textContent=s;document.getElementById('targetLen').textContent=normalize(s).length;renderSent();reset()};
+    box.appendChild(el);
+  });
+}
+renderSent();
+document.getElementById('targetLen').textContent=normalize(TARGET).length;
+
+function hasSR(){return 'webkitSpeechRecognition' in window||'SpeechRecognition' in window}
+if(!hasSR())document.getElementById('notice').style.display='block';
+
+async function startRec(el){
+  if(recognizing||!hasSR())return;
+  const mode=el.dataset.mode;
+  document.querySelectorAll('.mode').forEach(m=>m.classList.remove('rec'));
+  el.classList.add('rec');
+  el.querySelector('.sub').textContent='🎤 录音中…请开始说话';
+
+  try{mediaStream=await navigator.mediaDevices.getUserMedia({audio:true});setupWave(mediaStream)}catch(e){}
+
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  rec=new SR();rec.lang='zh-CN';rec.interimResults=false;rec.maxAlternatives=1;
+  recognizing=true;recStart=Date.now();
+  timerId=setInterval(()=>{document.getElementById('recTimer').textContent=((Date.now()-recStart)/1000).toFixed(1)+'s'},100);
+  rec.onresult=(e)=>{finish(mode,e.results[0][0].transcript)};
+  rec.onerror=(e)=>{finish(mode,null,e.error)};
+  rec.onend=()=>{recognizing=false;teardownWave();clearInterval(timerId);el.classList.remove('rec');
+    const m=document.querySelector(`.mode[data-mode="${mode}"]`);
+    if(m&&!m.classList.contains('done')){
+      const sub={normal:'不快不慢，清楚地读',fast:'嗖——像比赛一样快',dialect:'用你自己的口音读'}[mode];
+      m.querySelector('.sub').textContent=sub;
+    }
+  };
+  rec.start();
+}
+
+function setupWave(stream){
+  const wrap=document.getElementById('waveWrap');wrap.classList.add('show');
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  const src=audioCtx.createMediaStreamSource(stream);
+  analyser=audioCtx.createAnalyser();analyser.fftSize=512;
+  src.connect(analyser);
+  const canvas=document.getElementById('waveCanvas');
+  const ctx=canvas.getContext('2d');
+  const resize=()=>{canvas.width=canvas.clientWidth*2;canvas.height=canvas.clientHeight*2};resize();
+  const data=new Uint8Array(analyser.frequencyBinCount);
+  function draw(){
+    rafId=requestAnimationFrame(draw);
+    analyser.getByteFrequencyData(data);
+    ctx.fillStyle='#1f2937';ctx.fillRect(0,0,canvas.width,canvas.height);
+    const bars=48,w=canvas.width/bars;
+    for(let i=0;i<bars;i++){
+      const v=data[i*4]/255;
+      const h=v*canvas.height*.9;
+      const grad=ctx.createLinearGradient(0,canvas.height,0,canvas.height-h);
+      grad.addColorStop(0,'#06b6d4');grad.addColorStop(1,'#ec4899');
+      ctx.fillStyle=grad;
+      ctx.fillRect(i*w+2,(canvas.height-h)/2,w-4,h);
+    }
+  }
+  draw();
+}
+function teardownWave(){
+  if(rafId)cancelAnimationFrame(rafId);rafId=null;
+  if(mediaStream){mediaStream.getTracks().forEach(t=>t.stop());mediaStream=null}
+  if(audioCtx){try{audioCtx.close()}catch(e){}audioCtx=null}
+  document.getElementById('waveWrap').classList.remove('show');
+}
+
+function normalize(s){return (s||'').replace(/[\s，。！？、,.?!]/g,'')}
+
+function diff(ref,hyp){
+  const r=normalize(ref),h=normalize(hyp);
+  const m=r.length,n=h.length;
+  const dp=Array.from({length:m+1},()=>new Array(n+1).fill(0));
+  const bt=Array.from({length:m+1},()=>new Array(n+1).fill(null));
+  for(let i=0;i<=m;i++){dp[i][0]=i;bt[i][0]='D'}
+  for(let j=0;j<=n;j++){dp[0][j]=j;bt[0][j]='I'}
+  bt[0][0]=null;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++){
+    if(r[i-1]===h[j-1]){dp[i][j]=dp[i-1][j-1];bt[i][j]='M'}
+    else{const sub=dp[i-1][j-1]+1,del=dp[i-1][j]+1,ins=dp[i][j-1]+1;
+      const mn=Math.min(sub,del,ins);dp[i][j]=mn;bt[i][j]=mn===sub?'S':mn===del?'D':'I'}
+  }
+  let i=m,j=n;const ops=[];
+  while(i>0||j>0){const op=bt[i][j];
+    if(op==='M'){ops.unshift({type:'M',ch:r[i-1]});i--;j--}
+    else if(op==='S'){ops.unshift({type:'S',ch:h[j-1]});i--;j--}
+    else if(op==='D'){ops.unshift({type:'D',ch:r[i-1]});i--}
+    else{ops.unshift({type:'I',ch:h[j-1]});j--}
+  }
+  const correct=ops.filter(o=>o.type==='M').length;
+  const acc=m?Math.round(correct/m*100):0;
+  const html=ops.map(o=>{
+    if(o.type==='M')return `<span class="ok">${o.ch}</span>`;
+    if(o.type==='S'||o.type==='I')return `<span class="err">${o.ch}</span>`;
+    if(o.type==='D')return `<span class="err">_</span>`;
+  }).join('');
+  return {acc,html}
+}
+
+function finish(mode,text,err){
+  const row=document.getElementById('row-'+mode);
+  const cells=row.querySelectorAll('.cell');
+  if(err||!text){
+    cells[1].innerHTML=`<span class="err">识别失败：${err||'未收到结果'}</span>`;
+    cells[2].textContent='—';cells[2].className='cell acc';
+    return;
+  }
+  const {acc,html}=diff(TARGET,text);
+  cells[1].innerHTML=html;
+  cells[2].textContent=acc+'%';
+  cells[2].className='cell acc '+(acc>=90?'high':acc>=70?'mid':'low');
+  results[mode]={acc,text};
+  document.querySelector(`.mode[data-mode="${mode}"]`).classList.add('done');
+  updateMarks();updateChart();
+}
+
+function updateMarks(){
+  const modes=['normal','fast','dialect'].filter(m=>results[m]);
+  if(modes.length<2)return;
+  const max=Math.max(...modes.map(m=>results[m].acc));
+  const min=Math.min(...modes.map(m=>results[m].acc));
+  ['normal','fast','dialect'].forEach(m=>{
+    const c=document.querySelector(`#row-${m} .cell.mark`);
+    if(!results[m]){c.textContent='';return}
+    if(results[m].acc===max&&max!==min)c.textContent='⭐';
+    else if(results[m].acc===min&&max!==min)c.textContent='⚡';
+    else c.textContent='';
+  });
+}
+
+function updateChart(){
+  const modes=['normal','fast','dialect'].filter(m=>results[m]);
+  if(!modes.length)return;
+  document.getElementById('chartCard').classList.add('show');
+  const body=document.getElementById('chartBody');body.innerHTML='';
+  const labels={normal:'🗣️ 正常说',fast:'💨 很快说',dialect:'🏮 家乡话'};
+  modes.forEach(m=>{
+    const a=results[m].acc;
+    const cls=a>=90?'g':a>=70?'y':'r';
+    body.innerHTML+=`<div class="bar-row"><div class="bar-l">${labels[m]}</div><div class="bar-t"><div class="bar-f ${cls}" style="width:${a}%">${a>20?a+'%':''}</div></div><div class="bar-pct">${a}%</div></div>`;
+  });
+  if(modes.length===3){
+    const h=document.getElementById('finalHint');h.classList.add('show');
+    const best=modes.reduce((a,b)=>results[a].acc>results[b].acc?a:b);
+    const worst=modes.reduce((a,b)=>results[a].acc<results[b].acc?a:b);
+    const names={normal:'正常说',fast:'很快说',dialect:'家乡话'};
+    h.innerHTML=`🔍 <b>${names[best]}</b> 的准确率最高（${results[best].acc}%），<b>${names[worst]}</b> 最低（${results[worst].acc}%）。<br/><span style="opacity:.85">🧠 想一想：为什么这样？AI 是怎么被训练来听懂我们说话的？</span>`;
+  }
+}
+
+function exportResult(){
+  if(!Object.keys(results).length){alert('还没有结果可以保存～');return}
+  const lines=[`📊 语音识别测试结果`,`目标句子：${TARGET}`,``];
+  ['normal','fast','dialect'].forEach(m=>{
+    const n={normal:'正常说',fast:'很快说',dialect:'家乡话'}[m];
+    if(results[m])lines.push(`${n}：准确率 ${results[m].acc}% — 识别为「${results[m].text}」`);
+    else lines.push(`${n}：未测试`);
+  });
+  const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='语音识别结果.txt';a.click();
+}
+
+function reset(){
+  if(rec)try{rec.abort()}catch(e){}
+  teardownWave();
+  for(const k in results)delete results[k];
+  document.querySelectorAll('.mode').forEach(m=>{m.classList.remove('done','rec');
+    const sub={normal:'不快不慢，清楚地读',fast:'嗖——像比赛一样快',dialect:'用你自己的口音读'}[m.dataset.mode];
+    m.querySelector('.sub').textContent=sub;
+  });
+  ['normal','fast','dialect'].forEach(m=>{
+    const row=document.getElementById('row-'+m);const c=row.querySelectorAll('.cell');
+    c[1].innerHTML='<span class="empty">等待录音…</span>';c[2].textContent='—';c[2].className='cell acc';c[3].textContent='';
+  });
+  document.getElementById('chartCard').classList.remove('show');
+  document.getElementById('finalHint').classList.remove('show');
+}
+</script>
+</body>
+</html>

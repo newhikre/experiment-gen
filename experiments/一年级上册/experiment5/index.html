@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能设备指挥官</title>
+  <style>
+    :root {
+      --ink: #1b3045;
+      --muted: #64788a;
+      --panel: rgba(255, 255, 255, 0.93);
+      --line: rgba(27, 48, 69, 0.12);
+      --accent: #4f7dff;
+      --accent-2: #32ab87;
+      --accent-3: #ff934b;
+      --shadow: 0 24px 60px rgba(27, 44, 67, 0.14);
+      --radius: 26px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 12%, rgba(79, 125, 255, 0.18), transparent 24%),
+        radial-gradient(circle at 92% 10%, rgba(50, 171, 135, 0.18), transparent 24%),
+        linear-gradient(180deg, #f5fbff 0%, #edf8f6 52%, #f7fafc 100%);
+    }
+
+    .page {
+      width: min(1340px, calc(100vw - 24px));
+      margin: 16px auto 24px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero,
+    .shell,
+    .footer-card {
+      background: var(--panel);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      padding: 20px 24px;
+      display: grid;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      top: -46px;
+      right: -38px;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(79, 125, 255, 0.22), transparent 72%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(50, 171, 135, 0.12);
+      color: #18725a;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 980px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .hero-meta span {
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: rgba(27, 48, 69, 0.05);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .shell {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .guide-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(79, 125, 255, 0.1), rgba(255, 147, 75, 0.08));
+      border: 1px solid rgba(79, 125, 255, 0.12);
+    }
+
+    .guide-button {
+      appearance: none;
+      border: 0;
+      border-radius: 18px;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, var(--accent), #8db0ff);
+      color: white;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 24px rgba(79, 125, 255, 0.24);
+    }
+
+    .guide-button:hover,
+    .guide-button:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .guide-text {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .progress-wrap {
+      display: grid;
+      gap: 10px;
+      flex: 1;
+      min-width: min(720px, 100%);
+    }
+
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .progress-bar {
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(27, 48, 69, 0.08);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 25%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), #8db0ff);
+      transition: width 220ms ease;
+    }
+
+    .score-card {
+      padding: 12px 16px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(79, 125, 255, 0.12), rgba(255, 147, 75, 0.12));
+      font-weight: 700;
+    }
+
+    .device-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .device-tab {
+      appearance: none;
+      border: 0;
+      border-radius: 18px;
+      padding: 12px 16px;
+      background: rgba(27, 48, 69, 0.06);
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+    }
+
+    .device-tab:hover,
+    .device-tab:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .device-tab.active {
+      background: linear-gradient(135deg, var(--accent), #7ea4ff);
+      color: white;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.84);
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .panel-title h2,
+    .panel-title h3 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 147, 75, 0.12);
+      color: #b85d20;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .copy {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mini-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(27, 48, 69, 0.05);
+      display: grid;
+      gap: 8px;
+    }
+
+    .mini-card strong {
+      font-size: 17px;
+    }
+
+    .mini-card span {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .feedback {
+      padding: 14px 16px;
+      border-radius: 18px;
+      display: none;
+      line-height: 1.7;
+      font-size: 17px;
+      border: 1px solid var(--line);
+    }
+
+    .feedback.show {
+      display: block;
+    }
+
+    .feedback.success {
+      background: rgba(50, 171, 135, 0.08);
+      border-color: rgba(50, 171, 135, 0.18);
+      color: #15654d;
+    }
+
+    .feedback.error {
+      background: rgba(255, 147, 75, 0.08);
+      border-color: rgba(255, 147, 75, 0.18);
+      color: #9b4b1b;
+    }
+
+    .action-row,
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 16px;
+      padding: 13px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+    }
+
+    .btn:hover,
+    .btn:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      color: white;
+      background: linear-gradient(135deg, var(--accent), #7ea4ff);
+      box-shadow: 0 12px 24px rgba(79, 125, 255, 0.22);
+    }
+
+    .btn-accent {
+      color: white;
+      background: linear-gradient(135deg, var(--accent-2), #7bd3b7);
+      box-shadow: 0 12px 24px rgba(50, 171, 135, 0.22);
+    }
+
+    .btn-secondary {
+      color: var(--ink);
+      background: rgba(27, 48, 69, 0.08);
+    }
+
+    .btn[disabled] {
+      cursor: not-allowed;
+      opacity: 0.52;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .stage {
+      order: -1;
+      border-radius: 24px;
+      border: 1px solid rgba(27, 48, 69, 0.08);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.38), transparent 28%),
+        linear-gradient(180deg, #fbfdff, #eef6ff);
+      min-height: 620px;
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .stage-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .stage-head h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .round-pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(79, 125, 255, 0.1);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .scene-card {
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(27, 48, 69, 0.08);
+      background: linear-gradient(180deg, #13284a, #10203a);
+      color: white;
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+    }
+
+    .scene-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .scene-head strong {
+      font-size: 20px;
+    }
+
+    .scene-head span {
+      color: rgba(255,255,255,0.76);
+      font-size: 16px;
+    }
+
+    .device-stage {
+      position: relative;
+      min-height: 280px;
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.06), transparent 20%),
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.08);
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+    }
+
+    .device-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .state-badge {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      padding: 8px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.08);
+      font-size: 15px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.88);
+    }
+
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .flow-slot {
+      min-height: 148px;
+      padding: 14px;
+      border-radius: 20px;
+      border: 2px dashed rgba(27, 48, 69, 0.14);
+      background: rgba(255, 255, 255, 0.92);
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .flow-slot strong {
+      font-size: 19px;
+    }
+
+    .flow-slot p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 16px;
+    }
+
+    .flow-slot.active {
+      border-color: rgba(79, 125, 255, 0.34);
+      background: rgba(79, 125, 255, 0.06);
+    }
+
+    .flow-slot.drag-over {
+      border-color: rgba(50, 171, 135, 0.56);
+      background: rgba(50, 171, 135, 0.1);
+      box-shadow: inset 0 0 0 1px rgba(50, 171, 135, 0.12);
+    }
+
+    .picked-card {
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(27, 48, 69, 0.08);
+      display: grid;
+      gap: 6px;
+    }
+
+    .picked-card strong {
+      display: grid;
+      gap: 4px;
+      font-size: 18px;
+    }
+
+    .picked-card strong small {
+      font-size: 13px;
+      color: #5d77b4;
+      font-weight: 700;
+    }
+
+    .picked-card span {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .pool-section {
+      display: grid;
+      gap: 14px;
+    }
+
+    .pool-section h4 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .pool-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .pool-card {
+      appearance: none;
+      border: 2px solid rgba(27, 48, 69, 0.1);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      color: var(--ink);
+      padding: 16px;
+      text-align: left;
+      display: grid;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .pool-card:hover,
+    .pool-card:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(79, 125, 255, 0.34);
+      box-shadow: 0 12px 20px rgba(27, 48, 69, 0.08);
+    }
+
+    .pool-card.selected {
+      border-color: rgba(79, 125, 255, 0.56);
+      background: rgba(79, 125, 255, 0.08);
+    }
+
+    .pool-card[draggable="true"] {
+      cursor: grab;
+    }
+
+    .pool-card.dragging {
+      opacity: 0.45;
+      transform: rotate(-2deg) scale(0.98);
+      border-color: rgba(79, 125, 255, 0.4);
+    }
+
+    .pool-card strong {
+      display: grid;
+      gap: 4px;
+      font-size: 20px;
+    }
+
+    .pool-card strong small {
+      font-size: 14px;
+      color: #5d77b4;
+      font-weight: 700;
+    }
+
+    .pool-card span {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.55;
+      font-weight: 600;
+    }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .report-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(27, 48, 69, 0.05);
+      display: grid;
+      gap: 8px;
+    }
+
+    .report-card strong {
+      font-size: 24px;
+    }
+
+    .report-card span {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .footer-card {
+      padding: 22px 24px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .footer-card h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .footer-card ul {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .footer-card li {
+      color: var(--muted);
+      line-height: 1.72;
+    }
+
+    .footer-card {
+      display: none;
+    }
+
+    .summary-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(18, 30, 46, 0.58);
+      display: none;
+      place-items: center;
+      padding: 20px;
+      z-index: 20;
+    }
+
+    .summary-modal.show {
+      display: grid;
+    }
+
+    .summary-card {
+      width: min(760px, 100%);
+      background: #fffef9;
+      border-radius: 28px;
+      box-shadow: 0 28px 64px rgba(18, 30, 46, 0.28);
+      padding: 28px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .summary-card h2,
+    .summary-card p {
+      margin: 0;
+    }
+
+    .summary-card p {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .badge-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    .badge {
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(27, 48, 69, 0.05);
+      display: grid;
+      gap: 8px;
+    }
+
+    .badge strong {
+      font-size: 28px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 980px) {
+      .board {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100vw - 16px, 100%);
+        margin: 12px auto 22px;
+      }
+
+      .hero,
+      .shell,
+      .footer-card,
+      .summary-card {
+        padding: 18px;
+      }
+
+      .guide-bar {
+        align-items: flex-start;
+      }
+
+      .info-grid,
+      .flow-grid,
+      .pool-grid,
+      .report-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <span class="eyebrow">一年级上册 · 第十课 · 线上实验 05</span>
+      <h1>智能设备指挥官</h1>
+      <p>看场景，拖卡片，把设备的三步流程排对。</p>
+      <div class="hero-meta">
+        <span>感知 → 处理 → 动作</span>
+        <span>4 个设备任务</span>
+        <span>总分 100</span>
+      </div>
+    </section>
+
+    <section class="shell">
+      <div class="guide-bar">
+        <button class="guide-button" id="tutorialButton" type="button">🔊 听老师讲规则</button>
+        <span class="guide-text" id="tutorialText">先看场景，再把三张卡拖到感知、处理、动作里。排对一台设备得 25 分。</span>
+      </div>
+
+      <div class="topbar">
+        <div class="progress-wrap">
+          <div class="progress-head">
+            <span id="progressText">当前设备：1 / 4</span>
+            <span id="tipText">先看场景，再拖三张流程卡</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+        <div class="score-card" id="scoreCard">当前得分：0 / 100</div>
+      </div>
+
+      <div class="device-tabs" id="deviceTabs"></div>
+
+      <div class="board">
+        <div class="panel">
+          <div class="panel-title">
+            <h2 id="deviceTitle">设备任务</h2>
+            <span class="chip" id="deviceChip">流程排序</span>
+          </div>
+          <p class="copy" id="deviceDescription"></p>
+
+          <div class="info-grid" id="infoGrid"></div>
+
+          <div class="feedback" id="feedbackBox"></div>
+
+          <div class="action-row">
+            <button class="btn btn-primary" id="runButton" type="button" disabled>运行设备</button>
+            <button class="btn btn-secondary" id="clearButton" type="button">清空流程</button>
+            <button class="btn btn-accent hidden" id="nextButton" type="button">下一设备</button>
+          </div>
+
+          <div class="report-grid">
+            <div class="report-card">
+              <strong id="senseCount">0</strong>
+              <span>感知卡</span>
+            </div>
+            <div class="report-card">
+              <strong id="judgeCount">0</strong>
+              <span>处理卡</span>
+            </div>
+            <div class="report-card">
+              <strong id="actionCount">0</strong>
+              <span>动作卡</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel stage">
+          <div class="stage-head">
+            <h3 id="stageTitle">设备运行台</h3>
+            <span class="round-pill" id="roundPill">等待指挥</span>
+          </div>
+
+          <div class="scene-card">
+            <div class="scene-head">
+              <strong id="sceneTitle">设备场景</strong>
+              <span id="scenePrompt">先看看现在发生了什么</span>
+            </div>
+            <div class="device-stage">
+              <canvas class="device-canvas" id="deviceCanvas" width="700" height="360"></canvas>
+              <div class="state-badge" id="stateBadge">设备待机中</div>
+            </div>
+          </div>
+
+          <div class="flow-grid">
+            <div class="flow-slot" id="slotSense">
+              <strong>第 1 步：感知</strong>
+              <p>先知道了什么。</p>
+            </div>
+            <div class="flow-slot" id="slotJudge">
+              <strong>第 2 步：处理</strong>
+              <p>接着怎么判断。</p>
+            </div>
+            <div class="flow-slot" id="slotAction">
+              <strong>第 3 步：动作</strong>
+              <p>最后做什么动作。</p>
+            </div>
+          </div>
+
+          <div class="pool-section">
+            <h4>流程卡片库</h4>
+            <div class="pool-grid" id="poolGrid"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="footer-card">
+      <h3>教师观察点</h3>
+      <ul>
+        <li>学生是否理解“先感知，再处理，后动作”。</li>
+        <li>学生是否能分清输入信息和设备动作。</li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="summary-modal" id="summaryModal" aria-hidden="true">
+    <div class="summary-card">
+      <span class="eyebrow">实验完成</span>
+      <h2>你完成了“智能设备指挥官”</h2>
+      <p id="summaryText"></p>
+      <div class="badge-grid">
+        <div class="badge">
+          <span>总得分</span>
+          <strong id="finalScore">0</strong>
+        </div>
+        <div class="badge">
+          <span>答对设备</span>
+          <strong id="finalCorrect">0/4</strong>
+        </div>
+        <div class="badge">
+          <span>最稳环节</span>
+          <strong id="finalStrength">感知</strong>
+        </div>
+        <div class="badge">
+          <span>掌握结论</span>
+          <strong id="finalConcept">感知→处理→动作</strong>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary" id="restartButton" type="button">重新挑战</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const devices = [
+      {
+        id: "voice-light",
+        title: "任务 1：声控灯",
+        chip: "声音触发",
+        stageTitle: "声控灯运行台",
+        sceneTitle: "夜晚走廊里传来拍手声",
+        scenePrompt: "设备周围很暗，有人拍了一下手。",
+        description: "先听到声音，再判断要不要亮灯。",
+        info: [
+          { title: "先看什么", body: "看黑暗里出现了什么线索。" },
+          { title: "怎么答题", body: "拖 3 张卡，排成正确顺序。" }
+        ],
+        sense: { label: "听到拍手声", hint: "设备先接收到声音信号" },
+        judge: { label: "判断有人发出声音", hint: "系统确认要不要开灯" },
+        action: { label: "点亮灯泡", hint: "灯由暗变亮" },
+        distractors: [
+          { step: "sense", label: "看到有人走路", hint: "这更像摄像头或人体感应器" },
+          { step: "judge", label: "判断地面有障碍", hint: "和开灯无关" },
+          { step: "action", label: "打开门", hint: "不是灯的动作" }
+        ],
+        animation: "voice-light"
+      },
+      {
+        id: "auto-door",
+        title: "任务 2：自动门",
+        chip: "靠近触发",
+        stageTitle: "自动门运行台",
+        sceneTitle: "有人走近商店门口",
+        scenePrompt: "门前有人靠近，设备要决定要不要开门。",
+        description: "先发现有人靠近，再判断要不要开门。",
+        info: [
+          { title: "先看什么", body: "看门前是不是有人靠近。" },
+          { title: "怎么答题", body: "把 3 张卡拖到对应位置。" }
+        ],
+        sense: { label: "感知有人靠近", hint: "传感器先发现门前有人" },
+        judge: { label: "判断需要开门", hint: "系统确认距离足够近" },
+        action: { label: "门向两边打开", hint: "门体开始滑开" },
+        distractors: [
+          { step: "sense", label: "听到铃声", hint: "自动门通常不靠听声音" },
+          { step: "judge", label: "判断水龙头要出水", hint: "这是别的设备" },
+          { step: "action", label: "扫地前进", hint: "不是门的动作" }
+        ],
+        animation: "auto-door"
+      },
+      {
+        id: "robot-vacuum",
+        title: "任务 3：扫地机器人",
+        chip: "避障逻辑",
+        stageTitle: "扫地机器人运行台",
+        sceneTitle: "前方突然出现椅子腿",
+        scenePrompt: "扫地机器人正在前进，前方出现障碍物。",
+        description: "先发现障碍，再判断怎么绕开。",
+        info: [
+          { title: "先看什么", body: "看前面是不是被挡住了。" },
+          { title: "怎么答题", body: "先感知，再处理，最后动作。" }
+        ],
+        sense: { label: "感知前方有障碍", hint: "传感器先发现挡住去路的东西" },
+        judge: { label: "判断需要转向", hint: "系统决定绕开障碍" },
+        action: { label: "改变方向绕开", hint: "机器人向旁边转开" },
+        distractors: [
+          { step: "sense", label: "闻到香味", hint: "机器人没有鼻子感知" },
+          { step: "judge", label: "判断要开灯", hint: "和清扫无关" },
+          { step: "action", label: "播放音乐", hint: "不是扫地机器人的主要动作" }
+        ],
+        animation: "robot-vacuum"
+      },
+      {
+        id: "smart-faucet",
+        title: "任务 4：感应水龙头",
+        chip: "出水触发",
+        stageTitle: "感应水龙头运行台",
+        sceneTitle: "小朋友把手伸到水龙头下方",
+        scenePrompt: "水龙头下方出现一双手，设备要不要出水？",
+        description: "先发现手，再判断要不要出水。",
+        info: [
+          { title: "先看什么", body: "看手是不是伸到了水龙头下方。" },
+          { title: "怎么答题", body: "把 3 张卡拖到三步里。" }
+        ],
+        sense: { label: "感知手在下方", hint: "传感器先发现手的位置" },
+        judge: { label: "判断进入出水范围", hint: "系统确认应该开启水流" },
+        action: { label: "打开水流", hint: "水龙头开始出水" },
+        distractors: [
+          { step: "sense", label: "听到拍手", hint: "这是声控灯才更常见" },
+          { step: "judge", label: "判断要开门", hint: "不是水龙头的任务" },
+          { step: "action", label: "亮起灯光", hint: "那是灯的动作" }
+        ],
+        animation: "smart-faucet"
+      }
+    ];
+
+    const progressText = document.getElementById("progressText");
+    const tipText = document.getElementById("tipText");
+    const progressFill = document.getElementById("progressFill");
+    const scoreCard = document.getElementById("scoreCard");
+    const tutorialButton = document.getElementById("tutorialButton");
+    const tutorialText = document.getElementById("tutorialText");
+    const deviceTabs = document.getElementById("deviceTabs");
+    const deviceTitle = document.getElementById("deviceTitle");
+    const deviceChip = document.getElementById("deviceChip");
+    const deviceDescription = document.getElementById("deviceDescription");
+    const infoGrid = document.getElementById("infoGrid");
+    const feedbackBox = document.getElementById("feedbackBox");
+    const runButton = document.getElementById("runButton");
+    const clearButton = document.getElementById("clearButton");
+    const nextButton = document.getElementById("nextButton");
+    const senseCount = document.getElementById("senseCount");
+    const judgeCount = document.getElementById("judgeCount");
+    const actionCount = document.getElementById("actionCount");
+    const stageTitle = document.getElementById("stageTitle");
+    const roundPill = document.getElementById("roundPill");
+    const sceneTitle = document.getElementById("sceneTitle");
+    const scenePrompt = document.getElementById("scenePrompt");
+    const deviceCanvas = document.getElementById("deviceCanvas");
+    const deviceCtx = deviceCanvas.getContext("2d");
+    const stateBadge = document.getElementById("stateBadge");
+    const slotSense = document.getElementById("slotSense");
+    const slotJudge = document.getElementById("slotJudge");
+    const slotAction = document.getElementById("slotAction");
+    const poolGrid = document.getElementById("poolGrid");
+    const summaryModal = document.getElementById("summaryModal");
+    const summaryText = document.getElementById("summaryText");
+    const finalScore = document.getElementById("finalScore");
+    const finalCorrect = document.getElementById("finalCorrect");
+    const finalStrength = document.getElementById("finalStrength");
+    const finalConcept = document.getElementById("finalConcept");
+    const restartButton = document.getElementById("restartButton");
+
+    const state = {
+      index: 0,
+      score: 0,
+      correct: 0,
+      slots: {
+        sense: null,
+        judge: null,
+        action: null
+      },
+      completed: new Set()
+    };
+
+    function getLabelPinyin(label) {
+      const map = {
+        "听到拍手声": "tīng dào pāi shǒu shēng",
+        "判断有人发出声音": "pàn duàn yǒu rén fā chū shēng yīn",
+        "点亮灯泡": "diǎn liàng dēng pào",
+        "看到有人走路": "kàn dào yǒu rén zǒu lù",
+        "判断地面有障碍": "pàn duàn dì miàn yǒu zhàng ài",
+        "打开门": "dǎ kāi mén",
+        "感知有人靠近": "gǎn zhī yǒu rén kào jìn",
+        "判断需要开门": "pàn duàn xū yào kāi mén",
+        "门向两边打开": "mén xiàng liǎng biān dǎ kāi",
+        "听到铃声": "tīng dào líng shēng",
+        "判断水龙头要出水": "pàn duàn shuǐ lóng tóu yào chū shuǐ",
+        "扫地前进": "sǎo dì qián jìn",
+        "感知前方有障碍": "gǎn zhī qián fāng yǒu zhàng ài",
+        "判断需要转向": "pàn duàn xū yào zhuǎn xiàng",
+        "改变方向绕开": "gǎi biàn fāng xiàng rào kāi",
+        "闻到香味": "wén dào xiāng wèi",
+        "判断要开灯": "pàn duàn yào kāi dēng",
+        "播放音乐": "bō fàng yīn yuè",
+        "感知手在下方": "gǎn zhī shǒu zài xià fāng",
+        "判断进入出水范围": "pàn duàn jìn rù chū shuǐ fàn wéi",
+        "打开水流": "dǎ kāi shuǐ liú",
+        "听到拍手": "tīng dào pāi shǒu",
+        "判断要开门": "pàn duàn yào kāi mén",
+        "亮起灯光": "liàng qǐ dēng guāng"
+      };
+      return map[label] || "";
+    }
+
+    function pickTutorialVoice(synth) {
+      const voices = synth.getVoices();
+      if (!voices.length) return null;
+      const preferred = ["Xiaoxiao", "Xiaoyi", "Yunxi", "Yaoyao", "Meijia", "Sin-ji", "Tingting"];
+      return (
+        voices.find((voice) => preferred.some((key) => voice.name.includes(key))) ||
+        voices.find((voice) => /zh|chinese|mandarin/i.test(`${voice.name} ${voice.lang}`)) ||
+        null
+      );
+    }
+
+    function tutorialScriptForDevice(device) {
+      return `${device.title.replace(/^任务 \\d+：/, "")}这一关，先看场景里发生了什么。再把三张卡拖到感知、处理、动作里。三步都排对，这一关就是二十五分。`;
+    }
+
+    function speakTutorial() {
+      if (!("speechSynthesis" in window)) {
+        tutorialText.textContent = "这个浏览器暂时不能播报，请直接看按钮旁边的提示。";
+        return;
+      }
+      const synth = window.speechSynthesis;
+      const utterance = new SpeechSynthesisUtterance(tutorialScriptForDevice(currentDevice()));
+      const voice = pickTutorialVoice(synth);
+      if (voice) utterance.voice = voice;
+      utterance.lang = "zh-CN";
+      utterance.rate = 0.72;
+      utterance.pitch = 1.03;
+      synth.cancel();
+      synth.speak(utterance);
+    }
+
+    function currentDevice() {
+      return devices[state.index];
+    }
+
+    function createCardsForDevice(device) {
+      return [
+        { id: `${device.id}-sense-right`, type: "sense", ...device.sense },
+        { id: `${device.id}-judge-right`, type: "judge", ...device.judge },
+        { id: `${device.id}-action-right`, type: "action", ...device.action },
+        { id: `${device.id}-sense-wrong`, type: "sense", ...device.distractors.find((item) => item.step === "sense") },
+        { id: `${device.id}-judge-wrong`, type: "judge", ...device.distractors.find((item) => item.step === "judge") },
+        { id: `${device.id}-action-wrong`, type: "action", ...device.distractors.find((item) => item.step === "action") }
+      ];
+    }
+
+    function setFeedback(type, html) {
+      feedbackBox.className = `feedback show ${type}`;
+      feedbackBox.innerHTML = html;
+    }
+
+    function clearFeedback() {
+      feedbackBox.className = "feedback";
+      feedbackBox.innerHTML = "";
+    }
+
+    function renderTabs() {
+      deviceTabs.innerHTML = "";
+      devices.forEach((device, index) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "device-tab";
+        if (index === state.index) {
+          btn.classList.add("active");
+        }
+        btn.textContent = device.title.replace("任务 " + (index + 1) + "：", "");
+        btn.addEventListener("click", () => switchDevice(index));
+        deviceTabs.appendChild(btn);
+      });
+    }
+
+    function renderInfo(cards) {
+      infoGrid.innerHTML = cards.map((card) => `
+        <div class="mini-card">
+          <strong>${card.title}</strong>
+          <span>${card.body}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderPool() {
+      const cards = createCardsForDevice(currentDevice());
+      poolGrid.innerHTML = "";
+      cards.forEach((card) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "pool-card";
+        button.draggable = true;
+        button.dataset.cardId = card.id;
+        const pinyin = getLabelPinyin(card.label);
+        button.innerHTML = `<strong>${card.label}${pinyin ? `<small>${pinyin}</small>` : ""}</strong><span>${card.hint}</span>`;
+        button.addEventListener("dragstart", (event) => {
+          event.dataTransfer.setData("text/plain", card.id);
+          event.dataTransfer.effectAllowed = "move";
+          button.classList.add("dragging");
+        });
+        button.addEventListener("dragend", () => {
+          button.classList.remove("dragging");
+        });
+        poolGrid.appendChild(button);
+      });
+    }
+
+    function renderSlot(element, title, description, item) {
+      element.innerHTML = `<strong>${title}</strong><p>${description}</p>`;
+      element.classList.toggle("active", Boolean(item));
+      if (item) {
+        const card = document.createElement("div");
+        card.className = "picked-card";
+        const pinyin = getLabelPinyin(item.label);
+        card.innerHTML = `<strong>${item.label}${pinyin ? `<small>${pinyin}</small>` : ""}</strong><span>${item.hint}</span>`;
+        element.appendChild(card);
+      }
+    }
+
+    function renderSlots() {
+      renderSlot(slotSense, "第 1 步：感知", "先选择设备最先“知道”的信息。", state.slots.sense);
+      renderSlot(slotJudge, "第 2 步：处理", "再选择设备内部做出的判断。", state.slots.judge);
+      renderSlot(slotAction, "第 3 步：动作", "最后选择设备执行的动作。", state.slots.action);
+
+      senseCount.textContent = state.slots.sense ? "1" : "0";
+      judgeCount.textContent = state.slots.judge ? "1" : "0";
+      actionCount.textContent = state.slots.action ? "1" : "0";
+      runButton.disabled = !(state.slots.sense && state.slots.judge && state.slots.action);
+    }
+
+    function updateTopbar() {
+      progressText.textContent = `当前设备：${state.index + 1} / ${devices.length}`;
+      tipText.textContent = "先看场景，再把三张卡拖进去";
+      progressFill.style.width = `${((state.index + 1) / devices.length) * 100}%`;
+      scoreCard.textContent = `当前得分：${state.score} / 100`;
+      roundPill.textContent = state.completed.has(currentDevice().id) ? "本轮已完成" : "等待指挥";
+      tutorialText.textContent = state.completed.has(currentDevice().id)
+        ? "这一关已经完成了。可以去下一台设备。"
+        : "先看场景，再把三张卡拖到感知、处理、动作里。排对一台设备得 25 分。";
+    }
+
+    function drawScene(result) {
+      const device = currentDevice();
+      deviceCtx.clearRect(0, 0, deviceCanvas.width, deviceCanvas.height);
+
+      if (device.animation === "voice-light") {
+        drawVoiceLight(result);
+      }
+      if (device.animation === "auto-door") {
+        drawAutoDoor(result);
+      }
+      if (device.animation === "robot-vacuum") {
+        drawRobotVacuum(result);
+      }
+      if (device.animation === "smart-faucet") {
+        drawSmartFaucet(result);
+      }
+    }
+
+    function drawVoiceLight(result) {
+      deviceCtx.fillStyle = "#0f1f37";
+      deviceCtx.fillRect(0, 0, 700, 360);
+      deviceCtx.fillStyle = "#1d3557";
+      deviceCtx.fillRect(40, 80, 620, 220);
+      deviceCtx.fillStyle = "#152842";
+      deviceCtx.fillRect(0, 300, 700, 60);
+
+      const lightOn = result === "success";
+      deviceCtx.fillStyle = lightOn ? "#ffe48c" : "#587193";
+      deviceCtx.beginPath();
+      deviceCtx.arc(350, 74, 28, 0, Math.PI * 2);
+      deviceCtx.fill();
+
+      if (lightOn) {
+        const glow = deviceCtx.createRadialGradient(350, 74, 10, 350, 140, 180);
+        glow.addColorStop(0, "rgba(255, 236, 145, 0.52)");
+        glow.addColorStop(1, "rgba(255, 236, 145, 0)");
+        deviceCtx.fillStyle = glow;
+        deviceCtx.fillRect(120, 40, 460, 240);
+      }
+
+      deviceCtx.fillStyle = "#86b4ff";
+      deviceCtx.beginPath();
+      deviceCtx.arc(180, 210, 18, 0, Math.PI * 2);
+      deviceCtx.fill();
+      if (result !== "idle") {
+        deviceCtx.strokeStyle = "rgba(134,180,255,0.7)";
+        deviceCtx.lineWidth = 4;
+        for (let i = 0; i < 3; i += 1) {
+          deviceCtx.beginPath();
+          deviceCtx.arc(180, 210, 34 + i * 20, -0.6, 0.6);
+          deviceCtx.stroke();
+        }
+      }
+    }
+
+    function drawAutoDoor(result) {
+      deviceCtx.fillStyle = "#dce9f5";
+      deviceCtx.fillRect(0, 0, 700, 360);
+      deviceCtx.fillStyle = "#bfcfe0";
+      deviceCtx.fillRect(110, 28, 480, 38);
+      deviceCtx.fillStyle = "#8aa0b8";
+      deviceCtx.fillRect(116, 66, 12, 248);
+      deviceCtx.fillRect(572, 66, 12, 248);
+      deviceCtx.fillStyle = "#d1e8ff";
+      const gap = result === "success" ? 54 : 4;
+      deviceCtx.fillRect(130, 66, 220 - gap, 248);
+      deviceCtx.fillRect(350 + gap, 66, 220 - gap, 248);
+      deviceCtx.fillStyle = "#8ab0d6";
+      deviceCtx.fillRect(0, 314, 700, 46);
+      deviceCtx.fillStyle = "#54677b";
+      deviceCtx.beginPath();
+      deviceCtx.arc(344, 252, 20, 0, Math.PI * 2);
+      deviceCtx.fill();
+      deviceCtx.fillRect(332, 272, 24, 42);
+    }
+
+    function drawRobotVacuum(result) {
+      deviceCtx.fillStyle = "#f2f4f7";
+      deviceCtx.fillRect(0, 0, 700, 360);
+      deviceCtx.fillStyle = "#dadfe5";
+      deviceCtx.fillRect(0, 286, 700, 74);
+
+      deviceCtx.fillStyle = "#85624c";
+      deviceCtx.fillRect(472, 122, 18, 164);
+      deviceCtx.fillRect(540, 122, 18, 164);
+      deviceCtx.fillStyle = "#9e795f";
+      deviceCtx.fillRect(430, 102, 170, 20);
+
+      const robotX = result === "success" ? 290 : 420;
+      deviceCtx.fillStyle = "#1f2a38";
+      deviceCtx.beginPath();
+      deviceCtx.arc(robotX, 248, 58, 0, Math.PI * 2);
+      deviceCtx.fill();
+      deviceCtx.fillStyle = "#4f7dff";
+      deviceCtx.beginPath();
+      deviceCtx.arc(robotX, 248, 20, 0, Math.PI * 2);
+      deviceCtx.fill();
+
+      if (result !== "idle") {
+        deviceCtx.strokeStyle = "rgba(79,125,255,0.38)";
+        deviceCtx.lineWidth = 4;
+        deviceCtx.beginPath();
+        deviceCtx.arc(robotX, 248, 76, -0.8, 0.3);
+        deviceCtx.stroke();
+      }
+    }
+
+    function drawSmartFaucet(result) {
+      deviceCtx.fillStyle = "#eaf1f7";
+      deviceCtx.fillRect(0, 0, 700, 360);
+      deviceCtx.fillStyle = "#c2d0db";
+      deviceCtx.fillRect(0, 280, 700, 80);
+
+      deviceCtx.fillStyle = "#9baebb";
+      deviceCtx.fillRect(246, 78, 38, 154);
+      deviceCtx.fillRect(246, 78, 120, 28);
+      deviceCtx.fillRect(338, 78, 28, 128);
+      deviceCtx.fillRect(338, 178, 86, 28);
+
+      deviceCtx.fillStyle = "#efc3a4";
+      deviceCtx.beginPath();
+      deviceCtx.roundRect(438, 223, 120, 30, 15);
+      deviceCtx.fill();
+
+      deviceCtx.fillStyle = "#f6cfb2";
+      deviceCtx.beginPath();
+      deviceCtx.roundRect(352, 214, 100, 54, 24);
+      deviceCtx.fill();
+
+      const fingers = [
+        { x: 350, y: 200, w: 18, h: 24 },
+        { x: 370, y: 194, w: 20, h: 30 },
+        { x: 392, y: 192, w: 20, h: 32 },
+        { x: 414, y: 196, w: 18, h: 28 }
+      ];
+      fingers.forEach((finger) => {
+        deviceCtx.beginPath();
+        deviceCtx.roundRect(finger.x, finger.y, finger.w, finger.h, 10);
+        deviceCtx.fill();
+      });
+
+      deviceCtx.beginPath();
+      deviceCtx.moveTo(362, 236);
+      deviceCtx.quadraticCurveTo(340, 224, 332, 238);
+      deviceCtx.quadraticCurveTo(326, 254, 344, 262);
+      deviceCtx.quadraticCurveTo(360, 266, 370, 252);
+      deviceCtx.quadraticCurveTo(374, 242, 362, 236);
+      deviceCtx.fill();
+
+      deviceCtx.strokeStyle = "rgba(176, 116, 78, 0.28)";
+      deviceCtx.lineWidth = 2;
+      deviceCtx.lineCap = "round";
+      deviceCtx.beginPath();
+      deviceCtx.moveTo(370, 201);
+      deviceCtx.lineTo(370, 220);
+      deviceCtx.moveTo(392, 197);
+      deviceCtx.lineTo(392, 220);
+      deviceCtx.moveTo(414, 198);
+      deviceCtx.lineTo(414, 221);
+      deviceCtx.stroke();
+
+      if (result === "success") {
+        deviceCtx.strokeStyle = "#79cfff";
+        deviceCtx.lineWidth = 10;
+        deviceCtx.beginPath();
+        deviceCtx.moveTo(424, 206);
+        deviceCtx.lineTo(424, 272);
+        deviceCtx.stroke();
+      }
+    }
+
+    function renderDevice() {
+      const device = currentDevice();
+      deviceTitle.textContent = device.title;
+      deviceChip.textContent = device.chip;
+      deviceDescription.textContent = device.description;
+      stageTitle.textContent = device.stageTitle;
+      sceneTitle.textContent = device.sceneTitle;
+      scenePrompt.textContent = device.scenePrompt;
+      renderInfo(device.info);
+      renderPool();
+      renderSlots();
+      updateTopbar();
+      drawScene("idle");
+      stateBadge.textContent = "设备待机中";
+      nextButton.classList.toggle("hidden", !state.completed.has(device.id));
+    }
+
+    function switchDevice(index) {
+      state.index = index;
+      state.slots = { sense: null, judge: null, action: null };
+      clearFeedback();
+      renderTabs();
+      renderDevice();
+    }
+
+    function findCardById(id) {
+      return createCardsForDevice(currentDevice()).find((card) => card.id === id);
+    }
+
+    function slotFromCard(card) {
+      return card.type;
+    }
+
+    function attachSlotDrag(slotName, element) {
+      element.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        element.classList.add("drag-over");
+      });
+
+      element.addEventListener("dragleave", () => {
+        element.classList.remove("drag-over");
+      });
+
+      element.addEventListener("drop", (event) => {
+        event.preventDefault();
+        element.classList.remove("drag-over");
+        const cardId = event.dataTransfer.getData("text/plain");
+        if (!cardId) {
+          return;
+        }
+        const card = findCardById(cardId);
+        if (!card || slotFromCard(card) !== slotName) {
+          setFeedback("error", "这张卡片不属于这一步。请把感知卡放到第 1 步，判断卡放到第 2 步，动作卡放到第 3 步。");
+          return;
+        }
+        state.slots[slotName] = card;
+        clearFeedback();
+        renderSlots();
+      });
+    }
+
+    function runDevice() {
+      const device = currentDevice();
+      const okSense = state.slots.sense && state.slots.sense.label === device.sense.label;
+      const okJudge = state.slots.judge && state.slots.judge.label === device.judge.label;
+      const okAction = state.slots.action && state.slots.action.label === device.action.label;
+
+      if (okSense && okJudge && okAction) {
+        if (!state.completed.has(device.id)) {
+          state.completed.add(device.id);
+          state.correct += 1;
+          state.score += 25;
+        }
+        drawScene("success");
+        stateBadge.textContent = "设备顺利运行";
+        nextButton.classList.remove("hidden");
+        roundPill.textContent = "流程正确";
+        setFeedback("success", "指挥成功。你把“感知 → 处理 → 动作”排对了，设备顺利完成任务。");
+      } else {
+        drawScene("error");
+        stateBadge.textContent = "流程出错";
+        roundPill.textContent = "需要调整";
+        setFeedback("error", "设备没有按预期运行。再检查一下：它最先知道了什么？接着判断了什么？最后做了什么动作？");
+      }
+      updateTopbar();
+    }
+
+    function clearFlow() {
+      state.slots = { sense: null, judge: null, action: null };
+      clearFeedback();
+      drawScene("idle");
+      stateBadge.textContent = "设备待机中";
+      roundPill.textContent = state.completed.has(currentDevice().id) ? "本轮已完成" : "等待指挥";
+      renderPool();
+      renderSlots();
+    }
+
+    function showSummary() {
+      summaryModal.classList.add("show");
+      summaryModal.setAttribute("aria-hidden", "false");
+      finalScore.textContent = String(state.score);
+      finalCorrect.textContent = `${state.correct}/${devices.length}`;
+      finalStrength.textContent = state.correct >= 3 ? "流程排序" : "感知判断";
+      summaryText.textContent = state.correct === devices.length
+        ? "你已经能熟练指挥智能设备工作了。这个实验满分 100 分，每台设备 25 分，它们都按“感知 → 处理 → 动作”的规则运行。"
+        : "你已经完成实验。这个实验满分 100 分，每台设备 25 分。下次可以更注意输入信息和设备动作的区别。";
+    }
+
+    function restartAll() {
+      state.index = 0;
+      state.score = 0;
+      state.correct = 0;
+      state.slots = { sense: null, judge: null, action: null };
+      state.completed = new Set();
+      summaryModal.classList.remove("show");
+      summaryModal.setAttribute("aria-hidden", "true");
+      clearFeedback();
+      renderTabs();
+      renderDevice();
+    }
+
+    runButton.addEventListener("click", runDevice);
+    clearButton.addEventListener("click", clearFlow);
+    tutorialButton.addEventListener("click", speakTutorial);
+    nextButton.addEventListener("click", () => {
+      if (state.index === devices.length - 1) {
+        showSummary();
+      } else {
+        switchDevice(state.index + 1);
+      }
+    });
+    restartButton.addEventListener("click", restartAll);
+
+    attachSlotDrag("sense", slotSense);
+    attachSlotDrag("judge", slotJudge);
+    attachSlotDrag("action", slotAction);
+
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.addEventListener?.("voiceschanged", () => {});
+    }
+
+    renderTabs();
+    renderDevice();
+  </script>
+</body>
+</html>

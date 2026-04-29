@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>指令越清楚，AI越听话</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{font-family:"华文圆体","PingFang SC","Microsoft YaHei",system-ui,sans-serif;color:#3d2914}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 8% 12%, #fff7a8 0 80px, transparent 80px),
+      radial-gradient(circle at 92% 8%, #ddd6fe 0 60px, transparent 60px),
+      radial-gradient(ellipse 120px 70px at 18% 20%, #fff 0 70%, transparent 70%),
+      radial-gradient(ellipse 90px 50px at 80% 26%, #fff 0 70%, transparent 70%),
+      linear-gradient(180deg, #f5e1ff 0%, #fff5e0 60%, #d4f7d6 100%);
+    padding:20px 16px 100px;position:relative;overflow-x:hidden;
+  }
+  .deco{position:fixed;font-size:38px;opacity:.7;pointer-events:none;z-index:0;animation:floatA 6s ease-in-out infinite}
+  .deco.d1{top:14%;left:4%;animation-delay:0s}
+  .deco.d2{top:28%;right:5%;animation-delay:1.2s;font-size:32px}
+  .deco.d3{top:54%;left:3%;animation-delay:2.4s}
+  .deco.d4{bottom:18%;right:4%;animation-delay:3.5s;font-size:36px}
+  .deco.d5{bottom:32%;left:6%;animation-delay:1.8s;font-size:30px}
+  @keyframes floatA{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-14px) rotate(4deg)}}
+
+  .wrap{max-width:1180px;margin:0 auto;position:relative;z-index:1}
+
+  /* Hero */
+  .hero{
+    background:linear-gradient(135deg,#a78bfa 0%,#ec4899 60%,#f97316 100%);
+    color:#fff;border-radius:22px;padding:22px 26px;
+    box-shadow:0 8px 20px rgba(167,139,250,.35);
+    margin-bottom:22px;position:relative;border:2px solid #fff;display:flex;align-items:center;gap:18px;
+  }
+  .mascot{
+    width:108px;height:108px;background:linear-gradient(180deg,#fef3c7,#fbbf24);
+    border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:64px;flex-shrink:0;border:2px solid #fff;
+    box-shadow:0 8px 20px rgba(0,0,0,.18);animation:bounce 2.4s ease-in-out infinite;position:relative;
+  }
+  .mascot::after{
+    content:'听话啦！';position:absolute;top:-12px;right:-72px;
+    background:#fff;color:#a855f7;padding:5px 12px;border-radius:14px;
+    font-size:15px;font-weight:800;border:1.5px solid #a855f7;
+    white-space:nowrap;animation:pop 3s ease infinite;
+  }
+  .mascot::before{
+    content:'';position:absolute;top:0;right:-20px;width:14px;height:14px;
+    background:#fff;border-left:3px solid #a855f7;border-bottom:3px solid #a855f7;
+    transform:rotate(45deg);animation:pop 3s ease infinite;
+  }
+  @keyframes bounce{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-8px) rotate(4deg)}}
+  @keyframes pop{0%,80%,100%{opacity:1;transform:scale(1)}40%{opacity:1;transform:scale(1.08)}90%{opacity:0;transform:scale(.95)}}
+  .hero-text{flex:1;min-width:0}
+  .hero h1{font-size:30px;font-weight:900;letter-spacing:1px;text-shadow:0 3px 0 rgba(0,0,0,.12);line-height:1.2}
+  .hero-sub{font-size:15px;margin-top:8px;opacity:.96;line-height:1.5;font-weight:600}
+  .hero-badge{
+    position:absolute;top:14px;right:18px;background:#fff;color:#a855f7;
+    padding:6px 14px;border-radius:999px;font-size:14px;font-weight:800;
+    border:1.5px solid #fde68a;transform:rotate(6deg);
+  }
+
+  /* Tip */
+  .tip-strip{display:flex;gap:12px;align-items:center;background:#fff;padding:14px 18px;border-radius:22px;margin-bottom:18px;color:#7c2d12;font-size:15px;font-weight:600;line-height:1.5;border:2px solid #fed7aa;box-shadow:0 8px 18px rgba(0,0,0,.06)}
+  .tip-strip .ic-small{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#fef3c7,#f59e0b);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .tip-strip b{color:#9a3412;font-weight:900}
+
+  /* Task picker (sticker style) */
+  .task-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+  @media(max-width:860px){.task-picker{grid-template-columns:1fr 1fr}}
+  .task-btn{
+    border-radius:24px;padding:20px 12px;cursor:pointer;text-align:center;position:relative;
+    transition:.25s cubic-bezier(.34,1.56,.64,1);border:2px solid transparent;
+    color:#fff;font-weight:900;
+    box-shadow:0 8px 18px rgba(0,0,0,.12);
+  }
+  .task-btn:nth-child(1){background:linear-gradient(135deg,#86efac,#22c55e)}
+  .task-btn:nth-child(2){background:linear-gradient(135deg,#a78bfa,#7c3aed)}
+  .task-btn:nth-child(3){background:linear-gradient(135deg,#67e8f9,#0891b2)}
+  .task-btn:nth-child(4){background:linear-gradient(135deg,#fda4af,#e11d48)}
+  .task-btn:hover{transform:translateY(-4px) rotate(-2deg)}
+  .task-btn.on{transform:scale(1.06) rotate(-3deg);border-color:#fff;box-shadow:0 0 0 2px #fbbf24, 0 12px 24px rgba(0,0,0,.2)}
+  .task-btn .ti{font-size:48px;margin-bottom:6px;display:block;filter:drop-shadow(0 3px 0 rgba(0,0,0,.15));animation:wig 3s ease-in-out infinite}
+  .task-btn:nth-child(1) .ti{animation-delay:0s}
+  .task-btn:nth-child(2) .ti{animation-delay:.4s}
+  .task-btn:nth-child(3) .ti{animation-delay:.8s}
+  .task-btn:nth-child(4) .ti{animation-delay:1.2s}
+  @keyframes wig{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(6deg)}}
+  .task-btn .tn{font-size:17px;font-weight:900}
+  .task-btn .td{font-size:14px;margin-top:3px;opacity:.9;font-weight:600}
+  .task-btn.on::after{content:'★';position:absolute;top:-12px;right:-10px;width:32px;height:32px;background:#fde047;color:#92400e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;border:1.5px solid #fff;animation:spinSlow 2s linear infinite}
+  @keyframes spinSlow{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+  .card{background:#fff;border-radius:18px;padding:22px;margin-bottom:18px;box-shadow:0 6px 16px rgba(0,0,0,.07);border:2px solid #fff;position:relative}
+  h3{font-size:22px;font-weight:900;margin-bottom:14px;color:#7c2d12}
+
+  /* Task show */
+  .task-show{display:flex;gap:14px;align-items:center;background:linear-gradient(180deg,#fef9c3,#fde68a);padding:18px 22px;border-radius:22px;border:2px dashed #f59e0b;margin-bottom:16px}
+  .task-icon{width:64px;height:64px;background:#fff;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:38px;flex-shrink:0;box-shadow:0 6px 12px rgba(0,0,0,.1);border:1.5px solid #fde68a;animation:wig 3s ease-in-out infinite}
+  .task-show .content{flex:1}
+  .task-show .big{font-weight:900;font-size:19px;color:#7c2d12}
+  .task-show .small{color:#9a3412;font-size:14px;margin-top:4px;font-weight:600}
+
+  /* Keyword chips */
+  .group-title{color:#7c2d12;font-size:15px;margin:16px 0 10px;font-weight:900;display:flex;align-items:center;gap:8px}
+  .group-title::before{content:'●';color:#a855f7;font-size:18px}
+  .chips{display:flex;flex-wrap:wrap;gap:10px}
+  .chip{
+    padding:10px 18px;background:#fff;border:1.5px solid #fed7aa;border-radius:999px;cursor:pointer;
+    font-size:16px;transition:.2s;user-select:none;display:flex;align-items:center;gap:6px;font-weight:700;color:#7c2d12;
+    box-shadow:0 3px 0 #fed7aa;
+  }
+  .chip:hover{transform:translateY(-3px) rotate(-2deg);box-shadow:0 3px 0 #fed7aa}
+  .chip.on{background:linear-gradient(135deg,#a78bfa,#7c3aed);border-color:#fff;color:#fff;font-weight:900;box-shadow:0 0 0 2px #a855f7, 0 6px 14px rgba(168,85,247,.3);transform:rotate(-3deg)}
+  .chip.on::before{content:'✓';background:#fff;color:#a855f7;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900}
+
+  .run-area{text-align:center;margin-top:20px;padding-top:18px;border-top:3px dashed #fed7aa}
+  .run-btn{
+    font-size:18px;padding:16px 38px;border-radius:999px;border:0;font-family:inherit;
+    background:linear-gradient(135deg,#a855f7,#ec4899);color:#fff;font-weight:900;cursor:pointer;
+    box-shadow:0 3px 0 #7e22ce, 0 6px 12px rgba(168,85,247,.35);transition:.15s;
+  }
+  .run-btn:hover:not(:disabled){transform:translateY(2px);box-shadow:0 4px 0 #7e22ce, 0 6px 14px rgba(168,85,247,.35)}
+  .run-btn:active:not(:disabled){transform:translateY(6px);box-shadow:0 0 0 #7e22ce, 0 2px 6px rgba(168,85,247,.35)}
+  .run-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:0 4px 0 rgba(0,0,0,.15)}
+  .selected-count{color:#9a3412;font-size:14px;margin-top:10px;font-weight:600}
+
+  /* Comparison */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:860px){.compare{grid-template-columns:1fr}}
+  .panel{border-radius:24px;padding:22px;border:2px solid transparent;position:relative;min-height:270px;display:flex;flex-direction:column;box-shadow:0 8px 18px rgba(0,0,0,.06)}
+  .panel.vague{background:linear-gradient(180deg,#fff1f2,#fecaca);border-color:#fca5a5}
+  .panel.clear{background:linear-gradient(180deg,#f0fdf4,#bbf7d0);border-color:#86efac}
+  .panel h4{margin-bottom:12px;display:flex;align-items:center;gap:10px;font-size:18px;font-weight:900;color:#7c2d12}
+  .ic{font-size:32px}
+  .ai-mood{margin-left:auto;font-size:34px;transition:.3s}
+
+  .prompt-box{background:#fff;border-radius:16px;padding:14px 16px;font-size:14px;color:#3d2914;margin-bottom:12px;border:1.5px solid rgba(255,255,255,.6);font-weight:600}
+  .prompt-box .label{font-size:15px;color:#9ca3af;font-weight:900;letter-spacing:.5px;margin-bottom:4px}
+  .prompt-box b.hl{background:linear-gradient(180deg,transparent 50%,#fde047 50%);padding:1px 4px;color:#92400e;font-weight:900;border-radius:4px}
+  .output{flex:1;background:#fff;border-radius:16px;padding:16px 18px;font-size:17px;line-height:1.8;min-height:120px;white-space:pre-wrap;position:relative;color:#3d2914;font-weight:600;border:2px solid rgba(255,255,255,.6)}
+  .output .placeholder{color:#9ca3af;font-style:italic;font-weight:500}
+  .meta-row{display:flex;gap:8px;margin-top:10px;font-size:14px;flex-wrap:wrap}
+  .meta-chip{background:#fff;padding:5px 12px;border-radius:999px;font-weight:700;color:#7c2d12;border:2px solid rgba(255,255,255,.7);box-shadow:0 2px 0 rgba(0,0,0,.05)}
+
+  .rate{margin-top:14px;display:flex;align-items:center;gap:4px;justify-content:center;background:#fff;padding:12px;border-radius:16px;border:2px solid rgba(255,255,255,.6)}
+  .rate .label{font-size:14px;color:#7c2d12;margin-right:8px;font-weight:700}
+  .star{font-size:30px;cursor:pointer;color:#d1d5db;transition:.15s}
+  .star.on{color:#f59e0b;transform:scale(1.15) rotate(-8deg)}
+
+  /* Quality bars */
+  .quality-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  @media(max-width:640px){.quality-row{grid-template-columns:1fr}}
+  .qbar{background:#fff;border-radius:18px;padding:14px;border:1.5px solid #fed7aa}
+  .qbar .head{display:flex;justify-content:space-between;font-size:14px;color:#7c2d12;margin-bottom:8px;font-weight:900}
+  .qbar .track{background:#fef3c7;height:14px;border-radius:999px;overflow:hidden;border:2px solid #fde68a}
+  .qbar .fill{height:100%;border-radius:999px;transition:width .6s ease;background:linear-gradient(90deg,#fbbf24,#f59e0b)}
+  .qbar.clear{border-color:#86efac}
+  .qbar.clear .track{background:#dcfce7;border-color:#86efac}
+  .qbar.clear .fill{background:linear-gradient(90deg,#34d399,#10b981)}
+
+  .summary{background:linear-gradient(135deg,#fef9c3,#fef3c7);border-radius:20px;padding:18px;text-align:center;font-size:17px;color:#7c2d12;font-weight:900;display:none;margin-top:14px;border:2px dashed #f59e0b;box-shadow:0 6px 14px rgba(251,191,36,.2)}
+
+  .loading{display:inline-block;width:18px;height:18px;border:1.5px solid #e5e7eb;border-top-color:#a855f7;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;margin-left:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  @media(max-width:680px){
+    .hero{padding:18px 18px 22px;gap:12px}
+    .mascot{width:80px;height:80px;font-size:48px}
+    .mascot::after,.mascot::before{display:none}
+    .hero h1{font-size:22px}
+    .hero-sub{font-size:15px}
+    .hero-badge{position:static;margin-top:8px;display:inline-block;transform:none}
+  }
+</style>
+</head>
+<body>
+<span class="deco d1">🎯</span>
+<span class="deco d2">⭐</span>
+<span class="deco d3">✨</span>
+<span class="deco d4">🎨</span>
+<span class="deco d5">📝</span>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="mascot">🐶</div>
+    <div class="hero-text">
+      <h1 data-pinyin>🎯 指令越清楚，AI越听话</h1>
+      <div class="hero-sub" data-pinyin>同一个任务，两种指令，让我们看 AI 的反应差多少</div>
+    </div>
+    <div class="hero-badge" data-pinyin>第二单元 · 第六课</div>
+  </div>
+
+  <div class="tip-strip" data-pinyin>
+    <div class="ic-small">💡</div>
+    <div>先选一种<b>任务类型</b>，然后在下面给 AI 配上关键词，看看加了关键词之后 AI 写得有多不一样。</div>
+  </div>
+
+  <!-- Task picker -->
+  <div class="task-picker" id="taskPicker"></div>
+
+  <div class="card">
+    <div class="task-show" id="taskShow">
+      <div class="task-icon" id="tIcon">📚</div>
+      <div class="content">
+        <div class="big" id="tName">任务：让 AI 写一个故事</div>
+        <div class="small" id="tSub">选几个关键词，看看会发生什么</div>
+      </div>
+    </div>
+
+    <div id="groupsArea"></div>
+
+    <div class="run-area">
+      <div class="selected-count" id="selCount">还没选关键词</div>
+      <button class="run-btn" id="runBtn" data-pinyin onclick="run()">🚀 让AI写两版来对比</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 data-pinyin>🔍 模糊指令 vs 清晰指令</h3>
+    <div class="compare">
+      <div class="panel vague">
+        <h4 data-pinyin><span class="ic">😕</span>模糊指令 <span class="ai-mood" id="vMood">😴</span></h4>
+        <div class="prompt-box">
+          <div class="label">给 AI 的指令</div>
+          <div id="vPrompt">—</div>
+        </div>
+        <div class="output" id="vOut"><span class="placeholder">点按钮让 AI 开始写…</span></div>
+        <div class="meta-row" id="vMeta"></div>
+        <div class="rate" data-side="v"><span class="label" data-pinyin>给它打几颗星？</span></div>
+      </div>
+      <div class="panel clear">
+        <h4 data-pinyin><span class="ic">✨</span>清晰指令 <span class="ai-mood" id="cMood">😴</span></h4>
+        <div class="prompt-box">
+          <div class="label">给 AI 的指令（黄色 = 加的关键词）</div>
+          <div id="cPrompt">先选几个关键词…</div>
+        </div>
+        <div class="output" id="cOut"><span class="placeholder">等会儿就能看到清晰指令下的结果</span></div>
+        <div class="meta-row" id="cMeta"></div>
+        <div class="rate" data-side="c"><span class="label" data-pinyin>给它打几颗星？</span></div>
+      </div>
+    </div>
+
+    <div class="quality-row">
+      <div class="qbar">
+        <div class="head"><span>模糊指令评分</span><span id="vScore">—</span></div>
+        <div class="track"><div class="fill" id="vFill" style="width:0%"></div></div>
+      </div>
+      <div class="qbar clear">
+        <div class="head"><span>清晰指令评分</span><span id="cScore">—</span></div>
+        <div class="track"><div class="fill" id="cFill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="summary" id="summary"></div>
+  </div>
+</div>
+
+<script>
+const TASKS=[
+  {id:"story",icon:"📚",name:"写一个故事",sub:"让AI讲个短故事",sys:"你是儿童故事作家，用简单的中文写一个60-80字的短故事。只输出故事本身，不要标题。",vagueUser:"写一个故事。",clearBase:"请写一个适合小朋友的60-80字短故事，故事里要包含：",groups:{'主角':['小猫','机器人','恐龙','外星人','小女孩','小狐狸'],'情节':['有彩虹','在月亮上','丢了帽子','遇到精灵','下糖果雨','会说话'],'结局':['开心结局','交到新朋友','找到回家的路','学到道理']}},
+  {id:"poem",icon:"📝",name:"写一首小诗",sub:"让AI写首儿童诗",sys:"你是儿童诗作家，写一首4-6行的短诗，要押韵，语言简单适合小学生。只输出诗本身。",vagueUser:"写首诗。",clearBase:"请写一首4-6行押韵的儿童诗，诗里要出现：",groups:{'主题':['春天','夏天','大海','星星','月亮','下雨'],'事物':['小花','蝴蝶','风筝','白云','小船','萤火虫'],'感觉':['开心','安静','好奇','温暖']}},
+  {id:"riddle",icon:"🧩",name:"出一道谜语",sub:"让AI出个猜猜看",sys:"你是谜语设计师，出一条适合小学生的谜语，包含谜面和谜底。格式：谜面：xxx \\n 谜底：xxx",vagueUser:"出一个谜语。",clearBase:"请出一条适合小学二年级学生的谜语，谜底是生活中常见的物品或动物，要求：",groups:{'谜底类型':['水果','文具','动物','天气','家里的东西'],'难度':['简单有趣','需要动脑筋'],'风格':['押韵','幽默','温馨']}},
+  {id:"joke",icon:"😄",name:"讲一个笑话",sub:"让AI逗我笑",sys:"你是儿童幽默大师，讲一个适合小朋友的短笑话，要干净健康，50字以内。只输出笑话本身。",vagueUser:"讲个笑话。",clearBase:"请讲一个适合小学生的短笑话，要求：",groups:{'题材':['动物','学校','食物','家庭'],'风格':['谐音梗','意想不到','傻傻的可爱'],'长度':['短短一句','两三句话']}}
+];
+
+let cur=TASKS[0];
+const picked={};
+const pickerBox=document.getElementById('taskPicker');
+TASKS.forEach((t,i)=>{
+  const el=document.createElement('div');el.className='task-btn'+(i===0?' on':'');el.dataset.pinyin='';
+  el.innerHTML=`<div class="ti">${t.icon}</div><div class="tn">${t.name}</div><div class="td">${t.sub}</div>`;
+  el.onclick=()=>{document.querySelectorAll('.task-btn').forEach(x=>x.classList.remove('on'));el.classList.add('on');switchTask(t)};
+  pickerBox.appendChild(el);
+});
+
+function switchTask(t){
+  cur=t;
+  document.getElementById('tIcon').textContent=t.icon;
+  document.getElementById('tName').textContent='任务：'+t.name;
+  document.getElementById('tSub').textContent=t.sub;
+  for(const k in picked)delete picked[k];
+  renderGroups();
+  updateCount();
+}
+
+function renderGroups(){
+  const area=document.getElementById('groupsArea');area.innerHTML='';
+  for(const gname in cur.groups){
+    picked[gname]=new Set();
+    const title=document.createElement('div');title.className='group-title';title.dataset.pinyin='';title.innerHTML=`<span style="color:#8b5cf6">●</span> ${gname}`;
+    const chips=document.createElement('div');chips.className='chips';
+    cur.groups[gname].forEach(w=>{
+      const c=document.createElement('div');c.className='chip';c.dataset.pinyin='';c.textContent=w;
+      c.onclick=()=>{c.classList.toggle('on');picked[gname].has(w)?picked[gname].delete(w):picked[gname].add(w);updateCount()};
+      chips.appendChild(c);
+    });
+    area.appendChild(title);area.appendChild(chips);
+  }
+}
+renderGroups();
+
+function updateCount(){
+  const all=Object.values(picked).flatMap(s=>[...s]);
+  const el=document.getElementById('selCount');
+  el.textContent=all.length?`已选 ${all.length} 个关键词：${all.join('、')}`:'还没选关键词（点上面的词）';
+}
+
+function buildStars(side){
+  const box=document.querySelector(`.rate[data-side="${side}"]`);
+  if(box.querySelector('.star'))return;
+  for(let i=1;i<=5;i++){
+    const s=document.createElement('span');s.className='star';s.textContent='★';
+    s.onclick=()=>{box.dataset.v=i;box.querySelectorAll('.star').forEach((x,j)=>x.classList.toggle('on',j<i));updateScores()};
+    box.appendChild(s);
+  }
+}
+buildStars('v');buildStars('c');
+
+function countChars(s){return (s||'').replace(/\s/g,'').length}
+function quality(text,keywords){
+  const ch=countChars(text);
+  const hit=keywords.filter(k=>text&&text.includes(k)).length;
+  const lenScore=Math.min(100,ch/80*100);
+  const kwScore=keywords.length?(hit/keywords.length*100):100;
+  return {ch,hit,total:keywords.length,score:Math.round(lenScore*.4+kwScore*.6)}
+}
+
+function updateScores(){
+  const vStars=+document.querySelector('.rate[data-side="v"]').dataset.v||0;
+  const cStars=+document.querySelector('.rate[data-side="c"]').dataset.v||0;
+  if(vStars){document.getElementById('vScore').textContent=vStars*20+'分';document.getElementById('vFill').style.width=vStars*20+'%'}
+  if(cStars){document.getElementById('cScore').textContent=cStars*20+'分';document.getElementById('cFill').style.width=cStars*20+'%'}
+  if(!vStars||!cStars)return;
+  const s=document.getElementById('summary');s.style.display='block';
+  if(cStars>vStars)s.textContent=`✨ 清晰指令赢啦！多了 ${cStars-vStars} 颗星，关键词让 AI 更懂你。`;
+  else if(vStars>cStars)s.textContent=`🤔 这次模糊指令评分更高——也许清晰指令里的关键词可以更精简？`;
+  else s.textContent=`😊 两边评分一样，都很棒！再换一组关键词试试？`;
+}
+
+function highlightKeywords(prompt,words){
+  let out=prompt;
+  words.forEach(w=>{out=out.replace(new RegExp(w,'g'),`<b class="hl">${w}</b>`)});
+  return out;
+}
+
+async function run(){
+  const btn=document.getElementById('runBtn');
+  const words=Object.values(picked).flatMap(s=>[...s]);
+  if(words.length===0){alert('先选几个关键词～');return}
+  btn.disabled=true;btn.textContent='AI 正在思考…';
+  document.getElementById('vMood').textContent='🤔';document.getElementById('cMood').textContent='🤔';
+
+  const clearPrompt=cur.clearBase+words.join('、')+'。';
+  document.getElementById('vPrompt').textContent=cur.vagueUser;
+  document.getElementById('cPrompt').innerHTML=highlightKeywords(clearPrompt,words);
+
+  document.getElementById('vOut').innerHTML='<span class="loading"></span> AI 正在按模糊指令写…';
+  document.getElementById('cOut').innerHTML='<span class="loading"></span> AI 正在按清晰指令写…';
+  document.getElementById('vMeta').innerHTML='';document.getElementById('cMeta').innerHTML='';
+
+  let vText='',cText='';
+  await Promise.all([
+    chatStream([{role:"system",content:cur.sys},{role:"user",content:cur.vagueUser}],t=>{vText=t;document.getElementById('vOut').textContent=t}),
+    chatStream([{role:"system",content:cur.sys},{role:"user",content:clearPrompt}],t=>{cText=t;document.getElementById('cOut').textContent=t}),
+  ]).catch(e=>console.error(e));
+
+  const vq=quality(vText,words),cq=quality(cText,words);
+  document.getElementById('vMeta').innerHTML=`<span class="meta-chip">字数：${vq.ch}</span><span class="meta-chip">命中关键词：${vq.hit}/${vq.total}</span>`;
+  document.getElementById('cMeta').innerHTML=`<span class="meta-chip">字数：${cq.ch}</span><span class="meta-chip">命中关键词：${cq.hit}/${cq.total}</span>`;
+  document.getElementById('vMood').textContent=vq.hit>=vq.total*.5?'😊':vq.hit===0?'😅':'🙂';
+  document.getElementById('cMood').textContent=cq.hit>=cq.total*.8?'🤩':cq.hit>=cq.total*.5?'😊':'🙂';
+
+  btn.disabled=false;btn.textContent='🔁 再来一次';
+}
+
+async function chatStream(messages,onDelta){
+  const res=await fetch('https://api.qa.bingotalk.cn/api/v2/comm/vt/aiChat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(messages)});
+  const reader=res.body.getReader();const dec=new TextDecoder();let buf='',full='';
+  while(true){const {value,done}=await reader.read();if(done)break;
+    buf+=dec.decode(value,{stream:true});
+    const parts=buf.replace(/}\s*{/g,'}\n{').split('\n');buf=parts.pop();
+    for(const p of parts){const s=p.trim();if(!s)continue;try{const d=JSON.parse(s);const t=d?.data?.result||'';if(t){full+=t;onDelta(full)}}catch(e){}}
+  }
+  if(buf.trim()){try{const d=JSON.parse(buf);const t=d?.data?.result||'';if(t){full+=t;onDelta(full)}}catch(e){}}
+}
+
+updateCount();
+</script>
+<script>
+/* 给页面中标记了 data-pinyin 的元素自动加拼音（面向二年级小朋友）
+   给需要注音的元素加上 data-pinyin 属性，只有这些元素内的文字才会加拼音。
+*/
+(function () {
+  const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT', 'RUBY', 'RT', 'RP', 'CODE', 'PRE']);
+  const HAS_HAN = /[\u4e00-\u9fa5]/;
+  const HAN_RUN = /^[\u4e00-\u9fa5]+$/;
+  let observer = null;
+
+  function injectStyles() {
+    if (document.getElementById('__pyStyle')) return;
+    const s = document.createElement('style');
+    s.id = '__pyStyle';
+    s.textContent = `
+      ruby { ruby-position: over; ruby-align: center; }
+      ruby > rt {
+        font-size: 0.55em;
+        color: #ec4899;
+        font-weight: 500;
+        font-family: "Microsoft YaHei", system-ui, sans-serif;
+        line-height: 1.1;
+        opacity: 0.92;
+        user-select: none;
+        letter-spacing: 0;
+      }
+      h1 ruby > rt, h2 ruby > rt, h3 ruby > rt { color: inherit; opacity: 0.85; }
+      button ruby > rt, .btn ruby > rt { color: inherit; opacity: 0.9; }
+    `;
+    (document.head || document.documentElement).appendChild(s);
+  }
+
+  function hasPinyinMarker(node) {
+    let el = node.nodeType === 3 ? node.parentNode : node;
+    while (el) {
+      if (el.nodeType !== 1) { el = el.parentNode; continue; }
+      if (el.dataset && el.dataset.pinyin !== undefined) return true;
+      if (el === document.body) break;
+      el = el.parentNode;
+    }
+    return false;
+  }
+
+  function annotateText(node) {
+    if (!hasPinyinMarker(node)) return;
+    const text = node.nodeValue;
+    if (!text || !HAS_HAN.test(text)) return;
+    const parent = node.parentNode;
+    if (!parent) return;
+    const tag = parent.tagName;
+    if (tag && SKIP_TAGS.has(tag)) return;
+
+    const parts = text.split(/([\u4e00-\u9fa5]+)/);
+    if (parts.length <= 1) return;
+
+    const frag = document.createDocumentFragment();
+    for (const part of parts) {
+      if (!part) continue;
+      if (HAN_RUN.test(part)) {
+        let arr;
+        try {
+          arr = window.pinyinPro.pinyin(part, { toneType: 'symbol', type: 'array', nonZh: 'consecutive' });
+        } catch (e) {
+          arr = [];
+        }
+        for (let i = 0; i < part.length; i++) {
+          const r = document.createElement('ruby');
+          r.appendChild(document.createTextNode(part[i]));
+          const rt = document.createElement('rt');
+          rt.textContent = arr[i] || '';
+          r.appendChild(rt);
+          frag.appendChild(r);
+        }
+      } else {
+        frag.appendChild(document.createTextNode(part));
+      }
+    }
+    parent.replaceChild(frag, node);
+  }
+
+  function annotate(node) {
+    if (!node) return;
+    if (node.nodeType === 3) { annotateText(node); return; }
+    if (node.nodeType !== 1) return;
+    const tag = node.tagName;
+    if (SKIP_TAGS.has(tag)) return;
+    const kids = Array.from(node.childNodes);
+    for (const k of kids) annotate(k);
+  }
+
+  function startObserver() {
+    if (!('MutationObserver' in window)) return;
+    observer = new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === 'childList') {
+          for (const n of m.addedNodes) annotate(n);
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function run() {
+    if (!window.pinyinPro || !window.pinyinPro.pinyin) {
+      setTimeout(run, 80);
+      return;
+    }
+    injectStyles();
+    annotate(document.body);
+    startObserver();
+  }
+
+  function bootstrap() {
+    if (window.pinyinPro) { run(); return; }
+    const tryLoad = (urls) => {
+      if (!urls.length) { console.warn('[pinyin] CDN 加载失败，未能注音'); return; }
+      const s = document.createElement('script');
+      s.src = urls[0];
+      s.onload = run;
+      s.onerror = () => tryLoad(urls.slice(1));
+      (document.head || document.documentElement).appendChild(s);
+    };
+    tryLoad([
+      'https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js',
+      'https://unpkg.com/pinyin-pro@3.26.0/dist/index.js',
+      'https://fastly.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js'
+    ]);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrap);
+  } else {
+    bootstrap();
+  }
+})();
+
+</script>
+</body>
+</html>

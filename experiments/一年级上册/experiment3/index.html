@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>机器识别训练营</title>
+  <style>
+    :root {
+      --ink: #173045;
+      --muted: #607487;
+      --panel: rgba(255, 255, 255, 0.92);
+      --line: rgba(23, 48, 69, 0.12);
+      --accent: #4d79ff;
+      --accent-2: #2aa889;
+      --accent-3: #ff934f;
+      --shadow: 0 24px 60px rgba(25, 40, 68, 0.14);
+      --radius: 26px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 12%, rgba(77, 121, 255, 0.18), transparent 26%),
+        radial-gradient(circle at 92% 10%, rgba(42, 168, 137, 0.18), transparent 22%),
+        linear-gradient(180deg, #f5fbff 0%, #eef6ff 40%, #f7fbf3 100%);
+    }
+
+    .page {
+      width: min(1340px, calc(100vw - 24px));
+      margin: 16px auto 24px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero,
+    .shell,
+    .footer-card {
+      background: var(--panel);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      padding: 20px 24px;
+      display: grid;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -48px;
+      top: -54px;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(77, 121, 255, 0.22), transparent 70%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(77, 121, 255, 0.12);
+      color: #335bd6;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 980px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .hero-meta span {
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: rgba(23, 48, 69, 0.05);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .shell {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .guide-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(77, 121, 255, 0.1), rgba(255, 147, 79, 0.08));
+      border: 1px solid rgba(77, 121, 255, 0.12);
+    }
+
+    .guide-button {
+      appearance: none;
+      border: 0;
+      border-radius: 18px;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, var(--accent), #8bb0ff);
+      color: white;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 24px rgba(77, 121, 255, 0.24);
+    }
+
+    .guide-button:hover,
+    .guide-button:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .guide-text {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .progress-wrap {
+      display: grid;
+      gap: 10px;
+      flex: 1;
+      min-width: min(680px, 100%);
+    }
+
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .progress-bar {
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(23, 48, 69, 0.08);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 33.33%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), #8bb0ff);
+      transition: width 220ms ease;
+    }
+
+    .score-card {
+      padding: 12px 16px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(77, 121, 255, 0.12), rgba(255, 147, 79, 0.12));
+      font-weight: 700;
+    }
+
+    .mission-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .mission-tab {
+      appearance: none;
+      border: 0;
+      border-radius: 18px;
+      padding: 12px 16px;
+      background: rgba(23, 48, 69, 0.06);
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+    }
+
+    .mission-tab:hover,
+    .mission-tab:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .mission-tab.active {
+      background: linear-gradient(135deg, var(--accent), #7da3ff);
+      color: white;
+    }
+
+    .mission-board {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .panel-title h2,
+    .panel-title h3 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 147, 79, 0.12);
+      color: #b25b1f;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .copy {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 15px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mini-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(23, 48, 69, 0.05);
+      display: grid;
+      gap: 8px;
+    }
+
+    .mini-card strong {
+      font-size: 16px;
+    }
+
+    .mini-card span {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.55;
+    }
+
+    .feedback {
+      padding: 16px 18px;
+      border-radius: 18px;
+      display: none;
+      line-height: 1.7;
+      font-size: 16px;
+      border: 1px solid var(--line);
+    }
+
+    .feedback.show {
+      display: block;
+    }
+
+    .feedback.success {
+      background: rgba(42, 168, 137, 0.08);
+      border-color: rgba(42, 168, 137, 0.18);
+      color: #116349;
+    }
+
+    .feedback.error {
+      background: rgba(255, 147, 79, 0.08);
+      border-color: rgba(255, 147, 79, 0.18);
+      color: #9b4a17;
+    }
+
+    .action-row,
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 16px;
+      padding: 13px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+    }
+
+    .btn:hover,
+    .btn:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      color: white;
+      background: linear-gradient(135deg, var(--accent), #7da3ff);
+      box-shadow: 0 12px 24px rgba(77, 121, 255, 0.22);
+    }
+
+    .btn-accent {
+      color: white;
+      background: linear-gradient(135deg, var(--accent-2), #77d3b1);
+      box-shadow: 0 12px 24px rgba(42, 168, 137, 0.2);
+    }
+
+    .btn-secondary {
+      color: var(--ink);
+      background: rgba(23, 48, 69, 0.08);
+    }
+
+    .btn[disabled] {
+      cursor: not-allowed;
+      opacity: 0.52;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .stage {
+      border-radius: 24px;
+      border: 1px solid rgba(23, 48, 69, 0.08);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.36), transparent 30%),
+        linear-gradient(180deg, #f7fbff, #f0f7ff);
+      min-height: 500px;
+      padding: 22px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .stage-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .stage-head h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .round-pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(77, 121, 255, 0.1);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .machine-screen {
+      position: relative;
+      min-height: 260px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, #102845, #0f2138 70%, #0c1a2d 100%);
+      overflow: hidden;
+      padding: 20px;
+      display: grid;
+      place-items: center;
+    }
+
+    .machine-screen::before {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      pointer-events: none;
+    }
+
+    .screen-tag {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      padding: 8px 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.86);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .scan-line {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent, rgba(77, 121, 255, 0.95), transparent);
+      box-shadow: 0 0 20px rgba(77, 121, 255, 0.45);
+      top: 58px;
+      animation: scanMove 2.6s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes scanMove {
+      0% { top: 58px; opacity: 0; }
+      10% { opacity: 1; }
+      50% { top: 220px; opacity: 0.95; }
+      100% { top: 58px; opacity: 0; }
+    }
+
+    canvas.object-canvas {
+      width: min(100%, 280px);
+      height: auto;
+      aspect-ratio: 1;
+    }
+
+    .tag-row {
+      display: grid;
+      gap: 12px;
+    }
+
+    .tag-group {
+      display: grid;
+      gap: 10px;
+    }
+
+    .tag-group strong {
+      font-size: 17px;
+    }
+
+    .tag-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tag-btn {
+      appearance: none;
+      border: 2px solid rgba(23, 48, 69, 0.1);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.96);
+      color: var(--ink);
+      padding: 12px 16px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .tag-btn small {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .tag-btn:hover,
+    .tag-btn:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(77, 121, 255, 0.34);
+      box-shadow: 0 10px 18px rgba(23, 48, 69, 0.08);
+    }
+
+    .tag-btn.selected {
+      border-color: rgba(77, 121, 255, 0.58);
+      background: rgba(77, 121, 255, 0.1);
+      color: #335bd6;
+    }
+
+    .feature-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .feature-chip {
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      background: rgba(42, 168, 137, 0.1);
+      color: #1c7c61;
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .choice-btn {
+      appearance: none;
+      border: 2px solid rgba(23, 48, 69, 0.1);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--ink);
+      padding: 18px;
+      font-size: 20px;
+      font-weight: 800;
+      cursor: pointer;
+      display: grid;
+      gap: 8px;
+      text-align: left;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .choice-btn:hover,
+    .choice-btn:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(255, 147, 79, 0.36);
+      box-shadow: 0 12px 20px rgba(23, 48, 69, 0.08);
+    }
+
+    .choice-btn.selected {
+      border-color: rgba(255, 147, 79, 0.58);
+      background: rgba(255, 147, 79, 0.08);
+    }
+
+    .choice-btn span {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.55;
+      font-weight: 600;
+    }
+
+    .choice-btn small {
+      display: block;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .audio-console {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, #162848, #0e1e34);
+      color: white;
+    }
+
+    .console-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .console-head strong {
+      font-size: 18px;
+    }
+
+    .wave-grid {
+      display: grid;
+      grid-template-columns: repeat(20, 1fr);
+      gap: 6px;
+      align-items: end;
+      min-height: 110px;
+      padding: 12px 0;
+    }
+
+    .wave-bar {
+      border-radius: 999px 999px 4px 4px;
+      background: linear-gradient(180deg, #80d1ff, #5d8cff);
+      opacity: 0.86;
+      transition: height 220ms ease, opacity 220ms ease;
+      height: 22px;
+    }
+
+    .wave-bar.playing {
+      animation: pulseBar 0.9s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulseBar {
+      from { opacity: 0.54; }
+      to { opacity: 1; }
+    }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .report-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(23, 48, 69, 0.05);
+      display: grid;
+      gap: 8px;
+    }
+
+    .report-card strong {
+      font-size: 15px;
+    }
+
+    .report-card span {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .footer-card {
+      padding: 16px 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .footer-card h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .footer-card ul {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .footer-card li {
+      color: var(--muted);
+      line-height: 1.72;
+    }
+
+    .footer-card {
+      display: none;
+    }
+
+    .summary-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(18, 30, 46, 0.58);
+      display: none;
+      place-items: center;
+      padding: 20px;
+      z-index: 20;
+    }
+
+    .summary-modal.show {
+      display: grid;
+    }
+
+    .summary-card {
+      width: min(760px, 100%);
+      background: #fffef9;
+      border-radius: 28px;
+      box-shadow: 0 28px 64px rgba(18, 30, 46, 0.28);
+      padding: 28px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .summary-card h2,
+    .summary-card p {
+      margin: 0;
+    }
+
+    .summary-card p {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .badge-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+
+    .badge {
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(23, 48, 69, 0.05);
+      display: grid;
+      gap: 8px;
+    }
+
+    .badge strong {
+      font-size: 28px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 980px) {
+      .mission-board {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .page {
+        width: min(100vw - 16px, 100%);
+        margin: 12px auto 22px;
+      }
+
+      .hero,
+      .shell,
+      .footer-card,
+      .summary-card {
+        padding: 18px;
+      }
+
+      .choice-grid,
+      .info-grid,
+      .report-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <span class="eyebrow">一年级上册 · 第三课 · 线上实验 03</span>
+      <h1>机器识别训练营</h1>
+      <p>训练机器先看特征、再听特征，最后把线索拼起来判断物体。</p>
+      <div class="hero-meta">
+        <span>看见什么</span>
+        <span>听见什么</span>
+        <span>组合判断</span>
+      </div>
+    </section>
+
+    <section class="shell">
+      <div class="topbar">
+        <div class="progress-wrap">
+          <div class="progress-head">
+            <span id="progressText">当前任务：1 / 3</span>
+            <span id="tipText">先选特征，再提交给机器</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+        <div class="score-card" id="scoreCard">当前得分：0 / 100</div>
+      </div>
+
+      <div class="guide-bar">
+        <button class="guide-button" id="tutorialButton" type="button">🔊 听老师讲规则</button>
+        <span class="guide-text" id="tutorialText">先听这一关怎么玩，再开始操作。</span>
+      </div>
+
+      <div class="mission-tabs">
+        <button class="mission-tab active" id="tabVisual" type="button">看见什么</button>
+        <button class="mission-tab" id="tabAudio" type="button">听见什么</button>
+        <button class="mission-tab" id="tabFusion" type="button">组合判断</button>
+      </div>
+
+      <div class="mission-board">
+        <div class="panel">
+          <div class="panel-title">
+            <h2 id="missionTitle">任务 1：机器看到什么</h2>
+            <span class="chip" id="missionChip">颜色 + 形状</span>
+          </div>
+          <p class="copy" id="missionDescription">
+            机器先看特征，再判断物体。
+          </p>
+          <div class="info-grid" id="infoGrid"></div>
+          <div class="feedback" id="feedbackBox"></div>
+          <div class="action-row">
+            <button class="btn btn-primary" id="submitButton" type="button" disabled>提交本轮答案</button>
+            <button class="btn btn-accent hidden" id="nextMissionButton" type="button">下一任务</button>
+          </div>
+        </div>
+
+        <div class="panel stage">
+          <div class="stage-head">
+            <h3 id="stageTitle">视觉标注台</h3>
+            <span class="round-pill" id="roundPill">第 1 轮 / 共 3 轮</span>
+          </div>
+
+          <div id="visualMission">
+            <div class="machine-screen">
+              <span class="screen-tag">视觉传感器输入</span>
+              <div class="scan-line"></div>
+              <canvas class="object-canvas" id="visualCanvas" width="280" height="280"></canvas>
+            </div>
+            <div class="tag-row">
+              <div class="tag-group">
+                <strong>请选择机器看到的主要颜色</strong>
+                <div class="tag-options" id="colorOptions"></div>
+              </div>
+              <div class="tag-group">
+                <strong>请选择机器看到的主要形状</strong>
+                <div class="tag-options" id="shapeOptions"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="audioMission" class="hidden">
+            <div class="audio-console">
+              <div class="console-head">
+                <strong>声音识别台</strong>
+                <span class="round-pill" id="audioRoundPill">第 1 轮 / 共 3 轮</span>
+              </div>
+              <div class="wave-grid" id="waveGrid"></div>
+              <div class="cta-row">
+                <button class="btn btn-accent" id="playAudioButton" type="button">播放声音线索</button>
+              </div>
+            </div>
+            <div class="choice-grid" id="audioChoices"></div>
+          </div>
+
+          <div id="fusionMission" class="hidden">
+            <div class="report-grid">
+              <div class="report-card">
+                <strong>颜色识别结果</strong>
+                <span id="fusionColorText">黄色</span>
+              </div>
+              <div class="report-card">
+                <strong>形状识别结果</strong>
+                <span id="fusionShapeText">弯弯的长条</span>
+              </div>
+              <div class="report-card">
+                <strong>用途线索</strong>
+                <span id="fusionUseText">可以吃</span>
+              </div>
+            </div>
+            <div class="feature-strip" id="fusionFeatureStrip"></div>
+            <div class="choice-grid" id="fusionChoices"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="footer-card">
+      <h3>观察点</h3>
+      <ul>
+        <li>能不能说出机器先认特征，再认物体。</li>
+        <li>能不能把颜色、形状、声音线索合起来判断。</li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="summary-modal" id="summaryModal" aria-hidden="true">
+    <div class="summary-card">
+      <span class="eyebrow">实验完成</span>
+      <h2>你完成了“机器识别训练营”</h2>
+      <p id="summaryText"></p>
+      <div class="badge-grid">
+        <div class="badge">
+          <span>总得分</span>
+          <strong id="finalScore">0</strong>
+        </div>
+        <div class="badge">
+          <span>视觉标注</span>
+          <strong id="finalVisual">0/3</strong>
+        </div>
+        <div class="badge">
+          <span>声音识别</span>
+          <strong id="finalAudio">0/3</strong>
+        </div>
+        <div class="badge">
+          <span>组合判断</span>
+          <strong id="finalFusion">0/3</strong>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary" id="restartButton" type="button">重新开始</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const visualRounds = [
+      {
+        id: "apple",
+        objectName: "苹果",
+        color: "红色",
+        shape: "圆圆的",
+        draw: "apple"
+      },
+      {
+        id: "book",
+        objectName: "图书",
+        color: "蓝色",
+        shape: "长方形",
+        draw: "book"
+      },
+      {
+        id: "pine-tree",
+        objectName: "小松树",
+        color: "绿色",
+        shape: "尖尖的",
+        draw: "pine-tree"
+      }
+    ];
+
+    const audioRounds = [
+      {
+        id: "scissors",
+        answer: "剪刀",
+        label: "提示：像两片薄薄的东西快速合上，声音短而脆。",
+        options: [
+          { label: "剪刀", hint: "咔嚓一下，像在剪纸" },
+          { label: "拉链", hint: "更像连续拉开的摩擦声" },
+          { label: "小鼓", hint: "更低沉，不会这么脆" },
+          { label: "敲门", hint: "更像木头被敲击" }
+        ],
+        soundType: "scissors"
+      },
+      {
+        id: "drum",
+        answer: "小鼓",
+        label: "提示：低低的咚咚声，节奏很明显，像在打拍子。",
+        options: [
+          { label: "小鼓", hint: "咚咚两下，节奏感最强" },
+          { label: "皮球", hint: "也会弹跳，但尾音更轻更散" },
+          { label: "闹钟", hint: "会更清脆，不会这么低沉" },
+          { label: "图书", hint: "翻页声会更沙沙的" }
+        ],
+        soundType: "drum"
+      },
+      {
+        id: "whistle",
+        answer: "吹口哨",
+        label: "提示：细细长长的声音，音高会轻轻滑动，像人在用嘴巴吹气。",
+        options: [
+          { label: "吹口哨", hint: "细长、连续，像人在轻轻吹气" },
+          { label: "小鸟", hint: "更像一下一下的叫声，不会这么平滑" },
+          { label: "门铃", hint: "更像固定铃声，不像嘴巴吹出来的" },
+          { label: "小鼓", hint: "更低沉，是敲击声不是气流声" }
+        ],
+        soundType: "whistle"
+      }
+    ];
+
+    const fusionRounds = [
+      {
+        id: "banana",
+        colorText: "黄色",
+        shapeText: "弯弯的长条",
+        useText: "可以吃",
+        features: ["黄色", "弯弯的", "长条", "水果"],
+        answer: "香蕉",
+        choices: [
+          { label: "香蕉", hint: "黄色、弯弯、是一种水果" },
+          { label: "月亮", hint: "弯弯，但不是食物" },
+          { label: "铅笔", hint: "长条，但一般不是黄色弯弯" },
+          { label: "杯子", hint: "能装水" }
+        ]
+      },
+      {
+        id: "umbrella",
+        colorText: "红色",
+        shapeText: "半圆形 + 长柄",
+        useText: "下雨天会用到",
+        features: ["红色", "半圆形", "有长柄", "挡雨"],
+        answer: "雨伞",
+        choices: [
+          { label: "气球", hint: "也有圆形，但没有长柄" },
+          { label: "雨伞", hint: "下雨天会张开" },
+          { label: "苹果", hint: "红色，但没有长柄" },
+          { label: "帽子", hint: "戴在头上" }
+        ]
+      },
+      {
+        id: "bicycle",
+        colorText: "蓝色",
+        shapeText: "两个圆轮 + 细长车架",
+        useText: "可以骑着向前走",
+        features: ["蓝色", "两个圆轮", "细车架", "能骑行"],
+        answer: "自行车",
+        choices: [
+          { label: "眼镜", hint: "也有两个圆圈，但不能骑" },
+          { label: "滑板车", hint: "也能滑行，但结构不一样" },
+          { label: "自行车", hint: "两个轮子，可以骑行" },
+          { label: "火车", hint: "能行驶，但更长更大" }
+        ]
+      }
+    ];
+
+    const colorChoices = ["红色", "黄色", "蓝色", "绿色"];
+    const shapeChoices = ["圆圆的", "长方形", "弯弯的", "尖尖的"];
+
+    const progressText = document.getElementById("progressText");
+    const tipText = document.getElementById("tipText");
+    const progressFill = document.getElementById("progressFill");
+    const scoreCard = document.getElementById("scoreCard");
+    const missionTitle = document.getElementById("missionTitle");
+    const missionChip = document.getElementById("missionChip");
+    const missionDescription = document.getElementById("missionDescription");
+    const infoGrid = document.getElementById("infoGrid");
+    const feedbackBox = document.getElementById("feedbackBox");
+    const submitButton = document.getElementById("submitButton");
+    const nextMissionButton = document.getElementById("nextMissionButton");
+    const tabVisual = document.getElementById("tabVisual");
+    const tabAudio = document.getElementById("tabAudio");
+    const tabFusion = document.getElementById("tabFusion");
+    const tutorialButton = document.getElementById("tutorialButton");
+    const tutorialText = document.getElementById("tutorialText");
+    const stageTitle = document.getElementById("stageTitle");
+    const roundPill = document.getElementById("roundPill");
+    const visualMission = document.getElementById("visualMission");
+    const audioMission = document.getElementById("audioMission");
+    const fusionMission = document.getElementById("fusionMission");
+    const visualCanvas = document.getElementById("visualCanvas");
+    const visualCtx = visualCanvas.getContext("2d");
+    const colorOptions = document.getElementById("colorOptions");
+    const shapeOptions = document.getElementById("shapeOptions");
+    const waveGrid = document.getElementById("waveGrid");
+    const playAudioButton = document.getElementById("playAudioButton");
+    const audioRoundPill = document.getElementById("audioRoundPill");
+    const audioChoices = document.getElementById("audioChoices");
+    const fusionColorText = document.getElementById("fusionColorText");
+    const fusionShapeText = document.getElementById("fusionShapeText");
+    const fusionUseText = document.getElementById("fusionUseText");
+    const fusionFeatureStrip = document.getElementById("fusionFeatureStrip");
+    const fusionChoices = document.getElementById("fusionChoices");
+    const summaryModal = document.getElementById("summaryModal");
+    const summaryText = document.getElementById("summaryText");
+    const finalScore = document.getElementById("finalScore");
+    const finalVisual = document.getElementById("finalVisual");
+    const finalAudio = document.getElementById("finalAudio");
+    const finalFusion = document.getElementById("finalFusion");
+    const restartButton = document.getElementById("restartButton");
+
+    let audioContext;
+    let currentMission = 0;
+    let score = 0;
+
+    function pickTutorialVoice(synth) {
+      const voices = synth.getVoices ? synth.getVoices() : [];
+      const preferredNames = [
+        "Xiaoxiao",
+        "Xiaoyi",
+        "Yunxi",
+        "Yaoyao",
+        "Meijia",
+        "Sin-ji",
+        "Tingting"
+      ];
+      return (
+        voices.find((voice) => preferredNames.some((name) => voice.name.includes(name))) ||
+        voices.find((voice) => voice.lang && voice.lang.toLowerCase().includes("zh")) ||
+        null
+      );
+    }
+
+    function getLabelPinyin(label) {
+      const map = {
+        "红色": "hóng sè",
+        "黄色": "huáng sè",
+        "蓝色": "lán sè",
+        "绿色": "lǜ sè",
+        "圆圆的": "yuán yuán de",
+        "长方形": "cháng fāng xíng",
+        "弯弯的": "wān wān de",
+        "尖尖的": "jiān jiān de",
+        "月亮": "yuè liàng",
+        "铅笔": "qiān bǐ",
+        "杯子": "bēi zi",
+        "气球": "qì qiú",
+        "剪刀": "jiǎn dāo",
+        "拉链": "lā liàn",
+        "小鼓": "xiǎo gǔ",
+        "敲门": "qiāo mén",
+        "皮球": "pí qiú",
+        "吹口哨": "chuī kǒu shào",
+        "小鸟": "xiǎo niǎo",
+        "门铃": "mén líng",
+        "香蕉": "xiāng jiāo",
+        "电话": "diàn huà",
+        "雨伞": "yǔ sǎn",
+        "苹果": "píng guǒ",
+        "眼镜": "yǎn jìng",
+        "滑板车": "huá bǎn chē",
+        "自行车": "zì xíng chē",
+        "火车": "huǒ chē",
+        "帽子": "mào zi",
+        "图书": "tú shū",
+        "平板": "píng bǎn",
+        "窗户": "chuāng hu",
+        "盒子": "hé zi",
+        "闹钟": "nào zhōng"
+      };
+      return map[label] || "";
+    }
+
+    function speakTutorial() {
+      const synth = window.speechSynthesis;
+      const scripts = [
+        "这一关帮机器看图。先选主要颜色，再选主要形状，然后提交答案。",
+        "这一关帮机器听声音。先点播放声音，再选一个最合适的标签，然后提交。",
+        "这一关把颜色、形状和用途线索拼起来，再选出最可能的物体。"
+      ];
+      tutorialText.textContent = "正在播报这一关的玩法。";
+
+      if (!synth) {
+        tutorialText.textContent = "当前浏览器不支持语音播报。";
+        return;
+      }
+
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(scripts[currentMission]);
+      utterance.lang = "zh-CN";
+      const preferredVoice = pickTutorialVoice(synth);
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+      utterance.rate = 0.72;
+      utterance.pitch = 1.03;
+      utterance.volume = 1;
+      utterance.onend = () => {
+        tutorialText.textContent = "规则播报完成，可以开始操作。";
+      };
+      utterance.onerror = () => {
+        tutorialText.textContent = "语音播报没有成功，请再点一次。";
+      };
+      synth.speak(utterance);
+    }
+
+    const state = {
+      visual: {
+        round: 0,
+        selectedColor: "",
+        selectedShape: "",
+        correct: 0,
+        completed: false
+      },
+      audio: {
+        round: 0,
+        selected: "",
+        played: false,
+        correct: 0,
+        completed: false
+      },
+      fusion: {
+        round: 0,
+        selected: "",
+        correct: 0,
+        completed: false
+      }
+    };
+
+    const visualRoundScores = [10, 10, 10];
+    const audioRoundScores = [10, 10, 10];
+    const fusionRoundScores = [13, 13, 14];
+
+    function renderInfoCards(cards) {
+      infoGrid.innerHTML = cards.map((card) => `
+        <div class="mini-card">
+          <strong>${card.title}</strong>
+          <span>${card.body}</span>
+        </div>
+      `).join("");
+    }
+
+    function setFeedback(type, html) {
+      feedbackBox.className = `feedback show ${type}`;
+      feedbackBox.innerHTML = html;
+    }
+
+    function clearFeedback() {
+      feedbackBox.className = "feedback";
+      feedbackBox.innerHTML = "";
+    }
+
+    function updateScore() {
+      scoreCard.textContent = `当前得分：${score} / 100`;
+    }
+
+    function updateProgress() {
+      progressText.textContent = `当前任务：${currentMission + 1} / 3`;
+      progressFill.style.width = `${(currentMission + 1) / 3 * 100}%`;
+    }
+
+    function renderTabs() {
+      [tabVisual, tabAudio, tabFusion].forEach((tab, index) => {
+        tab.classList.toggle("active", currentMission === index);
+      });
+    }
+
+    function drawObject(drawType) {
+      visualCtx.clearRect(0, 0, visualCanvas.width, visualCanvas.height);
+      visualCtx.fillStyle = "rgba(255,255,255,0.04)";
+      visualCtx.fillRect(0, 0, visualCanvas.width, visualCanvas.height);
+      visualCtx.save();
+      visualCtx.translate(140, 145);
+
+      if (drawType === "apple") {
+        visualCtx.fillStyle = "#ef4b4b";
+        visualCtx.beginPath();
+        visualCtx.arc(0, 8, 70, 0, Math.PI * 2);
+        visualCtx.fill();
+        visualCtx.fillStyle = "#ef4b4b";
+        visualCtx.beginPath();
+        visualCtx.arc(-16, 0, 54, 0, Math.PI * 2);
+        visualCtx.arc(18, 0, 52, 0, Math.PI * 2);
+        visualCtx.fill();
+        visualCtx.fillStyle = "#69b969";
+        visualCtx.beginPath();
+        visualCtx.ellipse(18, -70, 28, 14, -0.4, 0, Math.PI * 2);
+        visualCtx.fill();
+        visualCtx.strokeStyle = "#86603d";
+        visualCtx.lineWidth = 8;
+        visualCtx.beginPath();
+        visualCtx.moveTo(0, -56);
+        visualCtx.quadraticCurveTo(-6, -82, 10, -98);
+        visualCtx.stroke();
+      }
+
+      if (drawType === "book") {
+        visualCtx.fillStyle = "#4d79ff";
+        visualCtx.fillRect(-92, -78, 184, 156);
+        visualCtx.fillStyle = "#f0f4ff";
+        visualCtx.fillRect(-8, -78, 16, 156);
+        visualCtx.fillStyle = "#ffffff";
+        visualCtx.fillRect(-92, -78, 10, 156);
+        visualCtx.fillStyle = "#d7e2ff";
+        visualCtx.fillRect(-70, -52, 46, 94);
+        visualCtx.fillRect(28, -52, 38, 94);
+      }
+
+      if (drawType === "pine-tree") {
+        visualCtx.fillStyle = "#4aa15c";
+        visualCtx.beginPath();
+        visualCtx.moveTo(0, -108);
+        visualCtx.lineTo(82, -18);
+        visualCtx.lineTo(42, -18);
+        visualCtx.lineTo(98, 48);
+        visualCtx.lineTo(56, 48);
+        visualCtx.lineTo(116, 122);
+        visualCtx.lineTo(-116, 122);
+        visualCtx.lineTo(-56, 48);
+        visualCtx.lineTo(-98, 48);
+        visualCtx.lineTo(-42, -18);
+        visualCtx.lineTo(-82, -18);
+        visualCtx.closePath();
+        visualCtx.fill();
+
+        visualCtx.fillStyle = "#7c5635";
+        visualCtx.fillRect(-18, 122, 36, 58);
+
+        visualCtx.strokeStyle = "#63b878";
+        visualCtx.lineWidth = 5;
+        visualCtx.beginPath();
+        visualCtx.moveTo(0, -86);
+        visualCtx.lineTo(-30, -24);
+        visualCtx.moveTo(0, -52);
+        visualCtx.lineTo(34, 14);
+        visualCtx.moveTo(-8, 6);
+        visualCtx.lineTo(-40, 74);
+        visualCtx.stroke();
+      }
+
+      visualCtx.restore();
+    }
+
+    function createTagButtons(container, options, selected, onClick) {
+      container.innerHTML = "";
+      options.forEach((option) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "tag-btn";
+        if (option === selected) {
+          button.classList.add("selected");
+        }
+        const pinyin = getLabelPinyin(option);
+        button.innerHTML = pinyin ? `<span>${option}</span><small>${pinyin}</small>` : `<span>${option}</span>`;
+        button.addEventListener("click", () => onClick(option));
+        container.appendChild(button);
+      });
+    }
+
+    function renderVisualMission() {
+      const round = visualRounds[state.visual.round];
+      stageTitle.textContent = "视觉标注台";
+      roundPill.textContent = `第 ${state.visual.round + 1} 轮 / 共 ${visualRounds.length} 轮`;
+      drawObject(round.draw);
+      createTagButtons(colorOptions, colorChoices, state.visual.selectedColor, (option) => {
+        state.visual.selectedColor = option;
+        renderVisualMission();
+      });
+      createTagButtons(shapeOptions, shapeChoices, state.visual.selectedShape, (option) => {
+        state.visual.selectedShape = option;
+        renderVisualMission();
+      });
+      submitButton.disabled = !(state.visual.selectedColor && state.visual.selectedShape);
+    }
+
+    function initWaveBars() {
+      waveGrid.innerHTML = "";
+      for (let i = 0; i < 20; i += 1) {
+        const bar = document.createElement("div");
+        bar.className = "wave-bar";
+        waveGrid.appendChild(bar);
+      }
+    }
+
+    function animateWave(pattern) {
+      const bars = [...waveGrid.children];
+      bars.forEach((bar, index) => {
+        bar.classList.add("playing");
+        bar.style.height = `${pattern[index % pattern.length]}px`;
+      });
+      setTimeout(() => {
+        bars.forEach((bar, index) => {
+          bar.classList.remove("playing");
+          bar.style.height = `${22 + (index % 5) * 6}px`;
+        });
+      }, 1200);
+    }
+
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === "suspended") {
+        return audioContext.resume();
+      }
+      return Promise.resolve();
+    }
+
+    function createNoiseBuffer(durationSeconds) {
+      const length = Math.floor(audioContext.sampleRate * durationSeconds);
+      const buffer = audioContext.createBuffer(1, length, audioContext.sampleRate);
+      const data = buffer.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < length; i += 1) {
+        const white = Math.random() * 2 - 1;
+        last = 0.82 * last + 0.18 * white;
+        data[i] = last;
+      }
+      return buffer;
+    }
+
+    function playNoiseBurst(startTime, duration, options = {}) {
+      const source = audioContext.createBufferSource();
+      source.buffer = createNoiseBuffer(duration + 0.08);
+
+      const filter = audioContext.createBiquadFilter();
+      filter.type = options.filterType || "bandpass";
+      filter.frequency.setValueAtTime(options.frequency || 1000, startTime);
+      filter.Q.value = options.q || 0.9;
+
+      const gain = audioContext.createGain();
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.linearRampToValueAtTime(options.gain || 0.06, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioContext.destination);
+      source.start(startTime);
+      source.stop(startTime + duration + 0.05);
+    }
+
+    function playBell(startTime) {
+      [1, 2.1, 2.9].forEach((multiple, index) => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(860 * multiple, startTime);
+        gain.gain.setValueAtTime(0.0001, startTime);
+        gain.gain.linearRampToValueAtTime(0.075 / (index + 1), startTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.48 + index * 0.08);
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start(startTime);
+        osc.stop(startTime + 0.52 + index * 0.08);
+      });
+    }
+
+    function playMeow(startTime) {
+      const osc = audioContext.createOscillator();
+      const filter = audioContext.createBiquadFilter();
+      const gain = audioContext.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(760, startTime);
+      osc.frequency.exponentialRampToValueAtTime(620, startTime + 0.16);
+      osc.frequency.exponentialRampToValueAtTime(460, startTime + 0.42);
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(2200, startTime);
+      filter.frequency.exponentialRampToValueAtTime(900, startTime + 0.44);
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.linearRampToValueAtTime(0.075, startTime + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.45);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.start(startTime);
+      osc.stop(startTime + 0.46);
+    }
+
+    function playSoundEffect(soundType) {
+      return initAudio().then(() => {
+        const now = audioContext.currentTime + 0.03;
+        if (soundType === "scissors") {
+          [0, 0.22].forEach((offset) => {
+            playNoiseBurst(now + offset, 0.08, {
+              frequency: 2100,
+              q: 1.4,
+              gain: 0.038,
+              filterType: "bandpass"
+            });
+          });
+          animateWave([18, 24, 38, 86, 52, 22, 18, 24, 42, 82]);
+          return;
+        }
+        if (soundType === "drum") {
+          [0, 0.34].forEach((offset) => {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(180, now + offset);
+            osc.frequency.exponentialRampToValueAtTime(90, now + offset + 0.18);
+            gain.gain.setValueAtTime(0.0001, now + offset);
+            gain.gain.linearRampToValueAtTime(0.085, now + offset + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.28);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start(now + offset);
+            osc.stop(now + offset + 0.3);
+          });
+          animateWave([22, 30, 44, 72, 96, 88, 58, 28, 18, 14]);
+          return;
+        }
+        if (soundType === "whistle") {
+          const osc = audioContext.createOscillator();
+          const filter = audioContext.createBiquadFilter();
+          const gain = audioContext.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(1480, now);
+          osc.frequency.linearRampToValueAtTime(1660, now + 0.24);
+          osc.frequency.linearRampToValueAtTime(1560, now + 0.46);
+          osc.frequency.linearRampToValueAtTime(1740, now + 0.72);
+          filter.type = "bandpass";
+          filter.frequency.setValueAtTime(1700, now);
+          filter.Q.value = 8;
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.linearRampToValueAtTime(0.055, now + 0.06);
+          gain.gain.linearRampToValueAtTime(0.042, now + 0.36);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.82);
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(audioContext.destination);
+          osc.start(now);
+          osc.stop(now + 0.84);
+          animateWave([14, 18, 24, 36, 48, 58, 64, 62, 54, 42, 34, 40, 52, 60, 56, 44]);
+          return;
+        }
+        if (soundType === "clock") {
+          playBell(now);
+          playBell(now + 0.34);
+          animateWave([24, 30, 36, 42, 74, 88, 96, 84, 54, 32]);
+          return;
+        }
+        if (soundType === "book") {
+          [0, 0.18, 0.4].forEach((offset, index) => {
+            playNoiseBurst(now + offset, 0.14 + index * 0.02, {
+              frequency: 640 + index * 120,
+              q: 0.62,
+              gain: 0.03,
+              filterType: "bandpass"
+            });
+          });
+          animateWave([16, 24, 28, 34, 42, 40, 30, 22, 18, 16]);
+          return;
+        }
+        if (soundType === "cat") {
+          playMeow(now);
+          playMeow(now + 0.58);
+          animateWave([18, 22, 32, 48, 72, 84, 76, 54, 30, 20]);
+        }
+      });
+    }
+
+    function renderAudioChoices() {
+      const round = audioRounds[state.audio.round];
+      audioChoices.innerHTML = "";
+      round.options.forEach((option) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "choice-btn";
+        if (state.audio.selected === option.label) {
+          button.classList.add("selected");
+        }
+        const pinyin = getLabelPinyin(option.label);
+        button.innerHTML = `<strong>${option.label}</strong>${pinyin ? `<small>${pinyin}</small>` : ""}<span>${option.hint}</span>`;
+        button.addEventListener("click", () => {
+          state.audio.selected = option.label;
+          renderAudioChoices();
+          submitButton.disabled = !state.audio.selected || !state.audio.played;
+        });
+        audioChoices.appendChild(button);
+      });
+      submitButton.disabled = !state.audio.selected || !state.audio.played;
+    }
+
+    function renderFusionChoices() {
+      const round = fusionRounds[state.fusion.round];
+      fusionColorText.textContent = round.colorText;
+      fusionShapeText.textContent = round.shapeText;
+      fusionUseText.textContent = round.useText;
+      fusionFeatureStrip.innerHTML = round.features.map((feature) => `<span class="feature-chip">${feature}</span>`).join("");
+      fusionChoices.innerHTML = "";
+      round.choices.forEach((choice) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "choice-btn";
+        if (state.fusion.selected === choice.label) {
+          button.classList.add("selected");
+        }
+        const pinyin = getLabelPinyin(choice.label);
+        button.innerHTML = `<strong>${choice.label}</strong>${pinyin ? `<small>${pinyin}</small>` : ""}<span>${choice.hint}</span>`;
+        button.addEventListener("click", () => {
+          state.fusion.selected = choice.label;
+          renderFusionChoices();
+          submitButton.disabled = !state.fusion.selected;
+        });
+        fusionChoices.appendChild(button);
+      });
+      submitButton.disabled = !state.fusion.selected;
+    }
+
+    function showMission(index) {
+      currentMission = index;
+      renderTabs();
+      updateProgress();
+      clearFeedback();
+      visualMission.classList.toggle("hidden", index !== 0);
+      audioMission.classList.toggle("hidden", index !== 1);
+      fusionMission.classList.toggle("hidden", index !== 2);
+      nextMissionButton.classList.toggle("hidden", true);
+
+      if (index === 0) {
+        missionTitle.textContent = "任务 1：机器看到什么";
+        missionChip.textContent = "颜色 + 形状";
+        missionDescription.textContent = "先选主要颜色，再选主要形状。";
+        tipText.textContent = "先选颜色，再选形状";
+        tutorialText.textContent = "任务 1：先看图，再选颜色和形状。";
+        stageTitle.textContent = "视觉标注台";
+        renderInfoCards([
+          { title: "看什么", body: "找出图里最主要的颜色和形状。" },
+          { title: "怎么做", body: "每轮选 1 个颜色和 1 个形状。" }
+        ]);
+        renderVisualMission();
+      }
+
+      if (index === 1) {
+        missionTitle.textContent = "任务 2：机器听见什么";
+        missionChip.textContent = "声音标签";
+        missionDescription.textContent = "先听声音，再选最合适的标签。";
+        tipText.textContent = "先播放，再选答案";
+        tutorialText.textContent = "任务 2：先听声音，再选一个标签。";
+        stageTitle.textContent = "声音识别台";
+        audioRoundPill.textContent = `第 ${state.audio.round + 1} 轮 / 共 ${audioRounds.length} 轮`;
+        renderInfoCards([
+          { title: "听什么", body: "听出这段声音最像什么。" },
+          { title: "怎么做", body: "先播放，再选一个答案。" }
+        ]);
+        renderAudioChoices();
+      }
+
+      if (index === 2) {
+        missionTitle.textContent = "任务 3：机器怎么组合判断";
+        missionChip.textContent = "特征组合";
+        missionDescription.textContent = "把颜色、形状和用途线索拼起来。";
+        tipText.textContent = "先看线索，再选物体";
+        tutorialText.textContent = "任务 3：把三条线索拼起来，再选物体。";
+        stageTitle.textContent = "组合判断台";
+        roundPill.textContent = `第 ${state.fusion.round + 1} 轮 / 共 ${fusionRounds.length} 轮`;
+        renderInfoCards([
+          { title: "看什么", body: "根据多条线索猜出物体。" },
+          { title: "怎么做", body: "读完线索后，再从下方选择。" }
+        ]);
+        renderFusionChoices();
+      }
+    }
+
+    function handleSubmit() {
+      if (currentMission === 0) {
+        const round = visualRounds[state.visual.round];
+        const correct = state.visual.selectedColor === round.color && state.visual.selectedShape === round.shape;
+        if (correct) {
+          state.visual.correct += 1;
+          score += visualRoundScores[state.visual.round];
+          updateScore();
+          setFeedback("success", `回答正确。机器先看到“${round.color}”和“${round.shape}”，再慢慢学会这是${round.objectName}。`);
+        } else {
+          setFeedback("error", `这轮不对。正确特征是“${round.color} + ${round.shape}”。机器需要先抓住这些基础线索。`);
+        }
+        state.visual.round += 1;
+        state.visual.selectedColor = "";
+        state.visual.selectedShape = "";
+        if (state.visual.round >= visualRounds.length) {
+          state.visual.completed = true;
+          nextMissionButton.classList.remove("hidden");
+          submitButton.disabled = true;
+          roundPill.textContent = "视觉标注完成";
+        } else {
+          renderVisualMission();
+        }
+        return;
+      }
+
+      if (currentMission === 1) {
+        const round = audioRounds[state.audio.round];
+        if (state.audio.selected === round.answer) {
+          state.audio.correct += 1;
+          score += audioRoundScores[state.audio.round];
+          updateScore();
+          setFeedback("success", `回答正确。机器把这段声音识别成“${round.answer}”。`);
+        } else {
+          setFeedback("error", `这轮不对。正确标签是“${round.answer}”。机器听到的是声音特征，不是完整故事。`);
+        }
+        state.audio.round += 1;
+        state.audio.selected = "";
+        state.audio.played = false;
+        if (state.audio.round >= audioRounds.length) {
+          state.audio.completed = true;
+          nextMissionButton.classList.remove("hidden");
+          submitButton.disabled = true;
+          audioRoundPill.textContent = "声音识别完成";
+        } else {
+          audioRoundPill.textContent = `第 ${state.audio.round + 1} 轮 / 共 ${audioRounds.length} 轮`;
+          renderAudioChoices();
+        }
+        return;
+      }
+
+      if (currentMission === 2) {
+        const round = fusionRounds[state.fusion.round];
+        if (state.fusion.selected === round.answer) {
+          state.fusion.correct += 1;
+          score += fusionRoundScores[state.fusion.round];
+          updateScore();
+          setFeedback("success", `回答正确。机器把“${round.colorText}、${round.shapeText}、${round.useText}”这些线索拼起来，判断出它是${round.answer}。`);
+        } else {
+          setFeedback("error", `这轮不对。正确答案是“${round.answer}”。机器依靠的是多个线索的组合。`);
+        }
+        state.fusion.round += 1;
+        state.fusion.selected = "";
+        if (state.fusion.round >= fusionRounds.length) {
+          state.fusion.completed = true;
+          submitButton.disabled = true;
+          nextMissionButton.textContent = "查看结果";
+          nextMissionButton.classList.remove("hidden");
+          roundPill.textContent = "组合判断完成";
+          setFeedback("success", "最后一轮完成。全部 9 轮分值已经累计完成，总分满分为 100 分。");
+        } else {
+          renderFusionChoices();
+          roundPill.textContent = `第 ${state.fusion.round + 1} 轮 / 共 ${fusionRounds.length} 轮`;
+        }
+      }
+    }
+
+    function handleNextMission() {
+      if (currentMission === 0) {
+        showMission(1);
+      } else if (currentMission === 1) {
+        showMission(2);
+      } else {
+        showSummary();
+      }
+    }
+
+    function showSummary() {
+      summaryModal.classList.add("show");
+      summaryModal.setAttribute("aria-hidden", "false");
+      finalScore.textContent = String(score);
+      finalVisual.textContent = `${state.visual.correct}/3`;
+      finalAudio.textContent = `${state.audio.correct}/3`;
+      finalFusion.textContent = `${state.fusion.correct}/3`;
+      summaryText.textContent = score >= 70
+        ? "你已经理解了机器识别世界的基本方式：先看特征、再听特征、最后把线索组合起来做判断。总分按 100 分计算。"
+        : "你已经完成了训练营。下次可以更注意“颜色、形状、声音、用途”这些基础特征，机器识别就会更准确。总分按 100 分计算。";
+    }
+
+    function resetAll() {
+      score = 0;
+      updateScore();
+      Object.assign(state.visual, { round: 0, selectedColor: "", selectedShape: "", correct: 0, completed: false });
+      Object.assign(state.audio, { round: 0, selected: "", played: false, correct: 0, completed: false });
+      Object.assign(state.fusion, { round: 0, selected: "", correct: 0, completed: false });
+      summaryModal.classList.remove("show");
+      summaryModal.setAttribute("aria-hidden", "true");
+      initWaveBars();
+      showMission(0);
+    }
+
+    submitButton.addEventListener("click", handleSubmit);
+    nextMissionButton.addEventListener("click", handleNextMission);
+    playAudioButton.addEventListener("click", () => {
+      const round = audioRounds[state.audio.round];
+      state.audio.played = true;
+      playSoundEffect(round.soundType);
+      submitButton.disabled = !state.audio.selected;
+      setFeedback("success", `声音已播放。现在为机器选择最合适的标签。`);
+    });
+    tutorialButton.addEventListener("click", speakTutorial);
+    tabVisual.addEventListener("click", () => showMission(0));
+    tabAudio.addEventListener("click", () => showMission(1));
+    tabFusion.addEventListener("click", () => showMission(2));
+    restartButton.addEventListener("click", resetAll);
+
+    initWaveBars();
+    updateScore();
+    showMission(0);
+  </script>
+</body>
+</html>

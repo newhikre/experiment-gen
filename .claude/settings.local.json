@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "Bash(LARK_CLI_NO_PROXY=1 lark-cli base --help)",
+      "Bash(LARK_CLI_NO_PROXY=1 lark-cli base +record-search --help)",
+      "Bash(python)"
+    ]
+  }
+}

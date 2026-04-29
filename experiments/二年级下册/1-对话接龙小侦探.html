@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>对话接龙小侦探</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{font-family:"华文圆体","PingFang SC","Microsoft YaHei",system-ui,sans-serif;color:#3d2914}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 8% 12%, #fff7a8 0 80px, transparent 80px),
+      radial-gradient(circle at 92% 8%, #ffd6e7 0 60px, transparent 60px),
+      radial-gradient(ellipse 120px 70px at 18% 20%, #fff 0 70%, transparent 70%),
+      radial-gradient(ellipse 90px 50px at 80% 26%, #fff 0 70%, transparent 70%),
+      linear-gradient(180deg, #ffe8c2 0%, #fff5e0 60%, #ffe6f0 100%);
+    padding:20px 16px 100px;position:relative;overflow-x:hidden;
+  }
+  .deco{font-size:46px;opacity:.7;pointer-events:none;z-index:0;animation:floatA 6s ease-in-out infinite}
+  .deco.d1{top:14%;left:4%;animation-delay:0s}
+  .deco.d2{top:28%;right:5%;animation-delay:1.2s;font-size:40px}
+  .deco.d3{top:54%;left:3%;animation-delay:2.4s}
+  .deco.d4{bottom:18%;right:4%;animation-delay:3.5s;font-size:44px}
+  .deco.d5{bottom:32%;left:6%;animation-delay:1.8s;font-size:46px}
+  @keyframes floatA{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-14px) rotate(4deg)}}
+
+  .wrap{max-width:1100px;margin:0 auto;position:relative;z-index:1}
+
+  /* Hero */
+  .hero{
+    display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;
+    background:linear-gradient(135deg,#fb923c 0%,#f59e0b 60%,#ef4444 100%);
+    color:#fff;border-radius:22px;padding:22px 26px;
+    box-shadow:0 8px 20px rgba(239,68,68,.3);
+    margin-bottom:22px;position:relative;border:2px solid #fff;
+  }
+  .mascot{
+    width:108px;height:108px;background:linear-gradient(180deg,#fde68a,#f59e0b);
+    border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:72px;flex-shrink:0;border:2px solid #fff;
+    box-shadow:0 8px 20px rgba(0,0,0,.18);animation:bounce 2.4s ease-in-out infinite;position:relative;
+  }
+  .mascot::after{
+    content:'破案啦！';position:absolute;top:-12px;right:-72px;
+    background:#fff;color:#ef4444;padding:5px 12px;border-radius:14px;
+    font-size:19px;font-weight:800;border:1.5px solid #ef4444;
+    white-space:nowrap;animation:pop 3s ease infinite;
+  }
+  .mascot::before{
+    content:'';position:absolute;top:0;right:-20px;width:14px;height:14px;
+    background:#fff;border-left:3px solid #ef4444;border-bottom:3px solid #ef4444;
+    transform:rotate(45deg);animation:pop 3s ease infinite;
+  }
+  @keyframes bounce{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-8px) rotate(4deg)}}
+  @keyframes pop{0%,80%,100%{opacity:1;transform:scale(1)}40%{opacity:1;transform:scale(1.08)}90%{opacity:0;transform:scale(.95)}}
+  .hero h1{font-size:38px;font-weight:900;letter-spacing:1px;text-shadow:0 3px 0 rgba(0,0,0,.12);line-height:1.2}
+  .hero .sub{font-size:19px;margin-top:8px;opacity:.96;line-height:1.5;font-weight:600;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .chip-tag{background:#fff;color:#9a3412;padding:5px 12px;border-radius:999px;font-weight:800;font-size:18px;border:1.5px solid #fde68a;transform:rotate(-3deg)}
+  .score-box{
+    background:#fff;color:#9a3412;border-radius:22px;padding:12px 18px;text-align:center;min-width:120px;
+    border:2px solid #fde68a;transform:rotate(4deg);box-shadow:0 6px 14px rgba(0,0,0,.15);
+  }
+  .score-box .num{font-size:38px;font-weight:900;line-height:1;color:#ef4444}
+  .score-box .lbl{font-size:19px;margin-top:4px;font-weight:800}
+
+  /* Stamp progress */
+  .progress-bar{
+    background:#fff;border-radius:24px;padding:14px 16px;margin-bottom:18px;
+    display:flex;gap:8px;justify-content:center;flex-wrap:wrap;
+    box-shadow:0 4px 12px rgba(0,0,0,.06);border:2px solid #fed7aa;
+  }
+  .dot{
+    width:46px;height:46px;border-radius:14px;background:#fef3c7;
+    display:flex;align-items:center;justify-content:center;font-size:20px;color:#9a3412;font-weight:900;
+    border:1.5px dashed #fbbf24;cursor:pointer;
+    transition:.4s cubic-bezier(.34,1.56,.64,1);position:relative;
+  }
+  .dot.done{
+    background:linear-gradient(135deg,#fb923c,#ef4444);color:#fff;
+    border:1.5px solid #fff;box-shadow:0 0 0 2px #fb923c, 0 6px 14px rgba(239,68,68,.4);
+    transform:rotate(-6deg) scale(1.05);
+  }
+  .dot.done::after{
+    content:'✓';position:absolute;top:-8px;right:-8px;width:20px;height:20px;
+    background:#10b981;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:18px;font-weight:900;border:2px solid #fff;
+  }
+  .dot.curr{
+    background:linear-gradient(135deg,#fde047,#fbbf24);color:#92400e;
+    border:1.5px solid #fff;box-shadow:0 0 0 2px #fbbf24, 0 6px 14px rgba(251,191,36,.5);
+    animation:pulse 1.5s ease-in-out infinite;transform:scale(1.1);
+  }
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.5),0 0 0 3px #fbbf24}50%{box-shadow:0 0 0 12px rgba(251,191,36,0),0 0 0 3px #fbbf24}}
+
+  /* Cards */
+  .card{
+    background:#fff;border-radius:18px;padding:22px;margin-bottom:18px;
+    box-shadow:0 6px 16px rgba(0,0,0,.07);
+    border:2px solid #fff;position:relative;
+  }
+  .card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+  .card-title{font-size:28px;font-weight:900;color:#7c2d12;display:flex;align-items:center;gap:8px}
+
+  /* Scene card */
+  .scene{background:linear-gradient(180deg,#fffbeb,#fef3c7);border-radius:24px;padding:24px;border:2px dashed #fbbf24;position:relative}
+  .scene-head{display:flex;gap:12px;align-items:center;margin-bottom:16px;padding-bottom:14px;border-bottom:3px dashed #fde68a}
+  .scene-icon{width:64px;height:64px;background:#fff;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 6px 12px rgba(0,0,0,.1);border:1.5px solid #fde68a;animation:wig 3s ease-in-out infinite}
+  @keyframes wig{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(6deg)}}
+  .scene-title{font-weight:900;font-size:21px;color:#7c2d12}
+  .scene-hint{color:#9a3412;font-size:18px;margin-top:4px;font-weight:600}
+  .dialog{font-size:24px;line-height:2.4;color:#3d2914;font-weight:600}
+  .blank{display:inline-block;min-width:130px;text-align:center;padding:4px 10px;color:#b45309;font-weight:900;background:#fff;border-radius:999px;border:1.5px dashed #f59e0b;animation:wig 2s ease-in-out infinite}
+
+  .input-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:18px}
+  input[type=text]{flex:1;min-width:260px;font-size:22px;padding:14px 18px;border-radius:18px;border:2px solid #fed7aa;outline:none;transition:.2s;background:#fffbeb;font-family:inherit;font-weight:600}
+  input[type=text]:focus{border-color:#f59e0b;background:#fff;box-shadow:0 0 0 2px rgba(245,158,11,.2)}
+  button{
+    font-size:20px;padding:14px 24px;border-radius:999px;border:0;cursor:pointer;
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-weight:900;
+    transition:.15s;font-family:inherit;
+    box-shadow:0 3px 0 #4338ca, 0 6px 12px rgba(99,102,241,.3);
+  }
+  button:hover:not(:disabled){transform:translateY(2px);box-shadow:0 4px 0 #4338ca, 0 6px 12px rgba(99,102,241,.3)}
+  button:active:not(:disabled){transform:translateY(6px);box-shadow:0 0 0 #4338ca, 0 2px 6px rgba(99,102,241,.3)}
+  button.warn{background:linear-gradient(135deg,#fb923c,#ef4444);box-shadow:0 3px 0 #c2410c, 0 6px 12px rgba(239,68,68,.3)}
+  button.warn:hover:not(:disabled){box-shadow:0 4px 0 #c2410c, 0 6px 12px rgba(239,68,68,.3)}
+  button.warn:active:not(:disabled){box-shadow:0 0 0 #c2410c, 0 2px 6px rgba(239,68,68,.3)}
+  button.ghost{background:#fff;color:#7c2d12;box-shadow:0 4px 0 #fed7aa, 0 6px 12px rgba(0,0,0,.06);border:1.5px solid #fed7aa;padding:11px 20px}
+  button.ghost:hover:not(:disabled){box-shadow:0 2px 0 #fed7aa, 0 4px 8px rgba(0,0,0,.06)}
+  button:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:0 4px 0 rgba(0,0,0,.15)}
+
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px}
+  @media(max-width:720px){.compare{grid-template-columns:1fr}}
+  .side{
+    border-radius:24px;padding:22px;min-height:170px;cursor:pointer;
+    transition:.25s cubic-bezier(.34,1.56,.64,1);position:relative;border:2px solid transparent;
+    animation:slideIn .4s ease-out;box-shadow:0 8px 18px rgba(0,0,0,.08);
+  }
+  @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .side.me{background:linear-gradient(180deg,#fff7ed,#ffedd5)}
+  .side.ai{background:linear-gradient(180deg,#eef2ff,#e0e7ff)}
+  .side:hover{transform:translateY(-4px) rotate(-1deg)}
+  .side.picked{transform:scale(1.04) rotate(-2deg);border-color:#fbbf24;box-shadow:0 0 0 2px #fde047, 0 12px 24px rgba(251,191,36,.3)}
+  .side.picked::before{content:"⭐ 你选了这个";position:absolute;top:-14px;left:18px;background:#fde047;color:#92400e;padding:5px 14px;border-radius:999px;font-size:19px;font-weight:900;border:1.5px solid #fff}
+  .side h3{margin:0 0 12px;display:flex;align-items:center;gap:10px;font-size:21px;font-weight:900;color:#7c2d12}
+  .avatar{
+    width:42px;height:42px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+    color:#fff;font-weight:900;font-size:18px;border:1.5px solid #fff;flex-shrink:0;
+    box-shadow:0 4px 8px rgba(0,0,0,.15);
+  }
+  .me .avatar{background:linear-gradient(180deg,#fbbf24,#f59e0b)}
+  .ai .avatar{background:linear-gradient(180deg,#a7f3d0,#10b981)}
+  .ans-text{font-size:22px;line-height:1.7;color:#3d2914;font-weight:600}
+
+
+
+  /* Tutorial */
+  .tutorial{
+    background:linear-gradient(135deg,#fef9c3,#fef3c7);border-radius:22px;padding:18px 22px;margin-bottom:20px;
+    display:flex;gap:14px;align-items:flex-start;border:2px solid #fde68a;
+    box-shadow:0 8px 18px rgba(251,191,36,.2);
+  }
+  .tutorial .num-circle{flex-shrink:0;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#fb923c,#ef4444);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:25px;border:1.5px solid #fff;box-shadow:0 4px 8px rgba(0,0,0,.15)}
+  .tutorial-content{flex:1;font-size:19px;color:#7c2d12;line-height:1.7;font-weight:600}
+  .tutorial-content b{color:#9a3412;font-weight:900}
+  .tutorial .close{background:#fff;color:#9a3412;padding:6px 14px;font-size:18px;border:2px solid #fed7aa;box-shadow:0 3px 0 #fed7aa}
+
+  /* Completion badge */
+  .badge-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:99;animation:fadeIn .3s}
+  .badge-modal.show{display:flex}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .badge-inner{background:#fff;border-radius:18px;padding:36px 44px;text-align:center;max-width:440px;animation:popIn .5s cubic-bezier(.17,.67,.16,1);border:2px solid #fde047}
+  @keyframes popIn{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+  .badge-shine{width:160px;height:160px;margin:0 auto 16px;background:radial-gradient(circle,#fef3c7,#f59e0b);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:92px;box-shadow:0 0 60px rgba(245,158,11,.6);animation:spinSlow 4s linear infinite;border:2px solid #fff}
+  @keyframes spinSlow{to{transform:rotate(360deg)}}
+  .badge-inner h2{color:#92400e;font-size:30px;font-weight:900}
+  .badge-inner p{color:#9a3412;margin:12px 0 22px;font-size:20px;font-weight:600}
+
+  .loading{display:inline-block;width:20px;height:20px;border:1.5px solid #e5e7eb;border-top-color:#10b981;border-radius:50%;animation:ld 1s linear infinite;vertical-align:middle;margin-left:8px}
+  @keyframes ld{to{transform:rotate(360deg)}}
+
+  /* Confetti */
+  .confetti{position:fixed;width:10px;height:10px;pointer-events:none;z-index:100}
+
+  @media(max-width:680px){
+    .hero{grid-template-columns:auto 1fr;gap:12px;padding:18px}
+    .mascot{width:80px;height:80px;font-size:56px}
+    .mascot::after,.mascot::before{display:none}
+    .hero h1{font-size:28px}
+    .score-box{grid-column:1/-1;transform:none}
+  }
+</style>
+</head>
+<body>
+<span class="deco d1">🔍</span>
+<span class="deco d2">⭐</span>
+<span class="deco d3">📋</span>
+<span class="deco d4">☁️</span>
+<span class="deco d5">🎈</span>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="mascot">🕵️</div>
+    <div>
+      <h1 data-pinyin>对话接龙小侦探</h1>
+      <div class="sub" data-pinyin>
+        <span class="chip-tag">第一单元 · 第四课</span>
+        <span>🎯 破解对话线索：谁的填法更自然？</span>
+      </div>
+    </div>
+    <div class="score-box">
+      <div class="num" id="trophy">0</div>
+      <div class="lbl" data-pinyin>🏆 已破解案件</div>
+    </div>
+  </div>
+
+  <div class="tutorial" id="tutorial">
+    <div class="num-circle">?</div>
+    <div class="tutorial-content" data-pinyin>
+      <b>怎么玩：</b> 每张卡片都有一句话被"偷走"了。① 先自己想一句填上 → ② 看 AI 会填什么 → ③ 对比两边，圈出更自然的那个！
+    </div>
+    <button class="close" data-pinyin onclick="document.getElementById('tutorial').style.display='none'">知道啦 ✕</button>
+  </div>
+
+  <div class="progress-bar" id="progressBar"></div>
+
+  <div class="card">
+    <div class="card-head">
+      <h3 class="card-title" data-pinyin>🔍 当前案卷 <span id="caseIdx" style="color:#6b7280;font-weight:500">第 1 / 6 卷</span></h3>
+      <div style="display:flex;gap:8px">
+        <button class="ghost" data-pinyin onclick="prevCard()">← 上一张</button>
+        <button class="warn" data-pinyin onclick="nextCard()">下一张 →</button>
+      </div>
+    </div>
+
+    <div class="scene">
+      <div class="scene-head">
+        <div class="scene-icon" id="sceneIcon">🌳</div>
+        <div>
+          <div class="scene-title" id="sceneTitle" data-pinyin>场景标题</div>
+          <div class="scene-hint" id="sceneHint" data-pinyin>请填写：……</div>
+        </div>
+      </div>
+      <div class="dialog" id="dialog"></div>
+    </div>
+
+    <div class="input-row">
+      <input id="myAns" type="text" placeholder="💭 想一句最自然的话填在空白处…" onkeydown="if(event.key==='Enter')submit()"/>
+      <button id="submitBtn" data-pinyin onclick="submit()">🚀 提交，看AI怎么填</button>
+    </div>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none">
+    <div class="card-head">
+      <h3 class="card-title" data-pinyin>⚖️ 对比一下，谁更自然？</h3>
+      <span style="color:#6b7280;font-size:19px">点击你觉得更好的一侧</span>
+    </div>
+    <div class="compare">
+      <div class="side me" onclick="pick('me')">
+        <h3><span class="avatar">我</span>我的填法</h3>
+        <div class="ans-text" id="meText"></div>
+      </div>
+      <div class="side ai" onclick="pick('ai')">
+        <h3><span class="avatar">AI</span>AI的填法 <span id="aiLoad" class="loading" style="display:none"></span></h3>
+        <div class="ans-text" id="aiText"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Completion badge -->
+<div class="badge-modal" id="badgeModal" onclick="this.classList.remove('show')">
+  <div class="badge-inner" onclick="event.stopPropagation()">
+    <div class="badge-shine">🏅</div>
+    <h2 style="margin:0;color:#92400e">恭喜成为小侦探！</h2>
+    <p style="color:#6b7280;margin:10px 0 20px">你已完成全部 6 张对话卡的破解。</p>
+    <button onclick="document.getElementById('badgeModal').classList.remove('show')">🎉 太棒啦</button>
+  </div>
+</div>
+
+<script>
+const CARDS=[
+  {icon:"🐻",title:"小熊家门口",hint:"小熊打开门对小兔子说的第一句话",ctx:["小兔子跑到小熊家门口，敲了敲门。","小熊开门一看，笑着说：",null,"小兔子把手里的胡萝卜举得高高的。"]},
+  {icon:"❄️",title:"雪地里的小狐狸",hint:"小狐狸第一次尝雪花后的反应",ctx:["今天的雪下得好大。","小狐狸第一次看见雪花。","它张开嘴想尝一尝，然后——",null]},
+  {icon:"📚",title:"开口的旧书",hint:"旧书主动对小女孩说的第一句话",ctx:["图书馆里很安静。","一本旧书忽然开口说话。","它轻声问小女孩：",null,"小女孩愣住了，不敢相信自己的耳朵。"]},
+  {icon:"🚀",title:"外星人的问候",hint:"外星人落地后说的招呼语",ctx:["飞船缓缓降落在学校操场。","舱门打开，一个绿色的小外星人走出来。","它看见了正在上体育课的小朋友，开心地说：",null]},
+  {icon:"🎂",title:"生日派对",hint:"小猴子许愿时说的一句心愿",ctx:["小猴子迎来了它的8岁生日。","蜡烛点起来了，大家都看着它。","小猴子闭上眼睛，认真地许下愿望：",null,"然后使劲吹灭了蜡烛。"]},
+  {icon:"🌊",title:"海底城堡",hint:"小海龟进入城堡后看到的景象",ctx:["小海龟第一次游进深海城堡。","里面静悄悄的，发着淡蓝色的光。","它游过一道拱门，惊讶地发现：",null,"从那以后，小海龟每天都想来这里。"]},
+];
+let idx=0, completed=new Set();
+
+function renderProgress(){
+  const bar=document.getElementById('progressBar');bar.innerHTML='';
+  CARDS.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='dot'+(completed.has(i)?' done':i===idx?' curr':'');
+    d.textContent=completed.has(i)?'✓':(i+1);
+    d.onclick=()=>{idx=i;renderCard()};
+    d.style.cursor='pointer';
+    bar.appendChild(d);
+  });
+}
+
+function renderCard(){
+  const c=CARDS[idx];
+  document.getElementById('sceneIcon').textContent=c.icon;
+  document.getElementById('sceneTitle').textContent=c.title;
+  document.getElementById('sceneHint').textContent='✍ 请填写：'+c.hint;
+  document.getElementById('dialog').innerHTML=c.ctx.map(l=>l===null?'<span class="blank">？？？</span>':l).join('<br/>');
+  document.getElementById('caseIdx').textContent=`第 ${idx+1} / ${CARDS.length} 卷`;
+  document.getElementById('resultCard').style.display='none';
+  document.getElementById('myAns').value='';
+  renderProgress();
+}
+function nextCard(){idx=(idx+1)%CARDS.length;renderCard()}
+function prevCard(){idx=(idx-1+CARDS.length)%CARDS.length;renderCard()}
+
+async function submit(){
+  const ans=document.getElementById('myAns').value.trim();
+  if(!ans){shake(document.getElementById('myAns'));return}
+  const btn=document.getElementById('submitBtn');btn.disabled=true;btn.textContent='🔍 AI 推理中…';
+  document.getElementById('resultCard').style.display='block';
+  document.getElementById('meText').textContent=ans;
+  document.getElementById('aiText').textContent='';
+  document.getElementById('aiLoad').style.display='inline-block';
+  resetPick();
+  document.getElementById('resultCard').scrollIntoView({behavior:'smooth',block:'start'});
+
+  const c=CARDS[idx];
+  const ctxStr=c.ctx.map(l=>l===null?'（此处空白，需要填写一句话）':l).join('\n');
+  const messages=[
+    {role:"system",content:"你是擅长写儿童对话的作家。根据上下文填出最自然的一句话。严格返回JSON：{\"answer\":\"填的那句话\"}，不要Markdown，不要额外文字。"},
+    {role:"user",content:`对话上下文：\n${ctxStr}\n\n需要填写：${c.hint}`}
+  ];
+  try{
+    let full='';
+    await chatStream(messages,t=>{full=t;document.getElementById('aiText').textContent=t});
+    const parsed=tryParseJSON(full);
+    if(parsed){
+      document.getElementById('aiText').textContent=parsed.answer||full;
+    }
+  }catch(e){document.getElementById('aiText').textContent='（网络出了点问题，再试一次吧）'}
+  document.getElementById('aiLoad').style.display='none';
+  btn.disabled=false;btn.textContent='🔁 再试一次';
+}
+
+function tryParseJSON(s){s=s.trim().replace(/^```json|```$/g,'').trim();try{return JSON.parse(s)}catch(e){const m=s.match(/\{[\s\S]*\}/);if(m)try{return JSON.parse(m[0])}catch(_){}}return null}
+
+function shake(el){el.style.animation='none';setTimeout(()=>el.style.animation='shake .4s',10)}
+const styleSheet=document.createElement('style');styleSheet.textContent='@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}';document.head.appendChild(styleSheet);
+
+function resetPick(){document.querySelectorAll('.side').forEach(s=>s.classList.remove('picked'))}
+function pick(who){
+  resetPick();
+  document.querySelector('.side.'+who).classList.add('picked');
+  completed.add(idx);
+  document.getElementById('trophy').textContent=completed.size;
+  confetti();
+  renderProgress();
+  if(completed.size===CARDS.length)setTimeout(()=>document.getElementById('badgeModal').classList.add('show'),600);
+}
+
+function confetti(){
+  const colors=['#ef4444','#f59e0b','#10b981','#6366f1','#ec4899','#8b5cf6'];
+  for(let i=0;i<24;i++){
+    const c=document.createElement('div');c.className='confetti';
+    c.style.left=Math.random()*100+'vw';c.style.top='-20px';
+    c.style.background=colors[Math.floor(Math.random()*colors.length)];
+    c.style.borderRadius=Math.random()>.5?'50%':'2px';
+    c.style.transform=`rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(c);
+    const dur=1000+Math.random()*1500;
+    c.animate([{transform:`translate(0,0) rotate(0)`,opacity:1},{transform:`translate(${(Math.random()-.5)*300}px,${window.innerHeight+40}px) rotate(${Math.random()*720}deg)`,opacity:0}],{duration:dur,easing:'cubic-bezier(.17,.67,.16,1)'});
+    setTimeout(()=>c.remove(),dur);
+  }
+}
+
+async function chatStream(messages,onDelta){
+  const res=await fetch('https://api.qa.bingotalk.cn/api/v2/comm/vt/aiChat',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(messages)
+  });
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  const reader=res.body.getReader();const decoder=new TextDecoder();let buf='',full='';
+  while(true){
+    const {value,done}=await reader.read();if(done)break;
+    buf+=decoder.decode(value,{stream:true});
+    const parts=buf.replace(/}\s*{/g,'}\n{').split('\n');buf=parts.pop();
+    for(const p of parts){const s=p.trim();if(!s)continue;try{const d=JSON.parse(s);const t=d?.data?.result||'';if(t){full+=t;onDelta(full)}}catch(e){}}
+  }
+  if(buf.trim()){try{const d=JSON.parse(buf);const t=d?.data?.result||'';if(t){full+=t;onDelta(full)}}catch(e){}}
+  return full;
+}
+
+renderCard();
+</script>
+<script>
+/* 给页面中标记了 data-pinyin 的元素自动加拼音（面向二年级小朋友）
+   给需要注音的元素加上 data-pinyin 属性，只有这些元素内的文字才会加拼音。
+*/
+(function () {
+  const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT', 'RUBY', 'RT', 'RP', 'CODE', 'PRE']);
+  const HAS_HAN = /[\u4e00-\u9fa5]/;
+  const HAN_RUN = /^[\u4e00-\u9fa5]+$/;
+  let observer = null;
+
+  function injectStyles() {
+    if (document.getElementById('__pyStyle')) return;
+    const s = document.createElement('style');
+    s.id = '__pyStyle';
+    s.textContent = `
+      ruby { ruby-position: over; ruby-align: center; }
+      ruby > rt {
+        font-size: 0.7em;
+        color: #ec4899;
+        font-weight: 500;
+        font-family: "Microsoft YaHei", system-ui, sans-serif;
+        line-height: 1.1;
+        opacity: 0.92;
+        user-select: none;
+        letter-spacing: 0;
+      }
+      h1 ruby > rt, h2 ruby > rt, h3 ruby > rt { color: inherit; opacity: 0.85; }
+      button ruby > rt, .btn ruby > rt { color: inherit; opacity: 0.9; }
+    `;
+    (document.head || document.documentElement).appendChild(s);
+  }
+
+  function hasPinyinMarker(node) {
+    let el = node.nodeType === 3 ? node.parentNode : node;
+    while (el) {
+      if (el.nodeType !== 1) { el = el.parentNode; continue; }
+      if (el.dataset && el.dataset.pinyin !== undefined) return true;
+      if (el === document.body) break;
+      el = el.parentNode;
+    }
+    return false;
+  }
+
+  function annotateText(node) {
+    if (!hasPinyinMarker(node)) return;
+    const text = node.nodeValue;
+    if (!text || !HAS_HAN.test(text)) return;
+    const parent = node.parentNode;
+    if (!parent) return;
+    const tag = parent.tagName;
+    if (tag && SKIP_TAGS.has(tag)) return;
+
+    const parts = text.split(/([\u4e00-\u9fa5]+)/);
+    if (parts.length <= 1) return;
+
+    const frag = document.createDocumentFragment();
+    for (const part of parts) {
+      if (!part) continue;
+      if (HAN_RUN.test(part)) {
+        let arr;
+        try {
+          arr = window.pinyinPro.pinyin(part, { toneType: 'symbol', type: 'array', nonZh: 'consecutive' });
+        } catch (e) {
+          arr = [];
+        }
+        for (let i = 0; i < part.length; i++) {
+          const r = document.createElement('ruby');
+          r.appendChild(document.createTextNode(part[i]));
+          const rt = document.createElement('rt');
+          rt.textContent = arr[i] || '';
+          r.appendChild(rt);
+          frag.appendChild(r);
+        }
+      } else {
+        frag.appendChild(document.createTextNode(part));
+      }
+    }
+    parent.replaceChild(frag, node);
+  }
+
+  function annotate(node) {
+    if (!node) return;
+    if (node.nodeType === 3) { annotateText(node); return; }
+    if (node.nodeType !== 1) return;
+    const tag = node.tagName;
+    if (SKIP_TAGS.has(tag)) return;
+    const kids = Array.from(node.childNodes);
+    for (const k of kids) annotate(k);
+  }
+
+  function startObserver() {
+    if (!('MutationObserver' in window)) return;
+    observer = new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === 'childList') {
+          for (const n of m.addedNodes) annotate(n);
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function run() {
+    if (!window.pinyinPro || !window.pinyinPro.pinyin) {
+      setTimeout(run, 80);
+      return;
+    }
+    injectStyles();
+    annotate(document.body);
+    startObserver();
+  }
+
+  function bootstrap() {
+    if (window.pinyinPro) { run(); return; }
+    const tryLoad = (urls) => {
+      if (!urls.length) { console.warn('[pinyin] CDN 加载失败，未能注音'); return; }
+      const s = document.createElement('script');
+      s.src = urls[0];
+      s.onload = run;
+      s.onerror = () => tryLoad(urls.slice(1));
+      (document.head || document.documentElement).appendChild(s);
+    };
+    tryLoad([
+      'https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js',
+      'https://unpkg.com/pinyin-pro@3.26.0/dist/index.js',
+      'https://fastly.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js'
+    ]);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrap);
+  } else {
+    bootstrap();
+  }
+})();
+
+</script>
+</body>
+</html>

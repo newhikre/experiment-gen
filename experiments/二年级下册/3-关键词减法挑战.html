@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>关键词减法挑战</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{font-family:"华文圆体","PingFang SC","Microsoft YaHei",system-ui,sans-serif;color:#3d2914}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 8% 12%, #d1fae5 0 80px, transparent 80px),
+      radial-gradient(circle at 92% 8%, #fed7aa 0 60px, transparent 60px),
+      radial-gradient(ellipse 120px 70px at 18% 20%, #fff 0 70%, transparent 70%),
+      radial-gradient(ellipse 90px 50px at 80% 26%, #fff 0 70%, transparent 70%),
+      linear-gradient(180deg, #d1fae5 0%, #fef9c3 60%, #fef3c7 100%);
+    padding:20px 16px 100px;position:relative;overflow-x:hidden;
+  }
+  .deco{position:fixed;font-size:38px;opacity:.7;pointer-events:none;z-index:0;animation:floatA 6s ease-in-out infinite}
+  .deco.d1{top:14%;left:4%;animation-delay:0s}
+  .deco.d2{top:28%;right:5%;animation-delay:1.2s;font-size:32px}
+  .deco.d3{top:54%;left:3%;animation-delay:2.4s}
+  .deco.d4{bottom:18%;right:4%;animation-delay:3.5s;font-size:36px}
+  .deco.d5{bottom:32%;left:6%;animation-delay:1.8s;font-size:30px}
+  @keyframes floatA{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-14px) rotate(4deg)}}
+
+  .wrap{max-width:1280px;margin:0 auto;position:relative;z-index:1}
+
+  /* Hero */
+  .hero{
+    background:linear-gradient(135deg,#10b981 0%,#34d399 50%,#fbbf24 100%);
+    color:#fff;border-radius:22px;padding:22px 26px;
+    box-shadow:0 8px 20px rgba(16,185,129,.35);
+    margin-bottom:22px;position:relative;border:2px solid #fff;display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  }
+  .mascot{
+    width:108px;height:108px;background:linear-gradient(180deg,#fef3c7,#fbbf24);
+    border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:64px;flex-shrink:0;border:2px solid #fff;
+    box-shadow:0 8px 20px rgba(0,0,0,.18);animation:bounce 2.4s ease-in-out infinite;position:relative;
+  }
+  .mascot::after{
+    content:'减一减！';position:absolute;top:-12px;right:-78px;
+    background:#fff;color:#059669;padding:5px 12px;border-radius:14px;
+    font-size:15px;font-weight:800;border:1.5px solid #10b981;
+    white-space:nowrap;animation:pop 3s ease infinite;
+  }
+  .mascot::before{
+    content:'';position:absolute;top:0;right:-20px;width:14px;height:14px;
+    background:#fff;border-left:3px solid #10b981;border-bottom:3px solid #10b981;
+    transform:rotate(45deg);animation:pop 3s ease infinite;
+  }
+  @keyframes bounce{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-8px) rotate(4deg)}}
+  @keyframes pop{0%,80%,100%{opacity:1;transform:scale(1)}40%{opacity:1;transform:scale(1.08)}90%{opacity:0;transform:scale(.95)}}
+  .hero-text{flex:1;min-width:0}
+  .hero h1{font-size:30px;font-weight:900;letter-spacing:1px;text-shadow:0 3px 0 rgba(0,0,0,.12);line-height:1.2}
+  .hero-sub{font-size:15px;margin-top:8px;opacity:.96;line-height:1.5;font-weight:600}
+  .round-wrap{display:flex;gap:10px;flex-shrink:0}
+  .round-box{background:#fff;color:#059669;border-radius:18px;padding:10px 14px;text-align:center;min-width:88px;border:2px solid #fde047;box-shadow:0 4px 0 rgba(0,0,0,.1);transform:rotate(-3deg)}
+  .round-box:nth-child(2){transform:rotate(3deg);border-color:#fb923c}
+  .round-box .n{font-size:24px;font-weight:900;line-height:1;color:#7c2d12}
+  .round-box .l{font-size:15px;margin-top:3px;font-weight:700;color:#9a3412}
+
+  /* Theme picker */
+  .theme-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+  @media(max-width:760px){.theme-row{grid-template-columns:1fr}}
+  .theme-card{
+    background:#fff;border-radius:24px;padding:16px 18px;
+    cursor:pointer;border:2px solid #fff;transition:.25s cubic-bezier(.34,1.56,.64,1);
+    display:flex;align-items:center;gap:12px;
+    box-shadow:0 6px 14px rgba(0,0,0,.08);
+  }
+  .theme-card:hover{transform:translateY(-3px) rotate(-2deg)}
+  .theme-card.on{border-color:#10b981;box-shadow:0 0 0 2px #fde047, 0 10px 22px rgba(16,185,129,.3);transform:scale(1.04) rotate(-3deg);background:linear-gradient(180deg,#ecfdf5,#fff)}
+  .theme-card .ti{font-size:38px;animation:wig 3s ease-in-out infinite;filter:drop-shadow(0 3px 0 rgba(0,0,0,.1))}
+  .theme-card .tn{font-weight:900;font-size:16px;color:#7c2d12}
+  .theme-card .td{color:#9a3412;font-size:14px;margin-top:2px;font-weight:600}
+  @keyframes wig{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(6deg)}}
+
+  .card{background:#fff;border-radius:18px;padding:22px;margin-bottom:18px;box-shadow:0 6px 16px rgba(0,0,0,.07);border:2px solid #fff;position:relative}
+  h3{font-size:22px;font-weight:900;margin-bottom:14px;color:#7c2d12}
+
+  /* Prompt line */
+  .prompt-wrap{background:linear-gradient(180deg,#fef9c3,#fde68a);border-radius:22px;border:2px dashed #f59e0b;padding:22px;position:relative}
+  .prompt-label{position:absolute;top:-12px;left:22px;background:#f59e0b;color:#fff;font-size:14px;font-weight:900;padding:4px 14px;border-radius:999px;border:1.5px solid #fff}
+  .prompt-line{font-size:20px;line-height:2.2;color:#7c2d12;font-weight:700}
+  .kw{display:inline-block;padding:5px 14px;border-radius:999px;margin:4px 4px;color:#fff;font-weight:800;font-size:16px;position:relative;user-select:none;transition:.2s;border:1.5px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.15)}
+  .kw.deletable{cursor:pointer}
+  .kw.deletable:hover{transform:translateY(-4px) scale(1.1) rotate(-3deg);box-shadow:0 10px 18px rgba(0,0,0,.22)}
+  .kw.deletable::after{content:"✕";position:absolute;top:-8px;right:-8px;background:#ef4444;color:#fff;width:22px;height:22px;border-radius:50%;font-size:15px;line-height:22px;text-align:center;opacity:0;transition:.2s;box-shadow:0 3px 6px rgba(0,0,0,.25);border:2px solid #fff;font-weight:900}
+  .kw.deletable:hover::after{opacity:1}
+  .kw.gone{text-decoration:line-through;opacity:.35}
+  .kw.c0{background:linear-gradient(135deg,#f87171,#ef4444)}
+  .kw.c1{background:linear-gradient(135deg,#34d399,#10b981)}
+  .kw.c2{background:linear-gradient(135deg,#a78bfa,#7c3aed)}
+
+  /* Progress ladder */
+  .ladder{display:flex;justify-content:space-between;align-items:center;margin:18px 0 0;gap:8px}
+  .rung{flex:1;display:flex;align-items:center;gap:8px}
+  .step{width:42px;height:42px;border-radius:50%;background:#fff;color:#9ca3af;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;transition:.3s;flex-shrink:0;border:2px solid #e5e7eb;box-shadow:0 3px 0 rgba(0,0,0,.08)}
+  .step.done{background:linear-gradient(180deg,#34d399,#10b981);color:#fff;border-color:#fff;box-shadow:0 0 0 2px #10b981, 0 3px 0 rgba(0,0,0,.08)}
+  .step.curr{background:linear-gradient(180deg,#fbbf24,#f59e0b);color:#fff;border-color:#fff;animation:pulse 1.5s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.5)}50%{box-shadow:0 0 0 12px rgba(245,158,11,0)}}
+  .rung-line{flex:1;height:5px;background:#e5e7eb;border-radius:999px;transition:.3s}
+  .rung-line.done{background:linear-gradient(90deg,#34d399,#10b981)}
+
+  .action{display:flex;justify-content:space-between;align-items:center;margin-top:18px;flex-wrap:wrap;gap:12px}
+  button{
+    font-size:16px;padding:14px 26px;border-radius:999px;border:0;cursor:pointer;font-family:inherit;
+    background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:900;
+    box-shadow:0 3px 0 #047857, 0 6px 12px rgba(16,185,129,.3);transition:.15s;
+  }
+  button:hover:not(:disabled){transform:translateY(2px);box-shadow:0 4px 0 #047857, 0 6px 12px rgba(16,185,129,.3)}
+  button:active:not(:disabled){transform:translateY(6px);box-shadow:0 0 0 #047857, 0 2px 6px rgba(16,185,129,.3)}
+  button:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:0 4px 0 rgba(0,0,0,.15)}
+  button.reset{background:linear-gradient(135deg,#9ca3af,#6b7280);box-shadow:0 3px 0 #4b5563, 0 6px 12px rgba(107,114,128,.3)}
+  button.reset:hover:not(:disabled){box-shadow:0 4px 0 #4b5563, 0 6px 12px rgba(107,114,128,.3)}
+  .hint-tag{color:#7c2d12;font-weight:900;font-size:14px;padding:8px 14px;background:linear-gradient(180deg,#fef9c3,#fde68a);border-radius:999px;animation:wiggle 1.2s ease infinite;border:1.5px solid #f59e0b}
+  @keyframes wiggle{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(2deg)}}
+
+  /* Results grid */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .slot{background:#fff;border-radius:24px;padding:18px;border:2px solid #fed7aa;min-height:280px;display:flex;flex-direction:column;transition:.25s cubic-bezier(.34,1.56,.64,1);position:relative;box-shadow:0 8px 18px rgba(0,0,0,.06)}
+  .slot.fill{cursor:pointer}
+  .slot.fill:hover{transform:translateY(-4px) rotate(-1deg);box-shadow:0 14px 28px rgba(0,0,0,.1)}
+  .slot.picked{border-color:#f59e0b;box-shadow:0 0 0 2px #fde047, 0 14px 28px rgba(245,158,11,.25);transform:rotate(-2deg)}
+  .slot-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .slot-num{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;border:1.5px solid #fff;box-shadow:0 3px 0 rgba(0,0,0,.1)}
+  .slot-num.c1{background:linear-gradient(135deg,#34d399,#10b981)}
+  .slot-num.c2{background:linear-gradient(135deg,#f87171,#ef4444)}
+  .tag{font-size:14px;background:#f3f4f6;padding:5px 12px;border-radius:999px;color:#374151;font-weight:700;border:2px solid #e5e7eb}
+  .tag.del{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
+  .slot .body{flex:1;font-size:15px;line-height:1.8;white-space:pre-wrap;min-height:120px;background:linear-gradient(180deg,#fefce8,#fef9c3);border-radius:16px;padding:14px;border:2px dashed #fde68a;color:#3d2914;font-weight:600}
+  .slot .meta{font-size:14px;color:#9a3412;margin-top:8px;font-weight:700}
+  .trophy{position:absolute;top:-18px;right:-12px;font-size:42px;display:none;filter:drop-shadow(0 4px 0 rgba(0,0,0,.15))}
+  .picked .trophy{display:block;animation:pop2 .5s ease-out}
+  @keyframes pop2{0%{transform:scale(0) rotate(-30deg)}60%{transform:scale(1.4) rotate(10deg)}100%{transform:scale(1) rotate(0)}}
+
+  /* Importance chart */
+  .chart-card{display:none}
+  .chart-card.show{display:block}
+  .bar-row{display:grid;grid-template-columns:140px 1fr 70px;gap:12px;align-items:center;margin-bottom:12px}
+  .bar-label{font-weight:900;font-size:14px;color:#7c2d12}
+  .bar-track{background:#fef3c7;height:30px;border-radius:999px;overflow:hidden;position:relative;border:1.5px solid #fde68a}
+  .bar-fill{height:100%;border-radius:999px;transition:width 1s cubic-bezier(.17,.67,.16,1);position:relative}
+  .bar-fill.c0{background:linear-gradient(90deg,#f87171,#ef4444)}
+  .bar-fill.c1{background:linear-gradient(90deg,#34d399,#10b981)}
+  .bar-fill.c2{background:linear-gradient(90deg,#a78bfa,#7c3aed)}
+  .bar-pct{font-weight:900;text-align:right;color:#7c2d12}
+
+  .recap{background:linear-gradient(135deg,#fef9c3,#fde68a);border-radius:22px;padding:20px 24px;margin-top:14px;font-size:15px;color:#7c2d12;display:none;line-height:1.8;border:2px dashed #f59e0b;box-shadow:0 6px 14px rgba(251,191,36,.2);font-weight:600}
+  .recap b{color:#9a3412;font-weight:900}
+
+  .loading{display:inline-block;width:18px;height:18px;border:1.5px solid #e5e7eb;border-top-color:#10b981;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  @media(max-width:680px){
+    .hero{padding:18px 18px 22px;gap:12px}
+    .mascot{width:80px;height:80px;font-size:48px}
+    .mascot::after,.mascot::before{display:none}
+    .hero h1{font-size:22px}
+    .hero-sub{font-size:15px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div>
+      <h1 data-pinyin>➖ 关键词减法挑战</h1>
+      <div class="hero-sub" data-pinyin>通过"删一个词"，找出哪个关键词最能决定故事风格</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <div class="round-box"><div class="n" id="roundN">1</div><div class="l">🎮 关卡</div></div>
+      <div class="round-box"><div class="n" id="totalRun">0</div><div class="l">✨ 生成次数</div></div>
+    </div>
+  </div>
+
+  <!-- Theme picker -->
+  <div class="theme-row" id="themeRow"></div>
+
+  <div class="card">
+    <h3 data-pinyin>🎨 完整指令（彩色词是关键词，可以点击删除）</h3>
+    <div class="prompt-wrap">
+      <div class="prompt-label" data-pinyin>📝 给 AI 的指令</div>
+      <div class="prompt-line" id="promptLine"></div>
+    </div>
+
+    <div class="ladder" id="ladder"></div>
+
+    <div class="action">
+      <div id="actionHint" style="color:#6b7280;font-size:14px">点右边按钮开始第 1 步：先生成原版</div>
+      <div style="display:flex;gap:10px">
+        <button class="reset" data-pinyin onclick="resetAll()">🔄 重来</button>
+        <button id="runBtn" data-pinyin onclick="runInitial()">✨ 生成第1格（原版）</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="card chart-card" id="chartCard">
+    <h3 data-pinyin>📊 关键词重要性排行榜</h3>
+    <div id="chartBody"></div>
+    <p style="color:#6b7280;font-size:15px;margin-top:14px" data-pinyin>💡 重要性 = 删除它之后故事变化的程度（根据你选的"变化最大"判断）</p>
+  </div>
+
+  <div class="recap" id="recap"></div>
+</div>
+
+<script>
+const THEMES=[
+  {id:"forest",name:"森林奇遇",sub:"勇敢/发光/森林",icon:"🌳",words:[{w:"勇敢的小刺猬",c:0},{w:"会发光的蘑菇",c:1},{w:"奇幻森林",c:2}]},
+  {id:"space",name:"太空探险",sub:"小熊/彗星/飞船",icon:"🚀",words:[{w:"穿宇航服的小熊",c:0},{w:"会唱歌的彗星",c:1},{w:"老旧的太空飞船",c:2}]},
+  {id:"ocean",name:"海底冒险",sub:"海豚/珍珠/珊瑚",icon:"🌊",words:[{w:"调皮的小海豚",c:0},{w:"闪闪发光的珍珠",c:1},{w:"五彩珊瑚城",c:2}]},
+];
+const BASE="请写一段约60字的儿童小故事，要包含：";
+let curTheme=THEMES[0];
+let step=0,results=[null,null,null],removed=[],runCount=0,round=1;
+const imp={}; // word -> cumulative importance score
+
+function renderThemes(){
+  const box=document.getElementById('themeRow');box.innerHTML='';
+  THEMES.forEach(t=>{
+    const el=document.createElement('div');el.className='theme-card'+(t.id===curTheme.id?' on':'');el.dataset.pinyin='';
+    el.innerHTML=`<div class="ti">${t.icon}</div><div><div class="tn">${t.name}</div><div class="td">${t.sub}</div></div>`;
+    el.onclick=()=>{curTheme=t;resetAll()};
+    box.appendChild(el);
+  });
+}
+
+function render(){
+  const words=curTheme.words.map((k,i)=>{
+    const gone=removed.includes(i);
+    const canDel=step>=1&&step<3&&!gone;
+    return `<span class="kw c${k.c} ${gone?'gone':''} ${canDel?'deletable':''}" ${canDel?`onclick="removeKw(${i})"`:''}>${k.w}</span>`;
+  }).join('、');
+  document.getElementById('promptLine').innerHTML=BASE+words+'。';
+
+  const lad=document.getElementById('ladder');lad.innerHTML='';
+  for(let i=0;i<3;i++){
+    const s=document.createElement('div');s.className='step'+(i<step?' done':i===step?' curr':'');
+    s.textContent=i<step?'✓':(i+1);
+    const rung=document.createElement('div');rung.className='rung';rung.appendChild(s);
+    if(i<2){const line=document.createElement('div');line.className='rung-line'+(i<step?' done':'');rung.appendChild(line)}
+    lad.appendChild(rung);
+  }
+
+  const g=document.getElementById('grid');g.innerHTML='';
+  for(let i=0;i<3;i++){
+    const r=results[i];
+    const div=document.createElement('div');
+    div.className='slot'+(r?' fill':'')+(r?.picked?' picked':'');
+    const tag=i===0?'原版（全关键词）':(r?.removedWord?`去掉：${r.removedWord}`:'等待删除…');
+    div.innerHTML=`
+      <div class="trophy">🏆</div>
+      <div class="slot-head"><div class="slot-num c${i}">${i+1}</div><div class="tag${i>0?' del':''}">${tag}</div></div>
+      <div class="body">${r?r.text:'<span style="color:#d1d5db">…</span>'}</div>
+      <div class="meta">${r?.text&&!r.text.includes('loading')?`字数：${r.text.replace(/\s/g,'').length}`:''}</div>
+    `;
+    if(r&&r.text&&!r.text.includes('loading'))div.onclick=()=>pick(i);
+    g.appendChild(div);
+  }
+
+  const hint=document.getElementById('actionHint');const btn=document.getElementById('runBtn');
+  if(step===0){hint.textContent='点右边按钮开始第 1 步：先生成原版';btn.style.display='inline-block';btn.disabled=false}
+  else if(step<3){hint.innerHTML='<span class="hint-tag">👉 在上面点一个彩色关键词把它删掉</span>';btn.style.display='none'}
+  else{hint.innerHTML='<span class="hint-tag">👉 在三格中圈出变化最大的那格</span>';btn.style.display='none'}
+}
+
+async function runInitial(){
+  const btn=document.getElementById('runBtn');btn.disabled=true;
+  results[0]={text:'<span class="loading"></span>',removedWord:null,picked:false};render();
+  const text=await ask(curTheme.words.map(k=>k.w));
+  results[0]={text,removedWord:null,picked:false};
+  step=1;runCount++;document.getElementById('totalRun').textContent=runCount;
+  render();
+}
+
+async function removeKw(i){
+  if(step>=3)return;
+  removed.push(i);
+  const idx=step;results[idx]={text:'<span class="loading"></span>',removedWord:curTheme.words[i].w,picked:false};render();
+  const remaining=curTheme.words.filter((_,j)=>!removed.includes(j)).map(k=>k.w);
+  const text=remaining.length?await ask(remaining):'（没有关键词了）';
+  results[idx]={text,removedWord:curTheme.words[i].w,picked:false};
+  step+=1;runCount++;document.getElementById('totalRun').textContent=runCount;
+  render();
+}
+
+function pick(i){
+  if(i===0)return;
+  results.forEach(r=>{if(r)r.picked=false});
+  results[i].picked=true;
+  const lost=results[i].removedWord;
+  if(lost){imp[lost]=(imp[lost]||0)+1}
+  render();showRecap(lost);showChart();
+  round++;document.getElementById('roundN').textContent=round;
+}
+
+function showRecap(lost){
+  const r=document.getElementById('recap');r.style.display='block';
+  r.innerHTML=`💡 <b>去掉「${lost}」</b> 后故事变化最大 —— 这个词对故事的${lost.match(/色|金|银|光|闪|红|蓝|绿/)?'画面氛围':lost.match(/森林|城|飞船|海|山/)?'场景':'角色'}最关键！<br/><span style="opacity:.85;font-size:15px">🧠 想一想：如果去掉其他词，变化会和这个一样大吗？</span>`;
+}
+
+function showChart(){
+  const card=document.getElementById('chartCard');card.classList.add('show');
+  const body=document.getElementById('chartBody');body.innerHTML='';
+  const all=THEMES.flatMap(t=>t.words);
+  const rows=curTheme.words.map(w=>({w:w.w,c:w.c,v:imp[w.w]||0}));
+  const max=Math.max(1,...rows.map(r=>r.v));
+  rows.sort((a,b)=>b.v-a.v).forEach(r=>{
+    const pct=r.v/max*100;
+    const row=document.createElement('div');row.className='bar-row';
+    row.innerHTML=`<div class="bar-label">${r.w}</div><div class="bar-track"><div class="bar-fill c${r.c}" style="width:${pct}%"></div></div><div class="bar-pct">${r.v} ⭐</div>`;
+    body.appendChild(row);
+  });
+}
+
+async function ask(words){
+  const msg=[
+    {role:"system",content:"你是儿童故事作家，根据关键词写一段约60字的短故事，要包含所有给定关键词。只输出故事本身，不要解释、不要标题。"},
+    {role:"user",content:`关键词：${words.join('、')}`}
+  ];
+  let out='';
+  const idx=results.findIndex(r=>r&&typeof r.text==='string'&&r.text.startsWith('<span class="loading"'));
+  await chatStream(msg,t=>{out=t;if(idx>=0){results[idx].text=t;render()}});
+  return out;
+}
+
+function resetAll(){
+  step=0;results[0]=results[1]=results[2]=null;removed.length=0;
+  document.getElementById('recap').style.display='none';
+  const b=document.getElementById('runBtn');b.disabled=false;b.style.display='inline-block';b.textContent='✨ 生成第1格（原版）';
+  renderThemes();render();
+}
+
+async function chatStream(messages,onDelta){
+  const res=await fetch('https://api.qa.bingotalk.cn/api/v2/comm/vt/aiChat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(messages)});
+  const reader=res.body.getReader();const dec=new TextDecoder();let buf='',full='';
+  while(true){const {value,done}=await reader.read();if(done)break;
+    buf+=dec.decode(value,{stream:true});
+    const parts=buf.replace(/}\s*{/g,'}\n{').split('\n');buf=parts.pop();
+    for(const p of parts){const s=p.trim();if(!s)continue;try{const d=JSON.parse(s);const t=d?.data?.result||'';if(t){full+=t;onDelta(full)}}catch(e){}}
+  }
+  if(buf.trim()){try{const d=JSON.parse(buf);const t=d?.data?.result||'';if(t){full+=t;onDelta(full)}}catch(e){}}
+}
+
+renderThemes();render();
+</script>
+<script>
+/* 给页面中标记了 data-pinyin 的元素自动加拼音（面向二年级小朋友）
+   给需要注音的元素加上 data-pinyin 属性，只有这些元素内的文字才会加拼音。
+*/
+(function () {
+  const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT', 'RUBY', 'RT', 'RP', 'CODE', 'PRE']);
+  const HAS_HAN = /[\u4e00-\u9fa5]/;
+  const HAN_RUN = /^[\u4e00-\u9fa5]+$/;
+  let observer = null;
+
+  function injectStyles() {
+    if (document.getElementById('__pyStyle')) return;
+    const s = document.createElement('style');
+    s.id = '__pyStyle';
+    s.textContent = `
+      ruby { ruby-position: over; ruby-align: center; }
+      ruby > rt {
+        font-size: 0.55em;
+        color: #ec4899;
+        font-weight: 500;
+        font-family: "Microsoft YaHei", system-ui, sans-serif;
+        line-height: 1.1;
+        opacity: 0.92;
+        user-select: none;
+        letter-spacing: 0;
+      }
+      h1 ruby > rt, h2 ruby > rt, h3 ruby > rt { color: inherit; opacity: 0.85; }
+      button ruby > rt, .btn ruby > rt { color: inherit; opacity: 0.9; }
+    `;
+    (document.head || document.documentElement).appendChild(s);
+  }
+
+  function hasPinyinMarker(node) {
+    let el = node.nodeType === 3 ? node.parentNode : node;
+    while (el) {
+      if (el.nodeType !== 1) { el = el.parentNode; continue; }
+      if (el.dataset && el.dataset.pinyin !== undefined) return true;
+      if (el === document.body) break;
+      el = el.parentNode;
+    }
+    return false;
+  }
+
+  function annotateText(node) {
+    if (!hasPinyinMarker(node)) return;
+    const text = node.nodeValue;
+    if (!text || !HAS_HAN.test(text)) return;
+    const parent = node.parentNode;
+    if (!parent) return;
+    const tag = parent.tagName;
+    if (tag && SKIP_TAGS.has(tag)) return;
+
+    const parts = text.split(/([\u4e00-\u9fa5]+)/);
+    if (parts.length <= 1) return;
+
+    const frag = document.createDocumentFragment();
+    for (const part of parts) {
+      if (!part) continue;
+      if (HAN_RUN.test(part)) {
+        let arr;
+        try {
+          arr = window.pinyinPro.pinyin(part, { toneType: 'symbol', type: 'array', nonZh: 'consecutive' });
+        } catch (e) {
+          arr = [];
+        }
+        for (let i = 0; i < part.length; i++) {
+          const r = document.createElement('ruby');
+          r.appendChild(document.createTextNode(part[i]));
+          const rt = document.createElement('rt');
+          rt.textContent = arr[i] || '';
+          r.appendChild(rt);
+          frag.appendChild(r);
+        }
+      } else {
+        frag.appendChild(document.createTextNode(part));
+      }
+    }
+    parent.replaceChild(frag, node);
+  }
+
+  function annotate(node) {
+    if (!node) return;
+    if (node.nodeType === 3) { annotateText(node); return; }
+    if (node.nodeType !== 1) return;
+    const tag = node.tagName;
+    if (SKIP_TAGS.has(tag)) return;
+    const kids = Array.from(node.childNodes);
+    for (const k of kids) annotate(k);
+  }
+
+  function startObserver() {
+    if (!('MutationObserver' in window)) return;
+    observer = new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === 'childList') {
+          for (const n of m.addedNodes) annotate(n);
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function run() {
+    if (!window.pinyinPro || !window.pinyinPro.pinyin) {
+      setTimeout(run, 80);
+      return;
+    }
+    injectStyles();
+    annotate(document.body);
+    startObserver();
+  }
+
+  function bootstrap() {
+    if (window.pinyinPro) { run(); return; }
+    const tryLoad = (urls) => {
+      if (!urls.length) { console.warn('[pinyin] CDN 加载失败，未能注音'); return; }
+      const s = document.createElement('script');
+      s.src = urls[0];
+      s.onload = run;
+      s.onerror = () => tryLoad(urls.slice(1));
+      (document.head || document.documentElement).appendChild(s);
+    };
+    tryLoad([
+      'https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js',
+      'https://unpkg.com/pinyin-pro@3.26.0/dist/index.js',
+      'https://fastly.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js'
+    ]);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrap);
+  } else {
+    bootstrap();
+  }
+})();
+
+</script>
+</body>
+</html>

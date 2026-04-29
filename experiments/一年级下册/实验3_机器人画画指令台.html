@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🤖 机器人画画指令台</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0f1729;
+  --panel: #1a2540;
+  --panel-border: #2a3a5c;
+  --canvas-bg: #f0f4f8;
+  --accent-blue: #4fc3f7;
+  --accent-green: #66bb6a;
+  --accent-orange: #ffa726;
+  --accent-pink: #ef5350;
+  --accent-purple: #ab47bc;
+  --accent-yellow: #ffee58;
+  --text: #e8eaf6;
+  --text-dim: #7986cb;
+  --glow-blue: rgba(79, 195, 247, 0.3);
+}
+
+body {
+  font-family: 'Fredoka', 'Noto Sans SC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Stars background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 30% 60%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1.5px 1.5px at 50% 10%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1px 1px at 90% 80%, rgba(255,255,255,0.4), transparent),
+    radial-gradient(1.5px 1.5px at 15% 85%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 60% 75%, rgba(255,255,255,0.3), transparent),
+    radial-gradient(1px 1px at 85% 15%, rgba(255,255,255,0.5), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 16px 0 12px;
+}
+
+.header h1 {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple), var(--accent-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  letter-spacing: 2px;
+}
+
+.header .subtitle {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* Main layout */
+.main {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* Canvas area */
+.canvas-area {
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 12px;
+  position: relative;
+}
+
+.canvas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.canvas-header .title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-blue);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.canvas-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.canvas-controls button {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--panel-border);
+  color: var(--text-dim);
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.canvas-controls button:hover {
+  background: rgba(255,255,255,0.15);
+  color: var(--text);
+}
+
+.canvas-wrap {
+  position: relative;
+  background: var(--canvas-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 4/3;
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Task bar */
+.task-bar {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.task-btn {
+  flex: 1;
+  min-width: 100px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 2px solid var(--panel-border);
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.task-btn:hover { border-color: var(--accent-blue); background: rgba(79,195,247,0.1); }
+.task-btn.active { border-color: var(--accent-blue); background: rgba(79,195,247,0.15); box-shadow: 0 0 12px var(--glow-blue); }
+
+.task-btn .icon { font-size: 18px; display: block; margin-bottom: 2px; }
+.task-btn .label { font-size: 11px; color: var(--text-dim); }
+
+/* Right panel */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Command buttons panel */
+.cmd-panel {
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.cmd-panel .title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-orange);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cmd-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.cmd-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 4px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cmd-btn .cmd-icon { font-size: 22px; }
+
+.cmd-btn.move { border-color: rgba(79,195,247,0.3); }
+.cmd-btn.move:hover { background: rgba(79,195,247,0.15); border-color: var(--accent-blue); box-shadow: 0 0 15px var(--glow-blue); transform: scale(1.05); }
+
+.cmd-btn.turn { border-color: rgba(171,71,188,0.3); }
+.cmd-btn.turn:hover { background: rgba(171,71,188,0.15); border-color: var(--accent-purple); box-shadow: 0 0 15px rgba(171,71,188,0.3); transform: scale(1.05); }
+
+.cmd-btn.pen { border-color: rgba(102,187,106,0.3); }
+.cmd-btn.pen:hover { background: rgba(102,187,106,0.15); border-color: var(--accent-green); box-shadow: 0 0 15px rgba(102,187,106,0.3); transform: scale(1.05); }
+
+.cmd-btn.color-btn { border-color: rgba(255,167,38,0.3); }
+.cmd-btn.color-btn:hover { background: rgba(255,167,38,0.15); border-color: var(--accent-orange); box-shadow: 0 0 15px rgba(255,167,38,0.3); transform: scale(1.05); }
+
+.cmd-btn:active { transform: scale(0.95) !important; }
+
+/* Step input */
+.step-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+}
+
+.step-row label { font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+
+.step-input {
+  width: 50px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 4px 6px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 600;
+  text-align: center;
+}
+
+.step-input:focus { outline: none; border-color: var(--accent-blue); }
+
+/* Color picker row */
+.color-row {
+  display: flex;
+  gap: 5px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+}
+
+.color-row label { font-size: 12px; color: var(--text-dim); width: 100%; margin-bottom: 2px; }
+
+.color-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.color-dot:hover { transform: scale(1.2); }
+.color-dot.active { border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.4); transform: scale(1.15); }
+
+/* Command log */
+.log-panel {
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 12px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.log-panel .title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-green);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.log-panel .cmd-count {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.log-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-right: 4px;
+}
+
+.log-list::-webkit-scrollbar { width: 4px; }
+.log-list::-webkit-scrollbar-track { background: transparent; }
+.log-list::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 4px; }
+
+.log-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+  font-size: 11px;
+  animation: logIn 0.3s ease;
+}
+
+.log-item .num {
+  color: var(--text-dim);
+  min-width: 18px;
+  font-size: 10px;
+}
+
+.log-item .log-icon { font-size: 14px; }
+
+@keyframes logIn {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Playback controls */
+.playback-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.play-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 10px;
+  border: 2px solid var(--panel-border);
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.play-btn:hover { background: rgba(102,187,106,0.15); border-color: var(--accent-green); }
+.play-btn.stop:hover { background: rgba(239,83,80,0.15); border-color: var(--accent-pink); }
+
+/* Status bar */
+.status-bar {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.status-bar span { display: flex; align-items: center; gap: 4px; }
+.status-bar .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.status-bar .dot.up { background: var(--accent-pink); }
+.status-bar .dot.down { background: var(--accent-green); }
+
+/* Robot speech bubble */
+.speech-bubble {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26,37,64,0.92);
+  color: var(--text);
+  padding: 6px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  white-space: nowrap;
+  border: 1px solid var(--panel-border);
+}
+
+.speech-bubble.show { opacity: 1; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app { padding: 8px; }
+  .header { padding: 12px 0 8px; }
+  .header h1 { font-size: 20px; letter-spacing: 1px; }
+  .header .subtitle { font-size: 12px; }
+
+  /* On mobile: stack vertically, cmd panel first */
+  .main {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .canvas-area { order: 2; }
+  .right-panel { order: 1; }
+
+  /* Make cmd panel and log panel side-by-side on landscape-ish mobile */
+  .right-panel { flex-direction: column; gap: 8px; }
+
+  /* Canvas */
+  .canvas-wrap { aspect-ratio: 4/3; }
+
+  /* Canvas controls - smaller and wrap */
+  .canvas-controls { flex-wrap: wrap; gap: 4px; }
+  .canvas-controls button { padding: 6px 10px; font-size: 11px; min-height: 36px; }
+
+  /* Task buttons */
+  .task-bar { gap: 5px; margin-top: 6px; }
+  .task-btn { min-width: 80px; padding: 7px 6px; font-size: 11px; min-height: 56px; }
+  .task-btn .icon { font-size: 16px; }
+  .task-btn .label { font-size: 10px; }
+
+  /* Cmd buttons - bigger tap targets */
+  .cmd-btn { padding: 14px 4px; min-height: 60px; font-size: 12px; border-radius: 14px; }
+  .cmd-btn .cmd-icon { font-size: 26px; }
+
+  /* Step row - stack into two rows */
+  .step-row { flex-wrap: wrap; gap: 6px; padding: 8px; }
+  .step-row label { font-size: 11px; }
+  .step-input { width: 56px; font-size: 15px; padding: 6px; min-height: 40px; }
+
+  /* Color dots - larger */
+  .color-dot { width: 30px; height: 30px; }
+  .color-row { gap: 6px; padding: 8px; }
+
+  /* Log panel - compact */
+  .log-list { max-height: 100px; }
+  .log-item { padding: 5px 8px; font-size: 12px; }
+
+  /* Play buttons */
+  .play-btn { padding: 10px; font-size: 12px; min-height: 44px; }
+
+  /* Status bar */
+  .status-bar { font-size: 10px; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+  /* Cmd panel title */
+  .cmd-panel .title { font-size: 13px; margin-bottom: 8px; }
+  .log-panel .title { font-size: 13px; }
+}
+
+@media (max-width: 480px) {
+  .header h1 { font-size: 18px; }
+  .cmd-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+  .cmd-btn { padding: 12px 2px; min-height: 56px; font-size: 11px; }
+  .cmd-btn .cmd-icon { font-size: 22px; }
+  .canvas-controls button { font-size: 10px; padding: 5px 8px; }
+  .task-btn { min-width: 70px; font-size: 10px; padding: 6px 4px; }
+  .step-row { gap: 4px; }
+  .step-input { width: 50px; }
+  .log-list { max-height: 80px; }
+  .status-bar { font-size: 9px; gap: 6px; }
+
+  /* Canvas controls - icon only on very small */
+  .canvas-header .title { font-size: 12px; }
+}
+
+/* Touch optimizations */
+.cmd-btn, .play-btn, .task-btn, .canvas-controls button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.step-input { -webkit-appearance: none; }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>🤖 机器人画画指令台</h1>
+    <div class="subtitle">用指令控制机器人，画出美丽的图形！</div>
+  </div>
+
+  <div class="main">
+    <div class="canvas-area">
+      <div class="canvas-header">
+        <div class="title">🎨 画布</div>
+        <div class="canvas-controls">
+          <button onclick="clearCanvas()">🗑️ 清空</button>
+          <button onclick="resetRobot()">🔄 重置机器人</button>
+          <button onclick="toggleGrid()">📐 网格</button>
+        </div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="canvas"></canvas>
+        <div class="speech-bubble" id="speech"></div>
+      </div>
+      <div class="task-bar">
+        <button class="task-btn" onclick="loadTask('square')">
+          <span class="icon">⬜</span>
+          任务一：正方形
+          <span class="label">基础移动</span>
+        </button>
+        <button class="task-btn" onclick="loadTask('triangle')">
+          <span class="icon">🔺</span>
+          任务二：三角形
+          <span class="label">理解角度</span>
+        </button>
+        <button class="task-btn" onclick="loadTask('house')">
+          <span class="icon">🏠</span>
+          任务三：彩色房子
+          <span class="label">综合运用</span>
+        </button>
+      </div>
+      <div class="status-bar">
+        <span>📍 位置: (<span id="st-x">0</span>, <span id="st-y">0</span>)</span>
+        <span>🧭 方向: <span id="st-dir">↑ 上</span></span>
+        <span>✏️ 画笔: <span class="dot down" id="st-pen-dot"></span> <span id="st-pen">落笔</span></span>
+        <span>🎨 颜色: <span id="st-color-dot" style="width:10px;height:10px;border-radius:50%;display:inline-block;background:#333"></span></span>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="cmd-panel">
+        <div class="title">🎮 指令按钮</div>
+        <div class="cmd-grid">
+          <button class="cmd-btn move" onclick="execCmd('forward')"><span class="cmd-icon">⬆️</span>前进</button>
+          <button class="cmd-btn move" onclick="execCmd('backward')"><span class="cmd-icon">⬇️</span>后退</button>
+          <button class="cmd-btn turn" onclick="execCmd('left')"><span class="cmd-icon">↩️</span>左转</button>
+          <button class="cmd-btn turn" onclick="execCmd('right')"><span class="cmd-icon">↪️</span>右转</button>
+          <button class="cmd-btn pen" onclick="execCmd('pendown')"><span class="cmd-icon">✏️</span>落笔</button>
+          <button class="cmd-btn pen" onclick="execCmd('penup')"><span class="cmd-icon">🔼</span>抬笔</button>
+        </div>
+        <div class="step-row">
+          <label>前进/后退步数:</label>
+          <input type="number" class="step-input" id="stepInput" value="3" min="1" max="10">
+          <label>转弯角度:</label>
+          <input type="number" class="step-input" id="angleInput" value="90" min="1" max="360" style="width:55px">
+          <label>°</label>
+        </div>
+        <div class="color-row">
+          <label>🎨 画笔颜色:</label>
+          <div class="color-dot active" style="background:#333" data-color="#333" onclick="setColor(this)"></div>
+          <div class="color-dot" style="background:#e53935" data-color="#e53935" onclick="setColor(this)"></div>
+          <div class="color-dot" style="background:#1e88e5" data-color="#1e88e5" onclick="setColor(this)"></div>
+          <div class="color-dot" style="background:#43a047" data-color="#43a047" onclick="setColor(this)"></div>
+          <div class="color-dot" style="background:#fb8c00" data-color="#fb8c00" onclick="setColor(this)"></div>
+          <div class="color-dot" style="background:#8e24aa" data-color="#8e24aa" onclick="setColor(this)"></div>
+          <div class="color-dot" style="background:#ffb300" data-color="#ffb300" onclick="setColor(this)"></div>
+          <div class="color-dot" style="background:#00acc1" data-color="#00acc1" onclick="setColor(this)"></div>
+        </div>
+      </div>
+
+      <div class="log-panel">
+        <div class="title">
+          📋 指令记录
+          <span class="cmd-count" id="cmdCount">共 0 条</span>
+        </div>
+        <div class="log-list" id="logList"></div>
+        <div class="playback-row">
+          <button class="play-btn" onclick="replayAll()">▶️ 回放</button>
+          <button class="play-btn" onclick="undoLast()">↩️ 撤销</button>
+          <button class="play-btn stop" onclick="clearLog()">🗑️ 清空</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const speech = document.getElementById('speech');
+
+const GRID_SIZE = 30;
+let showGrid = true;
+let DPR = 1;
+let W, H;
+
+// Robot state
+let robot = {
+  x: 0, y: 0,
+  angle: -90, // facing up
+  penDown: true,
+  color: '#333',
+  lineWidth: 3
+};
+
+// Command history
+let cmdHistory = [];
+let isAnimating = false;
+
+// Robot animation state
+let robotAnim = { eyeBlink: 0, bounce: 0, wheelRot: 0 };
+
+function initCanvas() {
+  DPR = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  robot.x = W / 2;
+  robot.y = H / 2;
+  drawAll();
+}
+
+function drawAll() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#f0f4f8';
+  ctx.fillRect(0, 0, W, H);
+  if (showGrid) drawGrid();
+  // Redraw all pen strokes
+  replayStrokes();
+  drawRobot(robot.x, robot.y, robot.angle);
+}
+
+function drawGrid() {
+  ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += GRID_SIZE) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += GRID_SIZE) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+}
+
+function drawRobot(x, y, angleDeg) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate((angleDeg + 90) * Math.PI / 180);
+
+  const s = 1 + Math.sin(robotAnim.bounce) * 0.04;
+  ctx.scale(s, s);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.1)';
+  ctx.beginPath();
+  ctx.ellipse(0, 16, 14, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Body
+  ctx.fillStyle = '#4fc3f7';
+  ctx.strokeStyle = '#0288d1';
+  ctx.lineWidth = 2;
+  roundRect(ctx, -12, -10, 24, 22, 6);
+  ctx.fill(); ctx.stroke();
+
+  // Head
+  ctx.fillStyle = '#b3e5fc';
+  ctx.strokeStyle = '#0288d1';
+  roundRect(ctx, -10, -22, 20, 14, 5);
+  ctx.fill(); ctx.stroke();
+
+  // Eyes
+  const blinkH = Math.abs(Math.sin(robotAnim.eyeBlink)) < 0.1 ? 1 : 4;
+  ctx.fillStyle = '#1a237e';
+  ctx.beginPath();
+  ctx.ellipse(-4, -16, 2.5, blinkH > 1 ? 3 : 0.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(4, -16, 2.5, blinkH > 1 ? 3 : 0.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eye shine
+  if (blinkH > 1) {
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(-3, -17, 1, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(5, -17, 1, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Antenna
+  ctx.strokeStyle = '#0288d1';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, -22); ctx.lineTo(0, -28); ctx.stroke();
+  ctx.fillStyle = '#ff5252';
+  ctx.beginPath(); ctx.arc(0, -29, 3, 0, Math.PI * 2); ctx.fill();
+
+  // Antenna glow
+  ctx.fillStyle = `rgba(255,82,82,${0.3 + Math.sin(Date.now() / 300) * 0.2})`;
+  ctx.beginPath(); ctx.arc(0, -29, 5, 0, Math.PI * 2); ctx.fill();
+
+  // Wheels
+  ctx.fillStyle = '#455a64';
+  const wr = robotAnim.wheelRot;
+  drawWheel(-12, 10, wr);
+  drawWheel(10, 10, wr);
+
+  // Pen indicator
+  if (robot.penDown) {
+    ctx.fillStyle = robot.color;
+    ctx.beginPath();
+    ctx.moveTo(-2, 14);
+    ctx.lineTo(2, 14);
+    ctx.lineTo(0, 20);
+    ctx.closePath();
+    ctx.fill();
+
+    // Pen drip
+    ctx.fillStyle = robot.color + '80';
+    ctx.beginPath(); ctx.arc(0, 22, 1.5, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Smile
+  ctx.strokeStyle = '#1a237e';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(0, -10, 5, 0.2, Math.PI - 0.2);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawWheel(x, y, rot) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.fillStyle = '#455a64';
+  ctx.beginPath();
+  ctx.arc(0, 0, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#37474f';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(-3, 0); ctx.lineTo(3, 0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -3); ctx.lineTo(0, 3); ctx.stroke();
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// Replay all strokes (without animation) for redraw
+function replayStrokes() {
+  let st = { x: W / 2, y: H / 2, angle: -90, penDown: true, color: '#333' };
+  for (const cmd of cmdHistory) {
+    const prev = { ...st };
+    switch (cmd.type) {
+      case 'forward':
+        st.x += Math.cos(st.angle * Math.PI / 180) * cmd.steps * GRID_SIZE;
+        st.y += Math.sin(st.angle * Math.PI / 180) * cmd.steps * GRID_SIZE;
+        if (st.penDown) {
+          ctx.strokeStyle = st.color;
+          ctx.lineWidth = 3;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(prev.x, prev.y);
+          ctx.lineTo(st.x, st.y);
+          ctx.stroke();
+        }
+        break;
+      case 'backward':
+        st.x -= Math.cos(st.angle * Math.PI / 180) * cmd.steps * GRID_SIZE;
+        st.y -= Math.sin(st.angle * Math.PI / 180) * cmd.steps * GRID_SIZE;
+        if (st.penDown) {
+          ctx.strokeStyle = st.color;
+          ctx.lineWidth = 3;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(prev.x, prev.y);
+          ctx.lineTo(st.x, st.y);
+          ctx.stroke();
+        }
+        break;
+      case 'left': st.angle -= cmd.angle; break;
+      case 'right': st.angle += cmd.angle; break;
+      case 'pendown': st.penDown = true; break;
+      case 'penup': st.penDown = false; break;
+      case 'color': st.color = cmd.color; break;
+    }
+  }
+}
+
+// Animate a single command
+function animateCommand(cmd) {
+  return new Promise(resolve => {
+    const steps = cmd.steps || 0;
+    const totalDist = steps * GRID_SIZE;
+    const duration = cmd.type === 'forward' || cmd.type === 'backward' ? Math.max(200, steps * 120) :
+                     cmd.type === 'left' || cmd.type === 'right' ? 300 : 150;
+    const startTime = performance.now();
+    const startX = robot.x, startY = robot.y, startAngle = robot.angle;
+
+    let dx = 0, dy = 0, dAngle = 0;
+    if (cmd.type === 'forward') {
+      dx = Math.cos(robot.angle * Math.PI / 180) * totalDist;
+      dy = Math.sin(robot.angle * Math.PI / 180) * totalDist;
+    } else if (cmd.type === 'backward') {
+      dx = -Math.cos(robot.angle * Math.PI / 180) * totalDist;
+      dy = -Math.sin(robot.angle * Math.PI / 180) * totalDist;
+    } else if (cmd.type === 'left') {
+      dAngle = -(cmd.angle || 90);
+    } else if (cmd.type === 'right') {
+      dAngle = (cmd.angle || 90);
+    }
+
+    function tick(now) {
+      const elapsed = now - startTime;
+      const t = Math.min(1, elapsed / duration);
+      const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+      if (cmd.type === 'forward' || cmd.type === 'backward') {
+        robot.x = startX + dx * ease;
+        robot.y = startY + dy * ease;
+        robotAnim.wheelRot += 0.15;
+      } else if (cmd.type === 'left' || cmd.type === 'right') {
+        robot.angle = startAngle + dAngle * ease;
+      }
+
+      robotAnim.bounce += 0.2;
+      drawAll();
+
+      if (t < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        // Snap to final
+        robot.x = startX + dx;
+        robot.y = startY + dy;
+        robot.angle = startAngle + dAngle;
+        drawAll();
+        resolve();
+      }
+    }
+
+    if (cmd.type === 'pendown') { robot.penDown = true; resolve(); drawAll(); return; }
+    if (cmd.type === 'penup') { robot.penDown = false; resolve(); drawAll(); return; }
+    if (cmd.type === 'color') { robot.color = cmd.color; resolve(); drawAll(); return; }
+
+    requestAnimationFrame(tick);
+  });
+}
+
+// Execute a command
+async function execCmd(type) {
+  if (isAnimating) return;
+  isAnimating = true;
+
+  const steps = parseInt(document.getElementById('stepInput').value) || 3;
+  const angle = parseInt(document.getElementById('angleInput').value) || 90;
+
+  const cmd = { type, steps, angle, color: robot.color };
+  cmdHistory.push(cmd);
+
+  showSpeech(getCmdText(cmd));
+  await animateCommand(cmd);
+  updateStatus();
+  updateLog();
+
+  isAnimating = false;
+}
+
+function getCmdText(cmd) {
+  const icons = { forward: '⬆️', backward: '⬇️', left: '↩️', right: '↪️', pendown: '✏️', penup: '🔼', color: '🎨' };
+  const labels = { forward: `前进 ${cmd.steps} 步`, backward: `后退 ${cmd.steps} 步`, left: `左转 ${cmd.angle}°`, right: `右转 ${cmd.angle}°`, pendown: '落笔', penup: '抬笔', color: '换颜色' };
+  return `${icons[cmd.type]} ${labels[cmd.type]}`;
+}
+
+function showSpeech(text) {
+  speech.textContent = text;
+  speech.classList.add('show');
+  clearTimeout(speech._timer);
+  speech._timer = setTimeout(() => speech.classList.remove('show'), 1500);
+}
+
+function updateStatus() {
+  const gx = Math.round((robot.x - W / 2) / GRID_SIZE);
+  const gy = Math.round((robot.y - H / 2) / GRID_SIZE);
+  document.getElementById('st-x').textContent = gx;
+  document.getElementById('st-y').textContent = -gy;
+
+  const dirs = [[0, '→ 右'], [90, '↓ 下'], [180, '← 左'], [-180, '← 左'], [270, '↑ 上'], [-90, '↑ 上'], [-270, '↓ 下']];
+  let a = ((robot.angle % 360) + 360) % 360;
+  const dirNames = ['→ 右', '↘', '↓ 下', '↙', '← 左', '↖', '↑ 上', '↗'];
+  const dirIdx = Math.round(a / 45) % 8;
+  document.getElementById('st-dir').textContent = dirNames[dirIdx];
+
+  const penDot = document.getElementById('st-pen-dot');
+  const penText = document.getElementById('st-pen');
+  if (robot.penDown) {
+    penDot.className = 'dot down';
+    penText.textContent = '落笔';
+  } else {
+    penDot.className = 'dot up';
+    penText.textContent = '抬笔';
+  }
+
+  document.getElementById('st-color-dot').style.background = robot.color;
+}
+
+function updateLog() {
+  const list = document.getElementById('logList');
+  const count = document.getElementById('cmdCount');
+  count.textContent = `共 ${cmdHistory.length} 条`;
+
+  list.innerHTML = '';
+  cmdHistory.forEach((cmd, i) => {
+    const div = document.createElement('div');
+    div.className = 'log-item';
+    div.innerHTML = `<span class="num">${i + 1}.</span> <span class="log-icon">${getCmdIcon(cmd.type)}</span> ${getCmdLabel(cmd)}`;
+    list.appendChild(div);
+  });
+  list.scrollTop = list.scrollHeight;
+}
+
+function getCmdIcon(type) {
+  return { forward: '⬆️', backward: '⬇️', left: '↩️', right: '↪️', pendown: '✏️', penup: '🔼', color: '🎨' }[type] || '';
+}
+
+function getCmdLabel(cmd) {
+  return { forward: `前进 ${cmd.steps} 步`, backward: `后退 ${cmd.steps} 步`, left: `左转 ${cmd.angle}°`, right: `右转 ${cmd.angle}°`, pendown: '落笔', penup: '抬笔', color: '换色' }[cmd.type] || '';
+}
+
+function setColor(el) {
+  document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+  el.classList.add('active');
+  const c = el.dataset.color;
+  robot.color = c;
+  const cmd = { type: 'color', color: c };
+  cmdHistory.push(cmd);
+  showSpeech('🎨 换颜色');
+  updateStatus();
+  updateLog();
+}
+
+function clearCanvas() {
+  cmdHistory = [];
+  robot.x = W / 2;
+  robot.y = H / 2;
+  robot.angle = -90;
+  robot.penDown = true;
+  robot.color = '#333';
+  document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+  document.querySelector('.color-dot').classList.add('active');
+  drawAll();
+  updateStatus();
+  updateLog();
+  showSpeech('🗑️ 画布已清空');
+}
+
+function resetRobot() {
+  robot.x = W / 2;
+  robot.y = H / 2;
+  robot.angle = -90;
+  drawAll();
+  updateStatus();
+  showSpeech('🔄 机器人已归位');
+}
+
+function toggleGrid() {
+  showGrid = !showGrid;
+  drawAll();
+}
+
+async function undoLast() {
+  if (cmdHistory.length === 0 || isAnimating) return;
+  cmdHistory.pop();
+  // Replay from scratch
+  robot.x = W / 2; robot.y = H / 2; robot.angle = -90; robot.penDown = true; robot.color = '#333';
+  for (const cmd of cmdHistory) {
+    switch (cmd.type) {
+      case 'forward':
+        robot.x += Math.cos(robot.angle * Math.PI / 180) * cmd.steps * GRID_SIZE;
+        robot.y += Math.sin(robot.angle * Math.PI / 180) * cmd.steps * GRID_SIZE;
+        break;
+      case 'backward':
+        robot.x -= Math.cos(robot.angle * Math.PI / 180) * cmd.steps * GRID_SIZE;
+        robot.y -= Math.sin(robot.angle * Math.PI / 180) * cmd.steps * GRID_SIZE;
+        break;
+      case 'left': robot.angle -= cmd.angle; break;
+      case 'right': robot.angle += cmd.angle; break;
+      case 'pendown': robot.penDown = true; break;
+      case 'penup': robot.penDown = false; break;
+      case 'color': robot.color = cmd.color; break;
+    }
+  }
+  drawAll();
+  updateStatus();
+  updateLog();
+  showSpeech('↩️ 已撤销');
+}
+
+function clearLog() {
+  clearCanvas();
+}
+
+async function replayAll() {
+  if (isAnimating || cmdHistory.length === 0) return;
+  isAnimating = true;
+  const saved = [...cmdHistory];
+  cmdHistory = [];
+
+  robot.x = W / 2; robot.y = H / 2; robot.angle = -90; robot.penDown = true; robot.color = '#333';
+  drawAll();
+  updateLog();
+
+  for (const cmd of saved) {
+    cmdHistory.push(cmd);
+    showSpeech(getCmdText(cmd));
+    await animateCommand(cmd);
+    updateStatus();
+    updateLog();
+    await new Promise(r => setTimeout(r, 150));
+  }
+  isAnimating = false;
+  showSpeech('✅ 回放完成！');
+}
+
+// Task presets
+function loadTask(task) {
+  document.querySelectorAll('.task-btn').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  clearCanvas();
+
+  let hint = '';
+  if (task === 'square') {
+    hint = '💡 提示：正方形需要4次"前进+右转90°"';
+    document.getElementById('stepInput').value = 3;
+    document.getElementById('angleInput').value = 90;
+  } else if (task === 'triangle') {
+    hint = '💡 提示：三角形需要"前进+右转120°"重复3次';
+    document.getElementById('stepInput').value = 3;
+    document.getElementById('angleInput').value = 120;
+  } else if (task === 'house') {
+    hint = '💡 提示：先画正方形做墙壁，再画三角形做屋顶！';
+    document.getElementById('stepInput').value = 3;
+    document.getElementById('angleInput').value = 90;
+  }
+  showSpeech(hint);
+  speech._timer = setTimeout(() => speech.classList.remove('show'), 3000);
+}
+
+// Animation loop for robot idle
+function idleLoop() {
+  robotAnim.eyeBlink += 0.05;
+  if (Math.random() < 0.002) robotAnim.eyeBlink = Math.PI; // blink
+  if (!isAnimating) {
+    robotAnim.bounce += 0.03;
+    drawAll();
+  }
+  requestAnimationFrame(idleLoop);
+}
+
+window.addEventListener('resize', initCanvas);
+initCanvas();
+updateStatus();
+idleLoop();
+</script>
+</body>
+</html>

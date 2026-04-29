@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>实验2·故事生成器</title>
+    <style>
+      :root {
+        --bg: linear-gradient(
+          180deg,
+          #10224d,
+          #284d99 44%,
+          #6d8ff7 78%,
+          #f4d08e
+        );
+        --card: rgba(255, 255, 255, 0.88);
+        --ink: #183560;
+        --gold: #ffd56a;
+        --pink: #ff8cb2;
+        --blue: #86b9ff;
+        --lav: #d8c8ff;
+        --mint: #8cf0d5;
+        --r: 28px;
+        --shadow: 0 18px 36px rgba(16, 34, 77, 0.24);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+        color: var(--ink);
+        background: var(--bg);
+        overflow-x: hidden;
+      }
+      body:before,
+      body:after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+      body:before {
+        background-image: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.95) 0 1.4px,
+            transparent 2px
+          ),
+          radial-gradient(
+            circle,
+            rgba(255, 213, 106, 0.82) 0 1.7px,
+            transparent 2.7px
+          ),
+          radial-gradient(
+            circle,
+            rgba(216, 200, 255, 0.8) 0 1.6px,
+            transparent 2.6px
+          );
+        background-size: 170px 170px, 240px 240px, 300px 300px;
+        opacity: 0.8;
+        animation: drift 14s linear infinite;
+      }
+      body:after {
+        background: radial-gradient(
+            circle at 15% 80%,
+            rgba(255, 255, 255, 0.12) 0 80px,
+            transparent 81px
+          ),
+          radial-gradient(
+            circle at 82% 15%,
+            rgba(255, 255, 255, 0.12) 0 70px,
+            transparent 71px
+          );
+        animation: breathe 6s ease-in-out infinite;
+      }
+      .page {
+        position: relative;
+        z-index: 1;
+        width: min(1180px, calc(100% - 28px));
+        margin: 18px auto 32px;
+      }
+      .hero,
+      .layout {
+        display: grid;
+        gap: 20px;
+      }
+      .hero {
+        grid-template-columns: 1.08fr 0.92fr;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.94);
+        color: #ff6797;
+        font-weight: 800;
+        box-shadow: 0 10px 22px rgba(255, 103, 151, 0.16);
+      }
+      h1 {
+        margin: 14px 0 12px;
+        font-size: clamp(32px, 5vw, 54px);
+        line-height: 1.05;
+        color: #fff;
+        text-shadow: 0 8px 18px rgba(16, 34, 77, 0.28);
+        font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      }
+      .hero p {
+        margin: 0;
+        color: #fff;
+        line-height: 1.85;
+        font-size: 17px;
+      }
+      .planet {
+        min-height: 258px;
+        border-radius: var(--r);
+        border: 3px solid rgba(255, 255, 255, 0.26);
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.16),
+          rgba(255, 255, 255, 0.08)
+        );
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+      }
+      .planet:before {
+        content: "";
+        position: absolute;
+        right: 56px;
+        top: 42px;
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--gold), var(--pink));
+        box-shadow: 0 0 0 18px rgba(255, 255, 255, 0.08);
+        animation: float 4.8s ease-in-out infinite;
+      }
+      .planet:after {
+        content: "";
+        position: absolute;
+        right: 30px;
+        top: 92px;
+        width: 220px;
+        height: 60px;
+        border-radius: 50%;
+        border: 8px solid rgba(255, 255, 255, 0.46);
+        transform: rotate(-15deg);
+      }
+      .book {
+        position: absolute;
+        left: 38px;
+        bottom: 26px;
+        width: 230px;
+        height: 146px;
+      }
+      .pageL,
+      .pageR {
+        position: absolute;
+        bottom: 0;
+        width: 94px;
+        height: 120px;
+        background: #fff;
+        border-radius: 18px 18px 10px 10px;
+        box-shadow: 0 14px 22px rgba(16, 34, 77, 0.14);
+      }
+      .pageL {
+        left: 12px;
+        transform: rotate(-7deg);
+      }
+      .pageR {
+        right: 12px;
+        transform: rotate(7deg);
+      }
+      .pageL:before,
+      .pageR:before {
+        content: "★";
+        position: absolute;
+        left: 50%;
+        top: 34px;
+        transform: translateX(-50%);
+        color: var(--pink);
+        font-size: 32px;
+      }
+      .pen {
+        position: absolute;
+        left: 152px;
+        top: 16px;
+        width: 88px;
+        height: 20px;
+        border-radius: 999px;
+        background: linear-gradient(
+          90deg,
+          var(--blue) 0 58%,
+          var(--gold) 58% 76%,
+          var(--pink) 76%
+        );
+        border: 4px solid var(--ink);
+        transform: rotate(-32deg);
+        animation: swing 2.8s ease-in-out infinite;
+      }
+      .trail {
+        position: absolute;
+        left: 90px;
+        top: 42px;
+        color: #fff;
+        font-size: 22px;
+        letter-spacing: 8px;
+        animation: blinkTrail 1.8s ease-in-out infinite;
+      }
+      .layout {
+        grid-template-columns: 0.95fr 1.05fr;
+        align-items: start;
+      }
+      .card {
+        background: var(--card);
+        border: 3px solid rgba(255, 255, 255, 0.66);
+        border-radius: var(--r);
+        backdrop-filter: blur(10px);
+        box-shadow: var(--shadow);
+        padding: 24px;
+      }
+      .title {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 18px;
+      }
+      .title h2,
+      .card h3 {
+        margin: 0;
+      }
+      .icon {
+        width: 46px;
+        height: 46px;
+        display: grid;
+        place-items: center;
+        border-radius: 18px;
+        color: #fff;
+        background: linear-gradient(135deg, var(--pink), var(--gold));
+        box-shadow: 0 12px 24px rgba(255, 140, 178, 0.24);
+        font-size: 22px;
+      }
+      .chips,
+      .actions,
+      .story-tags,
+      .history {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .chip,
+      .btn,
+      .history button,
+      .tagbox {
+        border: none;
+        cursor: pointer;
+        font: inherit;
+        border-radius: 18px;
+        transition: 0.2s transform, 0.2s box-shadow, 0.2s background;
+      }
+      .chip,
+      .history button,
+      .tagbox {
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.96);
+        color: var(--ink);
+        box-shadow: 0 10px 18px rgba(24, 53, 96, 0.1);
+      }
+      .chip:hover,
+      .chip.active,
+      .history button:hover,
+      .tagbox:hover {
+        transform: translateY(-3px) rotate(-1deg);
+        background: linear-gradient(
+          135deg,
+          rgba(216, 200, 255, 0.88),
+          rgba(255, 255, 255, 0.98)
+        );
+        box-shadow: 0 14px 24px rgba(24, 53, 96, 0.16);
+      }
+      textarea {
+        width: 100%;
+        min-height: 120px;
+        resize: vertical;
+        padding: 16px 18px;
+        border-radius: 22px;
+        border: 3px solid rgba(134, 185, 255, 0.22);
+        font: inherit;
+        font-size: 17px;
+        outline: none;
+        transition: 0.2s border-color, 0.2s transform;
+        margin-top: 18px;
+      }
+      textarea:focus {
+        border-color: rgba(255, 140, 178, 0.7);
+        transform: translateY(-1px);
+      }
+      .actions {
+        margin-top: 16px;
+      }
+      .btn {
+        padding: 14px 20px;
+        border-radius: 999px;
+        font-weight: 800;
+      }
+      .primary {
+        color: #fff;
+        background: linear-gradient(135deg, var(--pink), #6c8dff);
+        box-shadow: 0 14px 24px rgba(108, 141, 255, 0.26);
+      }
+      .secondary {
+        color: var(--ink);
+        background: linear-gradient(135deg, #fff, #e8f0ff);
+        box-shadow: 0 10px 18px rgba(24, 53, 96, 0.1);
+      }
+      .btn:hover {
+        transform: translateY(-3px) scale(1.01);
+      }
+      .box {
+        margin-top: 18px;
+        padding: 16px 18px;
+        border-radius: 22px;
+        background: linear-gradient(
+          135deg,
+          rgba(140, 240, 213, 0.24),
+          rgba(255, 255, 255, 0.96)
+        );
+        line-height: 1.8;
+      }
+      .meterWrap {
+        display: grid;
+        gap: 10px;
+        margin: 10px 0 18px;
+      }
+      .meter {
+        height: 16px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(24, 53, 96, 0.08);
+      }
+      .meter span {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: linear-gradient(
+          90deg,
+          var(--gold),
+          var(--pink),
+          var(--blue)
+        );
+        transition: width 0.4s ease;
+      }
+      .storyCard {
+        min-height: 660px;
+        display: flex;
+        flex-direction: column;
+      }
+      .storyShell {
+        flex: 1;
+        display: grid;
+        grid-template-rows: auto auto 1fr auto;
+        gap: 16px;
+      }
+      .story-tags span {
+        padding: 9px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+        font-weight: 800;
+      }
+      .paper {
+        position: relative;
+        min-height: 360px;
+        padding: 22px 22px 24px;
+        border-radius: 26px;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.98),
+          rgba(252, 248, 255, 0.95)
+        );
+        border: 3px dashed rgba(134, 185, 255, 0.22);
+        overflow: hidden;
+      }
+      .paper:before {
+        content: "";
+        position: absolute;
+        left: 22px;
+        right: 22px;
+        top: 0;
+        height: 12px;
+        border-radius: 0 0 18px 18px;
+        background: repeating-linear-gradient(
+          90deg,
+          var(--gold) 0 22px,
+          var(--pink) 22px 44px,
+          var(--blue) 44px 66px,
+          var(--mint) 66px 88px
+        );
+      }
+      .output {
+        margin: 10px 0 0;
+        min-height: 270px;
+        white-space: pre-wrap;
+        line-height: 1.9;
+        font-size: 18px;
+      }
+      .empty {
+        text-align: center;
+        padding-top: 28px;
+        color: rgba(24, 53, 96, 0.78);
+      }
+      .empty .emoji {
+        font-size: 56px;
+        display: inline-block;
+        animation: float 3.4s ease-in-out infinite;
+      }
+      .ribbon {
+        display: inline-flex;
+        padding: 9px 14px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--gold), #fff1b2);
+        font-weight: 800;
+        margin-bottom: 10px;
+      }
+      .notes p,
+      .notes li {
+        line-height: 1.8;
+      }
+      .notes ul {
+        margin: 10px 0 0;
+        padding-left: 20px;
+      }
+      @keyframes drift {
+        from {
+          transform: translateY(0);
+        }
+        to {
+          transform: translateY(-30px);
+        }
+      }
+      @keyframes breathe {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 0.95;
+        }
+        50% {
+          transform: scale(1.03);
+          opacity: 0.8;
+        }
+      }
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+      @keyframes swing {
+        0%,
+        100% {
+          transform: rotate(-32deg) translateY(0);
+        }
+        50% {
+          transform: rotate(-24deg) translateY(-4px);
+        }
+      }
+      @keyframes blinkTrail {
+        0%,
+        100% {
+          opacity: 0.5;
+          letter-spacing: 6px;
+        }
+        50% {
+          opacity: 1;
+          letter-spacing: 10px;
+        }
+      }
+      @media (max-width: 940px) {
+        .hero,
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        .storyCard {
+          min-height: auto;
+        }
+      }
+      @media (orientation: portrait) {
+        .page {
+          width: min(100% - 18px, 760px);
+        }
+        .card {
+          padding: 20px;
+        }
+        .planet {
+          min-height: 220px;
+        }
+        .paper {
+          min-height: 320px;
+        }
+        .output {
+          font-size: 17px;
+          line-height: 1.8;
+        }
+      }
+      @media (orientation: landscape) and (max-height: 520px) {
+        .page {
+          margin: 10px auto 22px;
+        }
+        .card {
+          padding: 18px;
+        }
+        .planet {
+          min-height: 190px;
+        }
+        .storyCard {
+          min-height: auto;
+        }
+        .paper {
+          min-height: 260px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <section class="hero">
+        <div>
+          <span class="badge">📖 二年级上册 · 实验2</span>
+          <h1>故事生成器<br />故事星球发射站</h1>
+          <p>
+            选一个或多个主题，把它们送进故事发射器。AI
+            会把关键词串成一段有开头、有经过、有结尾的小故事，你还可以点按钮把故事读出来。
+          </p>
+        </div>
+        <div class="planet">
+          <div class="book" aria-hidden="true">
+            <div class="pageL"></div>
+            <div class="pageR"></div>
+            <div class="pen"></div>
+            <div class="trail">✦ ✦ ✦</div>
+          </div>
+        </div>
+      </section>
+      <section class="layout">
+        <div>
+          <div class="card">
+            <div class="title">
+              <div class="icon">🚀</div>
+              <h2>主题发射区</h2>
+            </div>
+            <div class="chips" id="themeGrid">
+              <button class="chip" type="button">小兔子</button>
+              <button class="chip" type="button">太空</button>
+              <button class="chip" type="button">魔法森林</button>
+              <button class="chip" type="button">勇气</button>
+              <button class="chip" type="button">友谊</button>
+              <button class="chip" type="button">会说话的书包</button>
+              <button class="chip" type="button">海底冒险</button>
+              <button class="chip" type="button">生日惊喜</button>
+            </div>
+            <textarea
+              id="themeInput"
+              placeholder="输入一个或多个主题，用逗号隔开，例如：小熊，彩虹桥，勇敢"
+            ></textarea>
+            <div class="actions">
+              <button class="btn primary" id="generateBtn" type="button">
+                生成故事
+              </button>
+              <button class="btn secondary" id="randomBtn" type="button">
+                随机搭配主题
+              </button>
+              <button class="btn secondary" id="clearBtn" type="button">
+                清空主题
+              </button>
+            </div>
+            <div class="box">
+              <strong>实验步骤：</strong><br />
+              1. 选择预设主题或自己输入。<br />
+              2. 点击“生成故事”。<br />
+              3. 观察 AI 怎么把几个主题连成完整故事。
+            </div>
+            <div class="box">
+              <h3>最近发射过的主题</h3>
+              <div class="history" id="historyList"></div>
+            </div>
+          </div>
+          <div
+            class="card notes"
+            style="
+              margin-top: 20px;
+              background: linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.92),
+                rgba(255, 243, 212, 0.9)
+              );
+            "
+          >
+            <div class="ribbon">想一想</div>
+            <h3>课堂问题</h3>
+            <p>
+              你最喜欢 AI 讲的哪个故事？你觉得 AI
+              讲的故事和老师讲的有什么不一样？
+            </p>
+            <h3>回家作业</h3>
+            <ul>
+              <li>把你最喜欢的 AI 故事讲给好朋友听，看看他最喜欢哪一段。</li>
+              <li>
+                试着把同一个主题换一种说法，再比较两次生成的故事有什么不同。
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="card storyCard">
+          <div class="title">
+            <div class="icon">🌟</div>
+            <h2>故事展示舱</h2>
+          </div>
+          <div class="storyShell">
+            <div class="story-tags">
+              <span id="sourceBadge">等待发射</span>
+              <span id="lengthBadge">故事长度：0</span>
+            </div>
+            <div class="meterWrap">
+              <strong>故事魔法条</strong>
+              <div class="meter"><span id="meterBar"></span></div>
+            </div>
+            <div class="paper"><div class="output" id="storyOutput"></div></div>
+            <div class="actions">
+              <button class="btn secondary" id="speakBtn" type="button">
+                朗读故事
+              </button>
+              <button class="btn secondary" id="stopSpeakBtn" type="button">
+                停止朗读
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <script>
+      const themeGrid = document.getElementById("themeGrid"),
+        themeInput = document.getElementById("themeInput"),
+        generateBtn = document.getElementById("generateBtn"),
+        randomBtn = document.getElementById("randomBtn"),
+        clearBtn = document.getElementById("clearBtn"),
+        speakBtn = document.getElementById("speakBtn"),
+        stopSpeakBtn = document.getElementById("stopSpeakBtn"),
+        storyOutput = document.getElementById("storyOutput"),
+        sourceBadge = document.getElementById("sourceBadge"),
+        lengthBadge = document.getElementById("lengthBadge"),
+        meterBar = document.getElementById("meterBar"),
+        historyList = document.getElementById("historyList");
+      const presets = [
+          ["小刺猬", "月亮糖果店", "分享"],
+          ["小熊", "太空列车", "勇敢"],
+          ["海豚", "彩虹岛", "友谊"],
+          ["会说话的书包", "校园", "惊喜"],
+          ["小狐狸", "魔法森林", "帮助别人"],
+          ["机器人", "生日派对", "合作"],
+        ],
+        history = [];
+      let currentStory = "",
+        typingTimer = null;
+      themeGrid.addEventListener("click", (e) => {
+        const b = e.target.closest(".chip");
+        if (!b) return;
+        b.classList.toggle("active");
+        syncFromButtons();
+      });
+      randomBtn.addEventListener("click", () => {
+        const pick = presets[Math.floor(Math.random() * presets.length)];
+        document
+          .querySelectorAll(".chip")
+          .forEach((c) =>
+            c.classList.toggle("active", pick.includes(c.textContent.trim()))
+          );
+        themeInput.value = pick.join("，");
+      });
+      clearBtn.addEventListener("click", () => {
+        themeInput.value = "";
+        document
+          .querySelectorAll(".chip")
+          .forEach((c) => c.classList.remove("active"));
+        currentStory = "";
+        cancelTyping();
+        renderEmpty();
+        setMeter(0);
+        sourceBadge.textContent = "等待发射";
+        lengthBadge.textContent = "故事长度：0";
+        stopSpeaking();
+      });
+      generateBtn.addEventListener("click", generateStory);
+      speakBtn.addEventListener("click", speakStory);
+      stopSpeakBtn.addEventListener("click", stopSpeaking);
+      themeInput.addEventListener("input", syncButtons);
+      themeInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) generateStory();
+      });
+      function parseThemes(text) {
+        return text
+          .split(/[，,、\n]/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+      function syncFromButtons() {
+        themeInput.value = Array.from(
+          document.querySelectorAll(".chip.active"),
+          (c) => c.textContent.trim()
+        ).join("，");
+      }
+      function syncButtons() {
+        const themes = parseThemes(themeInput.value);
+        document
+          .querySelectorAll(".chip")
+          .forEach((c) =>
+            c.classList.toggle("active", themes.includes(c.textContent.trim()))
+          );
+      }
+      function renderEmpty() {
+        storyOutput.innerHTML = `<div class="empty"><div class="emoji">🌙</div><p>输入主题后，故事就会从星星里慢慢掉下来。</p></div>`;
+      }
+      function renderLoading(themes) {
+        storyOutput.innerHTML = `<div class="empty"><div class="emoji">✨</div><p>正在把“${escapeHtml(
+          themes.join("、")
+        )}”变成一个完整的小故事……</p></div>`;
+      }
+      function setMeter(n) {
+        meterBar.style.width = `${Math.max(0, Math.min(100, n))}%`;
+      }
+      function addHistory(themes) {
+        const text = themes.join("、");
+        const i = history.indexOf(text);
+        if (i >= 0) history.splice(i, 1);
+        history.unshift(text);
+        if (history.length > 6) history.length = 6;
+        renderHistory();
+      }
+      function renderHistory() {
+        historyList.innerHTML = "";
+        if (!history.length) {
+          historyList.innerHTML = `<span class="tagbox">还没有发射记录</span>`;
+          return;
+        }
+        history.forEach((item) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.textContent = item;
+          b.addEventListener("click", () => {
+            themeInput.value = item.replaceAll("、", "，");
+            syncButtons();
+            generateStory();
+          });
+          historyList.appendChild(b);
+        });
+      }
+      async function generateStory() {
+        const themes = parseThemes(themeInput.value);
+        if (!themes.length) {
+          themeInput.focus();
+          themeInput.placeholder = "先输入一个主题，再生成故事哦";
+          return;
+        }
+        cancelTyping();
+        stopSpeaking();
+        renderLoading(themes);
+        sourceBadge.textContent = "正在寻找故事星星";
+        lengthBadge.textContent = "故事长度：生成中";
+        setMeter(12);
+        addHistory(themes);
+        try {
+          const body = [
+            {
+              role: "system",
+              content:
+                "你是一位小学低年级故事老师。请根据给定主题写一篇适合小学生阅读的中文小故事，语言温暖活泼，要有开头、经过、结尾。",
+            },
+            {
+              role: "user",
+              content: `请用这些主题写故事：${themes.join("、")}。`,
+            },
+          ];
+          const res = await fetch(
+            "https://api.qa.bingotalk.cn/api/v2/comm/vt/aiChat",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            }
+          );
+          setMeter(55);
+          const raw = await res.text();
+          let data;
+          try {
+            data = JSON.parse(raw);
+          } catch {
+            data = raw;
+          }
+          const story = extractStoryText(data);
+          if (!res.ok) throw new Error(res.status);
+          if (!story) throw new Error("no story");
+          currentStory = story.trim();
+          sourceBadge.textContent = "AI 生成故事";
+        } catch (err) {
+          console.warn(err);
+          currentStory = createFallbackStory(themes);
+          sourceBadge.textContent = "本地故事引擎";
+        }
+        lengthBadge.textContent = `故事长度：${currentStory.length} 字`;
+        typeStory(currentStory);
+      }
+      function typeStory(text) {
+        cancelTyping();
+        storyOutput.textContent = "";
+        let i = 0;
+        setMeter(68);
+        typingTimer = setInterval(() => {
+          i += 2;
+          storyOutput.textContent = text.slice(0, i);
+          setMeter(Math.min(100, 68 + (i / Math.max(1, text.length)) * 32));
+          if (i >= text.length) {
+            cancelTyping();
+            setMeter(100);
+          }
+        }, 25);
+      }
+      function cancelTyping() {
+        if (typingTimer) {
+          clearInterval(typingTimer);
+          typingTimer = null;
+        }
+      }
+      function extractStoryText(payload) {
+        if (!payload) return "";
+        if (typeof payload === "string") {
+          const streamed = extractStreamResultText(payload);
+          if (streamed) return cleanStoryText(streamed);
+          return cleanStoryText(payload);
+        }
+        if (Array.isArray(payload)) {
+          for (const item of payload) {
+            const r = extractStoryText(item);
+            if (r) return r;
+          }
+          return "";
+        }
+        if (typeof payload !== "object") return "";
+        const chunkText = payload.data?.result;
+        if (typeof chunkText === "string" && chunkText.trim())
+          return cleanStoryText(chunkText);
+        const paths = [
+          payload.answer,
+          payload.content,
+          payload.text,
+          payload.message,
+          payload.reply,
+          payload.output_text,
+          payload.result?.answer,
+          payload.result?.content,
+          payload.result?.text,
+          payload.result?.message,
+          payload.data?.answer,
+          payload.data?.content,
+          payload.data?.text,
+          payload.data?.message,
+          payload.choices?.[0]?.message?.content,
+          payload.choices?.[0]?.text,
+        ];
+        for (const value of paths) {
+          const r = extractStoryText(value);
+          if (r) return r;
+        }
+        if (payload.role === "assistant" && payload.content) {
+          return extractStoryText(payload.content);
+        }
+        return "";
+      }
+      function extractStreamResultText(text) {
+        const trimmed = text.trim();
+        if (!trimmed || trimmed[0] !== "{") return "";
+        const chunks = [];
+        let start = -1,
+          depth = 0,
+          inString = false,
+          escaped = false;
+        for (let i = 0; i < trimmed.length; i++) {
+          const char = trimmed[i];
+          if (inString) {
+            if (escaped) {
+              escaped = false;
+              continue;
+            }
+            if (char === "\\") {
+              escaped = true;
+              continue;
+            }
+            if (char === '"') {
+              inString = false;
+            }
+            continue;
+          }
+          if (char === '"') {
+            inString = true;
+            continue;
+          }
+          if (char === "{") {
+            if (depth === 0) start = i;
+            depth++;
+            continue;
+          }
+          if (char === "}") {
+            depth--;
+            if (depth === 0 && start !== -1) {
+              const piece = trimmed.slice(start, i + 1);
+              try {
+                const parsed = JSON.parse(piece);
+                const result = parsed?.data?.result;
+                if (typeof result === "string") chunks.push(result);
+              } catch {}
+              start = -1;
+            }
+          }
+        }
+        return chunks.join("").trim();
+      }
+      function cleanStoryText(text) {
+        const trimmed = text.trim();
+        if (!trimmed) return "";
+        if (
+          (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+          (trimmed.startsWith("[") && trimmed.endsWith("]"))
+        ) {
+          try {
+            return extractStoryText(JSON.parse(trimmed));
+          } catch {}
+        }
+        const unfenced = trimmed
+          .replace(/^```[a-zA-Z]*\s*/, "")
+          .replace(/\s*```$/, "")
+          .trim();
+        return unfenced
+          .replace(/^(故事|故事正文|回答|AI回答|输出结果)[:：]\s*/, "")
+          .trim();
+      }
+      function createFallbackStory(themes) {
+        const seed = themes
+            .join("")
+            .split("")
+            .reduce((s, c) => s + c.charCodeAt(0), 0),
+          hero = themes[0] || "小朋友",
+          place = themes[1] || pick(["彩虹镇", "星星湖", "云朵操场"], seed + 3),
+          goal =
+            themes[2] || pick(["寻找勇气", "帮助朋友", "准备惊喜"], seed + 9),
+          helper = pick(
+            ["一只会发光的萤火虫", "一辆爱唱歌的小列车", "一把会跳舞的魔法伞"],
+            seed + 15
+          ),
+          challenge = pick(
+            [
+              "前方出现了一条摇摇晃晃的彩虹桥",
+              "半路忽然下起了会打鼓的雨",
+              "路边的风铃树不停提出谜语",
+            ],
+            seed + 21
+          ),
+          ending = pick(
+            [
+              "大家一起拍手欢呼，天边飞出了糖果色的晚霞。",
+              "原来最厉害的魔法，就是愿意帮助别人。",
+              `${hero}一想到这次冒险，心里就会亮起一颗小星星。`,
+            ],
+            seed + 27
+          );
+        return `${hero}住在${place}附近，每天都喜欢观察身边的新鲜事。\n\n有一天，${hero}听说只要学会${goal}，就能打开一扇闪闪发光的小门。于是，${hero}背上小书包出发了，路上遇见了${helper}。${helper}说：“别着急，我陪你一起试试。”\n\n走着走着，${challenge}。${hero}先深呼吸，再认真想办法，最后和新朋友一起把困难变成了游戏。等他们跨过难关时，那扇小门真的慢慢打开了，里面飞出许多星星纸片，上面写着：“你已经学会了${goal}！”\n\n${ending}`;
+      }
+      function pick(items, seed) {
+        return items[seed % items.length];
+      }
+      function speakStory() {
+        if (!currentStory) return;
+        if (!("speechSynthesis" in window)) {
+          alert("当前浏览器不支持朗读功能。");
+          return;
+        }
+        stopSpeaking();
+        const u = new SpeechSynthesisUtterance(currentStory);
+        u.lang = "zh-CN";
+        u.rate = 0.95;
+        u.pitch = 1.1;
+        window.speechSynthesis.speak(u);
+      }
+      function stopSpeaking() {
+        if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      }
+      function escapeHtml(text) {
+        return text
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+      renderEmpty();
+      renderHistory();
+    </script>
+  </body>
+</html>

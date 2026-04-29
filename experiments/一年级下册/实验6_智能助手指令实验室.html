@@ -1,0 +1,1792 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能助手指令实验室</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+
+:root {
+  --room-floor: #c9956b;
+  --room-wall: #f0e0cc;
+  --accent-warm: #ff6d3a;
+  --accent-teal: #00bfa5;
+  --accent-gold: #ffb300;
+  --accent-blue: #29b6f6;
+  --accent-pink: #f06292;
+  --bg-panel: #faf6f1;
+  --bg-card: #ffffff;
+  --text-dark: #3e2723;
+  --text-mid: #6d4c41;
+  --text-light: #a1887f;
+  --success: #2e7d32;
+  --fail: #c62828;
+  --shadow-soft: 0 4px 24px rgba(62,39,35,0.07);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: #f5ebe0;
+  color: var(--text-dark);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* subtle grid bg */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image: radial-gradient(circle, rgba(0,0,0,.018) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events:none;
+  z-index:0;
+}
+
+.app { position:relative; z-index:1; max-width:1320px; margin:0 auto; padding:10px 14px 30px; }
+
+/* Header */
+.header { text-align:center; padding:14px 0 8px; }
+.header h1 {
+  font-family:'Baloo 2',cursive; font-size:2.1em; font-weight:800;
+  background: linear-gradient(135deg, var(--accent-warm), #ff8a50);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+.header .sub { color:var(--text-mid); font-size:.88em; margin-top:2px; }
+
+/* Mode tabs */
+.mode-tabs { display:flex; justify-content:center; gap:10px; margin:8px 0 14px; }
+.mode-tab {
+  padding:7px 22px; border-radius:24px; border:2px solid #e0d5c8;
+  background:var(--bg-card); color:var(--text-mid); font-family:inherit;
+  font-size:.88em; font-weight:600; cursor:pointer; transition:all .3s;
+}
+.mode-tab:hover { border-color:var(--accent-warm); color:var(--accent-warm); }
+.mode-tab.active {
+  background:var(--accent-warm); color:#fff; border-color:var(--accent-warm);
+  box-shadow:0 4px 16px rgba(255,109,58,.25);
+}
+
+/* Layout */
+.main-layout { display:grid; grid-template-columns:1fr 350px; gap:14px; align-items:start; }
+
+
+/* ===== ROOM SCENE ===== */
+.room-container {
+  background:var(--bg-card); border-radius:20px; overflow:hidden;
+  box-shadow:var(--shadow-soft); border:1px solid rgba(0,0,0,.04);
+}
+
+.room-scene {
+  position:relative; width:100%; aspect-ratio:16/10; overflow:hidden; cursor:default;
+  background: linear-gradient(180deg, #eddcc6 0%, #e8d3b8 54%, var(--room-floor) 54.5%, #c08a5a 100%);
+  transition: background 1s ease;
+}
+
+/* Wall texture */
+.room-scene::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:54%;
+  background:
+    repeating-linear-gradient(90deg, transparent, transparent 110px, rgba(0,0,0,.012) 110px, rgba(0,0,0,.012) 111px),
+    linear-gradient(180deg, #f0e0cc 0%, #e8d3b8 100%);
+  z-index:0;
+}
+
+/* Floor pattern */
+.room-scene::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:46%;
+  background:
+    repeating-linear-gradient(90deg, transparent, transparent 100px, rgba(0,0,0,.025) 100px, rgba(0,0,0,.025) 102px),
+    repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(0,0,0,.01) 50px, rgba(0,0,0,.01) 51px);
+  z-index:0;
+}
+
+/* ===== WINDOW ===== */
+.window-frame {
+  position:absolute; top:4%; left:4%; width:26%; height:40%;
+  border:7px solid #7b5b3a; border-radius:6px 6px 3px 3px;
+  background: linear-gradient(180deg, #87ceeb 0%, #b3e5fc 50%, #e1f5fe 100%);
+  z-index:2; box-shadow: inset 0 0 40px rgba(135,206,235,.3), 0 4px 12px rgba(0,0,0,.1);
+  transition: background 1s;
+}
+.window-frame::before {
+  content:''; position:absolute; left:50%; top:0; bottom:0; width:5px;
+  background:#7b5b3a; transform:translateX(-50%);
+}
+.window-frame::after {
+  content:''; position:absolute; top:50%; left:0; right:0; height:5px;
+  background:#7b5b3a; transform:translateY(-50%);
+}
+
+/* Window light rays */
+.window-light {
+  position:absolute; top:4%; left:8%; width:40%; height:80%;
+  background: linear-gradient(135deg, rgba(255,248,225,.15) 0%, transparent 60%);
+  z-index:1; pointer-events:none; transition: opacity .8s;
+  clip-path: polygon(0% 0%, 30% 0%, 100% 100%, 40% 100%);
+}
+
+/* ===== CURTAINS ===== */
+.curtain-l, .curtain-r {
+  position:absolute; top:1.5%; height:48%; z-index:3;
+  transition: all .9s cubic-bezier(.25,.46,.45,.94);
+}
+.curtain-l {
+  left:0.5%; width:9%;
+  background: linear-gradient(100deg, #c62828 0%, #e53935 40%, #ef5350 70%, #e53935 100%);
+  border-radius: 0 0 12px 4px;
+  clip-path: polygon(0% 0%, 100% 0%, 88% 15%, 100% 30%, 90% 45%, 100% 60%, 88% 75%, 100% 90%, 92% 100%, 0% 100%);
+  box-shadow: 3px 0 10px rgba(0,0,0,.12);
+}
+.curtain-r {
+  left:28%; width:9%;
+  background: linear-gradient(260deg, #c62828 0%, #e53935 40%, #ef5350 70%, #e53935 100%);
+  border-radius: 0 0 4px 12px;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 8% 100%, 0% 90%, 12% 75%, 0% 60%, 10% 45%, 0% 30%, 12% 15%);
+  box-shadow: -3px 0 10px rgba(0,0,0,.12);
+}
+/* Open state */
+.curtain-l.open { width:5%; }
+.curtain-r.open { left:32%; width:5%; }
+/* Closed state */
+.curtain-l.closed { width:17%; }
+.curtain-r.closed { left:17.5%; width:17%; }
+
+.curtain-rod {
+  position:absolute; top:1%; left:0%; width:37%; height:6px;
+  background: linear-gradient(180deg, #a67c52, #8d6e63, #6d4c41);
+  z-index:4; border-radius:3px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+
+.curtain-label {
+  position:absolute; top:51%; left:8%; font-size:clamp(7px,1.1vw,11px);
+  color:var(--text-mid); font-weight:600; z-index:3; opacity:.8;
+}
+
+/* ===== SOFA ===== */
+.sofa { position:absolute; bottom:16%; left:6%; width:34%; height:22%; z-index:4; }
+.sofa-back {
+  position:absolute; top:0; left:4%; right:4%; height:48%;
+  background: linear-gradient(180deg, #5d4037, #4e342e);
+  border-radius:14px 14px 0 0;
+}
+.sofa-seat {
+  position:absolute; bottom:0; left:0; right:0; height:56%;
+  background: linear-gradient(180deg, #6d4c41, #5d4037);
+  border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.2);
+}
+.sofa-arm-l, .sofa-arm-r {
+  position:absolute; bottom:0; width:8%; height:80%;
+  background:linear-gradient(180deg, #5d4037, #4e342e);
+  border-radius:8px;
+}
+.sofa-arm-l { left:-2%; }
+.sofa-arm-r { right:-2%; }
+
+.sofa-pillow {
+  position:absolute; top:12%; width:22%; height:55%; border-radius:10px;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,.12), 0 2px 4px rgba(0,0,0,.08);
+}
+.sofa-pillow:nth-child(4) { left:8%; background:linear-gradient(135deg,#8d6e63,#a1887f); }
+.sofa-pillow:nth-child(5) { left:34%; background:linear-gradient(135deg,#a1887f,#bcaaa4); }
+.sofa-pillow:nth-child(6) { left:62%; background:linear-gradient(135deg,#8d6e63,#a1887f); }
+
+/* Throw pillow */
+.throw-pillow {
+  position:absolute; top:5%; left:72%; width:18%; height:42%;
+  background: linear-gradient(135deg, #ffcc80, #ffb74d);
+  border-radius:8px; transform:rotate(-12deg); z-index:1;
+  box-shadow: 0 2px 6px rgba(0,0,0,.1);
+}
+
+/* ===== COFFEE TABLE ===== */
+.coffee-table {
+  position:absolute; bottom:10%; left:20%; width:18%; height:7.5%;
+  background: linear-gradient(180deg, #bcaaa4, #a1887f);
+  border-radius:5px; z-index:5;
+  box-shadow: 0 6px 16px rgba(0,0,0,.12);
+}
+.coffee-table::before {
+  content:''; position:absolute; bottom:-6px; left:8%; width:12%; height:6px;
+  background:#8d6e63; border-radius:0 0 3px 3px;
+}
+.coffee-table::after {
+  content:''; position:absolute; bottom:-6px; right:8%; width:12%; height:6px;
+  background:#8d6e63; border-radius:0 0 3px 3px;
+}
+
+/* ===== NIGHTSTAND ===== */
+.nightstand {
+  position:absolute; bottom:6%; right:4%; width:13%; height:16%;
+  background: linear-gradient(180deg, #8d6e63, #795548);
+  border-radius:6px; z-index:5; box-shadow:0 6px 16px rgba(0,0,0,.12);
+}
+.nightstand::before {
+  content:''; position:absolute; top:40%; left:30%; width:40%; height:3px;
+  background:rgba(0,0,0,.08); border-radius:2px;
+}
+
+/* ===== BOOKSHELF (decoration) ===== */
+.bookshelf {
+  position:absolute; top:6%; left:38%; width:14%; height:44%; z-index:2;
+}
+.shelf { position:absolute; left:0; right:0; height:4px; background:#6d4c41; border-radius:2px; }
+.shelf:nth-child(1){top:0;}
+.shelf:nth-child(2){top:33%;}
+.shelf:nth-child(3){top:66%;}
+.shelf:nth-child(4){top:99%;}
+.books {
+  position:absolute; left:4%; bottom:4px; display:flex; gap:2px;
+}
+.book {
+  width:clamp(4px,0.6vw,7px); border-radius:1px 1px 0 0;
+  box-shadow: 0 -1px 2px rgba(0,0,0,.1);
+}
+
+/* ===== PLANT (decoration) ===== */
+.plant-pot {
+  position:absolute; bottom:6%; left:46%; width:5%; z-index:6;
+}
+.pot {
+  width:100%; aspect-ratio:1/.7;
+  background: linear-gradient(180deg, #a1887f, #8d6e63);
+  border-radius:4px 4px 6px 6px; position:relative;
+}
+.plant-leaves {
+  position:absolute; bottom:90%; left:50%; transform:translateX(-50%);
+  width:160%; aspect-ratio:1;
+}
+.leaf {
+  position:absolute; width:40%; height:60%;
+  background: linear-gradient(135deg, #66bb6a, #43a047);
+  border-radius:50% 0 50% 0;
+}
+.leaf:nth-child(1){ left:10%; bottom:0; transform:rotate(-30deg); }
+.leaf:nth-child(2){ right:10%; bottom:0; transform:rotate(30deg); }
+.leaf:nth-child(3){ left:30%; bottom:20%; transform:rotate(-10deg); background:linear-gradient(135deg,#81c784,#66bb6a); }
+
+/* ===== SMART SPEAKER ===== */
+.device-speaker {
+  position:absolute; bottom:18%; left:24%; width:6.5%; z-index:6;
+  cursor:pointer; transition:transform .3s;
+}
+.device-speaker:hover { transform:scale(1.1) translateY(-2px); }
+
+.speaker-body {
+  width:100%; aspect-ratio:1/1.2;
+  background: linear-gradient(180deg, #37474f, #263238);
+  border-radius:30% 30% 40% 40%; position:relative;
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
+.speaker-ring {
+  position:absolute; top:18%; left:18%; right:18%; aspect-ratio:1;
+  border-radius:50%; border:2.5px solid #546e7a; opacity:.5;
+  transition:all .5s;
+}
+.speaker-dot {
+  position:absolute; top:50%; left:50%; width:6px; height:6px;
+  background:#546e7a; border-radius:50%; transform:translate(-50%,-50%);
+  transition:all .5s;
+}
+.speaker-body.active .speaker-ring {
+  border-color:var(--accent-teal); opacity:1;
+  box-shadow:0 0 18px rgba(0,191,165,.45);
+  animation:ringPulse 1.2s ease infinite;
+}
+.speaker-body.active .speaker-dot {
+  background:var(--accent-teal);
+  box-shadow:0 0 8px var(--accent-teal);
+}
+@keyframes ringPulse {
+  0%,100%{transform:scale(1); opacity:1;}
+  50%{transform:scale(1.08); opacity:.65;}
+}
+
+/* Sound waves */
+.sound-waves {
+  position:absolute; top:-30%; left:50%; transform:translateX(-50%);
+  width:200%; height:40%; pointer-events:none; opacity:0; transition:opacity .5s;
+}
+.sound-waves.active { opacity:1; }
+.sw {
+  position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+  border:2px solid var(--accent-teal); border-radius:50%;
+  opacity:0; animation:soundWave 1.8s ease-out infinite;
+}
+.sw:nth-child(1){ width:40%; aspect-ratio:2/1; animation-delay:0s; }
+.sw:nth-child(2){ width:65%; aspect-ratio:2/1; animation-delay:.4s; }
+.sw:nth-child(3){ width:90%; aspect-ratio:2/1; animation-delay:.8s; }
+@keyframes soundWave {
+  0%{opacity:.6;transform:translateX(-50%) scale(.8);}
+  100%{opacity:0;transform:translateX(-50%) scale(1.2);}
+}
+
+.speaker-label,.lamp-label,.tv-label,.robot-label {
+  text-align:center; font-size:clamp(7px,1.1vw,11px);
+  color:var(--text-mid); margin-top:4px; font-weight:600; white-space:nowrap;
+}
+
+/* ===== DESK LAMP ===== */
+.device-lamp {
+  position:absolute; bottom:22%; right:5.5%; width:11%; z-index:6;
+  cursor:pointer; transition:transform .3s;
+}
+.device-lamp:hover { transform:scale(1.06); }
+
+.lamp-shade {
+  width:70%; aspect-ratio:1.8/1; margin:0 auto;
+  background: linear-gradient(180deg, #bdbdbd, #9e9e9e);
+  border-radius:50% 50% 5px 5px; position:relative;
+  transition:all .6s; box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+.lamp-shade.on {
+  background: linear-gradient(180deg, #fff9c4, #fff176);
+  box-shadow:0 0 30px rgba(255,241,118,.4), 0 2px 8px rgba(0,0,0,.08);
+}
+
+.lamp-pole {
+  width:5px; height:48px; margin:0 auto;
+  background:linear-gradient(180deg, #8d6e63, #6d4c41);
+  border-radius:3px;
+}
+.lamp-base-el {
+  width:50%; height:7px; margin:0 auto;
+  background:linear-gradient(180deg, #6d4c41, #5d4037);
+  border-radius:4px;
+}
+
+.lamp-glow {
+  position:absolute; bottom:-60px; left:-50%; width:200%; height:100px;
+  background:radial-gradient(ellipse at center, rgba(255,241,118,.35) 0%, rgba(255,241,118,.1) 40%, transparent 70%);
+  opacity:0; transition:opacity .6s; pointer-events:none;
+}
+.lamp-glow.on { opacity:1; }
+
+/* Warm particles */
+.lamp-particles {
+  position:absolute; bottom:-20px; left:0; right:0; height:50px;
+  pointer-events:none; overflow:visible;
+}
+.lp {
+  position:absolute; width:3px; height:3px;
+  background:rgba(255,241,118,.6); border-radius:50%;
+  animation:floatUp 2.5s ease infinite;
+}
+.lp:nth-child(1){left:20%;animation-delay:0s;}
+.lp:nth-child(2){left:40%;animation-delay:.5s;}
+.lp:nth-child(3){left:60%;animation-delay:1s;}
+.lp:nth-child(4){left:80%;animation-delay:1.5s;}
+@keyframes floatUp {
+  0%{opacity:0;transform:translateY(0);}
+  30%{opacity:.8;}
+  100%{opacity:0;transform:translateY(-35px) translateX(5px);}
+}
+.lamp-particles { display:none; }
+.lamp-particles.on { display:block; }
+
+/* ===== TV ===== */
+.device-tv {
+  position:absolute; top:3%; right:6%; width:34%; z-index:4;
+  cursor:pointer; transition:transform .3s;
+}
+.device-tv:hover { transform:scale(1.03); }
+
+.tv-frame {
+  width:100%; aspect-ratio:16/9;
+  background:#1a1a1a; border-radius:6px;
+  border:5px solid #212121; position:relative; overflow:hidden;
+  box-shadow: 0 10px 35px rgba(0,0,0,.2);
+}
+.tv-screen {
+  position:absolute; inset:3px; background:#0a0a0a; border-radius:3px;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .6s; overflow:hidden;
+}
+
+/* TV on effects */
+.tv-screen.on {
+  background: linear-gradient(135deg, #1a237e, #0d47a1 40%, #01579b 70%, #0277bd);
+}
+
+/* Scanlines */
+.tv-scanlines {
+  position:absolute; inset:0; pointer-events:none; opacity:0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.04) 2px, rgba(0,0,0,.04) 4px);
+  transition:opacity .5s;
+}
+.tv-screen.on .tv-scanlines { opacity:1; }
+
+/* Screen glare */
+.tv-glare {
+  position:absolute; top:-20%; right:-20%; width:60%; height:60%;
+  background:radial-gradient(ellipse, rgba(255,255,255,.06), transparent 70%);
+  pointer-events:none; opacity:0; transition:opacity .5s;
+}
+.tv-screen.on .tv-glare { opacity:1; }
+
+.tv-content {
+  color:#fff; font-size:clamp(10px,1.4vw,15px); text-align:center;
+  opacity:0; transition:opacity .5s; z-index:1; line-height:1.4;
+}
+.tv-screen.on .tv-content { opacity:1; }
+
+/* TV channel switch animation */
+.tv-screen.switching {
+  animation:tvSwitch .3s ease;
+}
+@keyframes tvSwitch {
+  0%{filter:brightness(1);}
+  30%{filter:brightness(3) contrast(2);}
+  60%{filter:brightness(.5);}
+  100%{filter:brightness(1);}
+}
+
+.tv-off-dot {
+  width:4px; height:4px; background:#1a1a1a; border-radius:50%;
+  transition:all .3s;
+}
+.tv-screen.on .tv-off-dot { display:none; }
+
+/* TV turn on/off animation */
+.tv-screen.turning-on {
+  animation:tvOn .5s ease forwards;
+}
+@keyframes tvOn {
+  0%{clip-path:inset(49% 0 49% 0);}
+  50%{clip-path:inset(0 20% 0 20%);}
+  100%{clip-path:inset(0 0 0 0);}
+}
+.tv-screen.turning-off {
+  animation:tvOff .4s ease forwards;
+}
+@keyframes tvOff {
+  0%{clip-path:inset(0 0 0 0); filter:brightness(1);}
+  60%{clip-path:inset(45% 0 45% 0); filter:brightness(2);}
+  100%{clip-path:inset(50% 0 50% 0); filter:brightness(0);}
+}
+
+.tv-stand-el {
+  width:18%; height:10px; margin:0 auto;
+  background:linear-gradient(180deg, #333, #212121);
+  border-radius:0 0 4px 4px;
+}
+
+/* Wall mount illusion */
+.tv-mount {
+  position:absolute; top:50%; right:22%; width:2%; height:8%;
+  background:#5d4037; z-index:3; border-radius:2px;
+  transform:translateY(-50%);
+}
+
+/* ===== ROBOT VACUUM ===== */
+.device-robot {
+  position:absolute; bottom:4%; left:52%; width:9%; z-index:8;
+  cursor:pointer; transition:all .5s cubic-bezier(.4,0,.2,1);
+}
+.device-robot:hover { transform:scale(1.1); }
+
+.robot-body {
+  width:100%; aspect-ratio:1;
+  background:linear-gradient(145deg, #eceff1, #cfd8dc, #b0bec5);
+  border-radius:50%; position:relative;
+  box-shadow: 0 6px 20px rgba(0,0,0,.18), inset 0 2px 4px rgba(255,255,255,.3);
+  transition:all .4s;
+}
+
+/* Robot face */
+.robot-face {
+  position:absolute; top:15%; left:50%; transform:translateX(-50%); width:65%;
+}
+.robot-eyes { display:flex; justify-content:center; gap:22%; }
+.robot-eye {
+  width:22%; aspect-ratio:1; background:#455a64; border-radius:50%;
+  position:relative; transition:all .4s;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.3);
+}
+.robot-eye::after {
+  content:''; position:absolute; top:15%; left:20%; width:35%; height:35%;
+  background:rgba(255,255,255,.7); border-radius:50%;
+}
+.robot-mouth {
+  width:28%; height:3px; background:#455a64; border-radius:2px;
+  margin:18% auto 0; transition:all .4s;
+}
+
+/* Active robot */
+.robot-body.active {
+  box-shadow: 0 6px 20px rgba(0,0,0,.18), 0 0 20px rgba(0,191,165,.2);
+}
+.robot-body.active .robot-eye {
+  background:var(--accent-teal);
+  box-shadow: 0 0 8px rgba(0,191,165,.5), inset 0 1px 3px rgba(0,0,0,.2);
+}
+.robot-body.active .robot-mouth {
+  width:22%; height:8px; border-radius:0 0 12px 12px; background:var(--accent-teal);
+}
+
+/* Robot antenna */
+.robot-antenna {
+  position:absolute; top:-12%; left:50%; transform:translateX(-50%);
+  width:3px; height:14%; background:#78909c;
+}
+.robot-antenna::after {
+  content:''; position:absolute; top:-4px; left:50%; transform:translateX(-50%);
+  width:7px; height:7px; background:#90a4ae; border-radius:50%;
+  transition: all .4s;
+}
+.robot-body.active .robot-antenna::after {
+  background:var(--accent-teal);
+  box-shadow:0 0 8px var(--accent-teal);
+  animation:antennaBlink 1s infinite;
+}
+@keyframes antennaBlink {
+  0%,100%{opacity:1;} 50%{opacity:.3;}
+}
+
+/* Brush bar */
+.robot-brush-bar {
+  position:absolute; bottom:8%; left:20%; right:20%; height:6px;
+  background:#78909c; border-radius:3px; overflow:hidden;
+  transition:all .3s;
+}
+.robot-brush-bar::after {
+  content:''; position:absolute; inset:0;
+  background:repeating-linear-gradient(90deg, #607d8b 0, #607d8b 3px, #78909c 3px, #78909c 6px);
+}
+.robot-body.active .robot-brush-bar::after {
+  animation:brushSpin .3s linear infinite;
+}
+@keyframes brushSpin {
+  0%{transform:translateX(0);} 100%{transform:translateX(6px);}
+}
+
+/* Robot roaming animation */
+.device-robot.roaming {
+  animation:robotRoam 6s ease-in-out infinite;
+}
+@keyframes robotRoam {
+  0%{transform:translateX(0) translateY(0);}
+  15%{transform:translateX(-25px) translateY(-8px);}
+  30%{transform:translateX(-50px) translateY(5px);}
+  50%{transform:translateX(-30px) translateY(-15px);}
+  70%{transform:translateX(10px) translateY(-5px);}
+  85%{transform:translateX(20px) translateY(8px);}
+  100%{transform:translateX(0) translateY(0);}
+}
+
+/* Dust trail */
+.dust-trail {
+  position:absolute; pointer-events:none; z-index:7;
+}
+.dust {
+  position:absolute; border-radius:50%; pointer-events:none;
+  animation:dustPoof 1.2s ease forwards;
+}
+@keyframes dustPoof {
+  0%{opacity:.7;transform:translate(0,0) scale(1);}
+  100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0);}
+}
+
+/* Charging dock */
+.charge-dock {
+  position:absolute; bottom:2%; right:20%; width:5%; height:4%;
+  background:linear-gradient(180deg, #78909c, #607d8b);
+  border-radius:4px 4px 0 0; z-index:5;
+  box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+.charge-dock::after {
+  content:'⚡'; position:absolute; top:20%; left:50%; transform:translateX(-50%);
+  font-size:clamp(6px,.9vw,10px);
+}
+
+/* ===== FEEDBACK BUBBLE ===== */
+.feedback-bubble {
+  position:absolute; top:45%; left:50%; transform:translate(-50%,-50%) scale(.9);
+  background:rgba(255,255,255,.97); padding:14px 24px; border-radius:18px;
+  font-size:clamp(11px,1.3vw,15px); font-weight:600; z-index:20;
+  box-shadow:0 10px 40px rgba(0,0,0,.12);
+  opacity:0; pointer-events:none;
+  transition:all .45s cubic-bezier(.34,1.56,.64,1);
+  max-width:80%; text-align:center; line-height:1.5;
+}
+.feedback-bubble.show {
+  opacity:1; transform:translate(-50%,-55%) scale(1);
+}
+.feedback-bubble.success { border:2px solid var(--success); color:var(--success); }
+.feedback-bubble.fail { border:2px solid var(--fail); color:var(--fail); }
+.feedback-bubble.info { border:2px solid var(--accent-blue); color:var(--accent-blue); }
+
+/* Thinking dots when processing */
+.feedback-bubble .thinking {
+  display:inline-flex; gap:4px; margin-left:4px;
+}
+.feedback-bubble .thinking span {
+  width:5px; height:5px; background:currentColor; border-radius:50%;
+  animation:thinkDot .8s ease infinite;
+}
+.feedback-bubble .thinking span:nth-child(2){animation-delay:.15s;}
+.feedback-bubble .thinking span:nth-child(3){animation-delay:.3s;}
+@keyframes thinkDot {
+  0%,80%,100%{transform:scale(.6);opacity:.4;}
+  40%{transform:scale(1);opacity:1;}
+}
+
+/* ===== ROOM STATUS BAR ===== */
+.room-bar {
+  display:flex; justify-content:space-around; padding:10px 14px;
+  background:var(--bg-panel); border-top:1px solid rgba(0,0,0,.04);
+  flex-wrap:wrap; gap:5px;
+}
+.device-pill {
+  display:flex; align-items:center; gap:5px; font-size:.78em;
+  color:var(--text-mid); padding:5px 12px; border-radius:20px;
+  background:var(--bg-card); cursor:pointer; transition:all .25s;
+  border:1px solid transparent;
+}
+.device-pill:hover { border-color:var(--accent-warm); background:rgba(255,109,58,.04); }
+.device-pill .dot {
+  width:8px; height:8px; border-radius:50%; transition:all .4s;
+}
+.device-pill .dot.on { background:var(--success); box-shadow:0 0 6px rgba(46,125,50,.4); }
+.device-pill .dot.off { background:#ccc; }
+
+/* ===== RIGHT PANEL ===== */
+.right-panel { display:flex; flex-direction:column; gap:10px; }
+
+/* Command input */
+.command-section {
+  background:var(--bg-card); border-radius:16px; padding:14px;
+  box-shadow:var(--shadow-soft);
+}
+.section-title {
+  font-family:'Baloo 2',cursive; font-size:1em; font-weight:700;
+  color:var(--accent-warm); margin-bottom:8px;
+}
+.command-input-wrap { display:flex; gap:8px; }
+.command-input {
+  flex:1; padding:10px 14px; border:2px solid #e0d5c8;
+  border-radius:12px; font-family:inherit; font-size:.92em;
+  background:var(--bg-panel); color:var(--text-dark); outline:none;
+  transition:border-color .3s, box-shadow .3s;
+}
+.command-input:focus { border-color:var(--accent-warm); box-shadow:0 0 0 3px rgba(255,109,58,.1); }
+.command-input::placeholder { color:var(--text-light); }
+
+.send-btn {
+  padding:10px 20px; background:var(--accent-warm); color:#fff; border:none;
+  border-radius:12px; font-family:inherit; font-size:.92em; font-weight:700;
+  cursor:pointer; transition:all .3s; white-space:nowrap;
+  box-shadow:0 3px 12px rgba(255,109,58,.25);
+}
+.send-btn:hover { background:#f4511e; transform:translateY(-1px); box-shadow:0 5px 18px rgba(255,109,58,.3); }
+.send-btn:active { transform:translateY(0); }
+
+/* Voice animation on input */
+.voice-wave {
+  display:flex; align-items:center; gap:2px; height:20px; margin-top:8px; opacity:0;
+  transition:opacity .3s;
+}
+.voice-wave.active { opacity:1; }
+.voice-wave span {
+  width:3px; background:var(--accent-warm); border-radius:2px;
+  animation:voiceBar .6s ease-in-out infinite alternate;
+}
+.voice-wave span:nth-child(1){height:6px;animation-delay:0s;}
+.voice-wave span:nth-child(2){height:12px;animation-delay:.1s;}
+.voice-wave span:nth-child(3){height:8px;animation-delay:.2s;}
+.voice-wave span:nth-child(4){height:16px;animation-delay:.15s;}
+.voice-wave span:nth-child(5){height:10px;animation-delay:.05s;}
+.voice-wave span:nth-child(6){height:14px;animation-delay:.25s;}
+.voice-wave span:nth-child(7){height:7px;animation-delay:.18s;}
+@keyframes voiceBar {
+  0%{transform:scaleY(.4);}100%{transform:scaleY(1.2);}
+}
+
+/* Quick commands */
+.quick-commands { margin-top:10px; }
+.quick-label {
+  font-size:.72em; color:var(--text-light); margin-bottom:6px;
+  text-transform:uppercase; letter-spacing:1px;
+}
+.quick-btns { display:flex; flex-wrap:wrap; gap:5px; }
+.quick-btn {
+  padding:4px 11px; background:var(--bg-panel); border:1px solid #e0d5c8;
+  border-radius:18px; font-family:inherit; font-size:.78em;
+  color:var(--text-mid); cursor:pointer; transition:all .25s;
+}
+.quick-btn:hover { background:rgba(255,109,58,.08); border-color:var(--accent-warm); color:var(--accent-warm); }
+.quick-btn.fail-demo {
+  border-color:rgba(198,40,40,.2); color:rgba(198,40,40,.6);
+}
+.quick-btn.fail-demo:hover { background:rgba(198,40,40,.05); border-color:var(--fail); color:var(--fail); }
+
+/* History */
+.history-section {
+  background:var(--bg-card); border-radius:16px; padding:14px;
+  box-shadow:var(--shadow-soft); max-height:250px; overflow-y:auto;
+}
+.history-section::-webkit-scrollbar { width:4px; }
+.history-section::-webkit-scrollbar-thumb { background:#d7ccc8; border-radius:2px; }
+
+.history-item {
+  display:flex; gap:8px; padding:7px 0;
+  border-bottom:1px solid rgba(0,0,0,.03);
+  font-size:.82em; animation:slideUp .35s ease;
+}
+@keyframes slideUp {
+  from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);}
+}
+
+.history-icon {
+  width:22px; height:22px; border-radius:50%; display:flex; align-items:center;
+  justify-content:center; font-size:.65em; flex-shrink:0; margin-top:2px; font-weight:700;
+}
+.history-icon.ok { background:rgba(46,125,50,.1); color:var(--success); }
+.history-icon.fail { background:rgba(198,40,40,.1); color:var(--fail); }
+
+.history-text { flex:1; }
+.history-cmd { font-weight:600; color:var(--text-dark); }
+.history-result { color:var(--text-light); font-size:.88em; margin-top:2px; }
+
+/* Score */
+.score-section {
+  background:var(--bg-card); border-radius:16px; padding:14px;
+  box-shadow:var(--shadow-soft);
+}
+.score-grid {
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:8px;
+}
+.score-item { text-align:center; }
+.score-item .num {
+  font-family:'Baloo 2',cursive; font-size:1.4em; font-weight:700;
+  color:var(--accent-warm);
+}
+.score-item .label { font-size:.7em; color:var(--text-light); }
+
+.score-bar { height:8px; background:#efebe9; border-radius:4px; overflow:hidden; margin:6px 0; }
+.score-bar-fill {
+  height:100%; border-radius:4px; transition:width .6s cubic-bezier(.4,0,.2,1);
+  background:linear-gradient(90deg, var(--accent-warm), var(--accent-gold));
+}
+
+.rank-badge {
+  text-align:center; padding:8px; font-size:.85em; font-weight:600;
+  color:var(--accent-warm); border-radius:8px; background:rgba(255,109,58,.06);
+  line-height:1.4;
+}
+
+/* Challenge */
+.challenge-section {
+  background:linear-gradient(135deg, #fff8e1, #ffecb3);
+  border-radius:16px; padding:14px; box-shadow:var(--shadow-soft);
+  border:2px solid var(--accent-gold); display:none;
+}
+.challenge-section.active { display:block; }
+.challenge-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.challenge-title { font-family:'Baloo 2',cursive; font-size:1em; font-weight:700; color:#e65100; }
+.challenge-nav {
+  display:flex; gap:4px;
+}
+.challenge-nav button {
+  width:26px; height:26px; border-radius:50%; border:1.5px solid #e65100;
+  background:transparent; color:#e65100; font-size:.7em; font-weight:700;
+  cursor:pointer; transition:all .2s;
+}
+.challenge-nav button.active { background:#e65100; color:#fff; }
+.challenge-nav button.done { background:var(--success); border-color:var(--success); color:#fff; }
+
+.challenge-desc { font-size:.82em; color:#bf360c; margin-bottom:10px; line-height:1.5; }
+.challenge-tasks { display:flex; flex-direction:column; gap:3px; }
+.challenge-task {
+  display:flex; align-items:center; gap:6px; font-size:.82em;
+  color:var(--text-mid); padding:4px 0; transition:all .3s;
+}
+.challenge-task .check-box {
+  width:18px; height:18px; border-radius:50%; border:2px solid #d7ccc8;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.6em; transition:all .4s; flex-shrink:0;
+}
+.challenge-task.done .check-box {
+  background:var(--success); border-color:var(--success); color:#fff;
+  animation:checkPop .4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes checkPop {
+  0%{transform:scale(0);}60%{transform:scale(1.3);}100%{transform:scale(1);}
+}
+.challenge-task.done { color:var(--success); }
+.challenge-task.done span:last-child { text-decoration:line-through; opacity:.6; }
+
+.challenge-complete {
+  text-align:center; padding:10px; margin-top:8px;
+  background:rgba(46,125,50,.1); border-radius:10px;
+  color:var(--success); font-weight:600; font-size:.9em;
+  animation:completeBounce .5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes completeBounce {
+  0%{transform:scale(.5);opacity:0;}
+  60%{transform:scale(1.1);}
+  100%{transform:scale(1);opacity:1;}
+}
+
+/* ===== 移动端适配 ===== */
+@media(max-width:960px){
+  .main-layout{grid-template-columns:1fr;}
+  .right-panel { order: -1; }
+  .room-container { order: 1; }
+}
+
+@media(max-width:700px){
+  .app { padding: 8px 10px 24px; }
+  .header { padding: 10px 0 6px; }
+  .header h1 { font-size: 1.6em; }
+  .header .sub { font-size: .82em; }
+
+  /* 模式标签 */
+  .mode-tabs { gap: 8px; margin: 6px 0 10px; }
+  .mode-tab { padding: 7px 18px; font-size: .82em; }
+
+  /* 房间场景保持16:10比例，但缩小内部元素字体 */
+  .curtain-label { font-size: 9px; }
+  .feedback-bubble { font-size: 12px; padding: 10px 16px; }
+
+  /* 设备状态栏 */
+  .room-bar { padding: 7px 10px; gap: 4px; }
+  .device-pill { font-size: .72em; padding: 4px 9px; }
+  .device-pill .dot { width: 6px; height: 6px; }
+
+  /* 右侧面板 */
+  .command-section { padding: 12px; border-radius: 12px; }
+  .section-title { font-size: .92em; margin-bottom: 6px; }
+  .command-input { padding: 10px 12px; font-size: .88em; min-height: 44px; }
+  .send-btn { padding: 10px 16px; font-size: .88em; min-height: 44px; min-width: 64px; }
+  .command-input-wrap { gap: 6px; }
+
+  /* 快捷指令按钮 */
+  .quick-btn { padding: 5px 12px; font-size: .76em; min-height: 34px; }
+  .quick-label { font-size: .68em; }
+
+  /* 历史记录 */
+  .history-section { padding: 12px; border-radius: 12px; max-height: 180px; }
+  .history-item { font-size: .78em; padding: 5px 0; gap: 6px; }
+  .history-icon { width: 20px; height: 20px; }
+
+  /* 积分 */
+  .score-section { padding: 12px; border-radius: 12px; }
+  .score-grid { gap: 6px; }
+  .score-item .num { font-size: 1.2em; }
+  .score-item .label { font-size: .65em; }
+  .rank-badge { font-size: .8em; padding: 6px; }
+
+  /* 挑战模式 */
+  .challenge-section { padding: 12px; border-radius: 12px; }
+  .challenge-title { font-size: .92em; }
+  .challenge-desc { font-size: .78em; }
+  .challenge-task { font-size: .78em; }
+  .challenge-nav button { width: 24px; height: 24px; font-size: .65em; }
+}
+
+@media(max-width:420px){
+  .header h1 { font-size: 1.3em; }
+  .mode-tab { padding: 6px 14px; font-size: .78em; }
+  .send-btn { padding: 10px 12px; font-size: .82em; }
+  .quick-btn { padding: 4px 9px; font-size: .72em; }
+  .score-item .num { font-size: 1.1em; }
+  .history-section { max-height: 140px; }
+  .device-pill { font-size: .67em; padding: 3px 7px; }
+}
+
+/* 触摸优化 */
+.mode-tab, .quick-btn, .send-btn, .device-pill,
+.challenge-nav button, .modal-btn {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.command-input { -webkit-appearance: none; }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>🏠 智能助手指令实验室</h1>
+    <div class="sub">学会给智能设备下达清晰、明确的指令</div>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="setMode('free')">🎮 自由探索</button>
+    <button class="mode-tab" onclick="setMode('challenge')">🏆 挑战模式</button>
+  </div>
+
+  <div class="main-layout">
+    <div class="room-container">
+      <div class="room-scene" id="room-scene">
+        <div class="window-frame" id="window-frame"></div>
+        <div class="window-light" id="window-light"></div>
+        <div class="curtain-rod"></div>
+        <div class="curtain-l open" id="curtain-l"></div>
+        <div class="curtain-r open" id="curtain-r"></div>
+        <div class="curtain-label">🪟 智能窗帘</div>
+
+        <!-- Bookshelf decoration -->
+        <div class="bookshelf">
+          <div class="shelf"></div>
+          <div style="position:absolute;top:4%;left:5%;right:5%;bottom:67%;display:flex;gap:2px;align-items:flex-end;">
+            <div class="book" style="height:80%;background:#e57373;"></div>
+            <div class="book" style="height:95%;background:#64b5f6;"></div>
+            <div class="book" style="height:70%;background:#81c784;"></div>
+            <div class="book" style="height:88%;background:#ffb74d;"></div>
+            <div class="book" style="height:75%;background:#ce93d8;"></div>
+          </div>
+          <div class="shelf"></div>
+          <div style="position:absolute;top:37%;left:5%;right:5%;bottom:34%;display:flex;gap:2px;align-items:flex-end;">
+            <div class="book" style="height:85%;background:#4fc3f7;"></div>
+            <div class="book" style="height:70%;background:#f48fb1;"></div>
+            <div class="book" style="height:92%;background:#a5d6a7;"></div>
+            <div class="book" style="height:65%;background:#ffe082;"></div>
+          </div>
+          <div class="shelf"></div>
+          <div style="position:absolute;top:70%;left:5%;right:5%;bottom:1%;display:flex;gap:2px;align-items:flex-end;">
+            <div class="book" style="height:75%;background:#ef9a9a;"></div>
+            <div class="book" style="height:90%;background:#90caf9;"></div>
+            <div class="book" style="height:60%;background:#c5e1a5;"></div>
+          </div>
+          <div class="shelf"></div>
+        </div>
+
+        <!-- Plant -->
+        <div class="plant-pot">
+          <div class="plant-leaves">
+            <div class="leaf"></div><div class="leaf"></div><div class="leaf"></div>
+          </div>
+          <div class="pot"></div>
+        </div>
+
+        <div class="sofa">
+          <div class="sofa-back"></div>
+          <div class="sofa-seat">
+            <div class="sofa-arm-l"></div>
+            <div class="sofa-arm-r"></div>
+            <div class="sofa-pillow"></div>
+            <div class="sofa-pillow"></div>
+            <div class="sofa-pillow"></div>
+          </div>
+          <div class="throw-pillow"></div>
+        </div>
+
+        <div class="coffee-table"></div>
+
+        <!-- Speaker -->
+        <div class="device-speaker" onclick="clickDevice('speaker')">
+          <div class="speaker-body" id="speaker-body">
+            <div class="speaker-ring"></div>
+            <div class="speaker-dot"></div>
+          </div>
+          <div class="sound-waves" id="sound-waves">
+            <div class="sw"></div><div class="sw"></div><div class="sw"></div>
+          </div>
+          <div class="speaker-label">🔊 智能音箱</div>
+        </div>
+
+        <div class="nightstand"></div>
+
+        <!-- Lamp -->
+        <div class="device-lamp" onclick="clickDevice('lamp')">
+          <div class="lamp-shade" id="lamp-shade">
+            <div class="lamp-glow" id="lamp-glow"></div>
+            <div class="lamp-particles" id="lamp-particles">
+              <div class="lp"></div><div class="lp"></div><div class="lp"></div><div class="lp"></div>
+            </div>
+          </div>
+          <div class="lamp-pole"></div>
+          <div class="lamp-base-el"></div>
+          <div class="lamp-label">💡 智能台灯</div>
+        </div>
+
+        <div class="tv-mount"></div>
+
+        <!-- TV -->
+        <div class="device-tv" onclick="clickDevice('tv')">
+          <div class="tv-frame">
+            <div class="tv-screen" id="tv-screen">
+              <div class="tv-scanlines"></div>
+              <div class="tv-glare"></div>
+              <div class="tv-content" id="tv-content">📺 智能电视</div>
+              <div class="tv-off-dot"></div>
+            </div>
+          </div>
+          <div class="tv-stand-el"></div>
+          <div class="tv-label">📺 智能电视</div>
+        </div>
+
+        <div class="charge-dock"></div>
+
+        <!-- Robot -->
+        <div class="device-robot" id="device-robot" onclick="clickDevice('robot')">
+          <div class="robot-body" id="robot-body">
+            <div class="robot-antenna"></div>
+            <div class="robot-face">
+              <div class="robot-eyes">
+                <div class="robot-eye"></div>
+                <div class="robot-eye"></div>
+              </div>
+              <div class="robot-mouth"></div>
+            </div>
+            <div class="robot-brush-bar"></div>
+          </div>
+          <div class="robot-label">🤖 扫地机器人</div>
+        </div>
+
+        <div class="feedback-bubble" id="feedback-bubble"></div>
+      </div>
+
+      <div class="room-bar" id="room-bar"></div>
+    </div>
+
+    <div class="right-panel">
+      <div class="command-section">
+        <div class="section-title">🎤 输入指令</div>
+        <div class="command-input-wrap">
+          <input class="command-input" id="cmd-input" type="text"
+                 placeholder="试试说"打开台灯"…"
+                 onkeydown="if(event.key==='Enter')sendCommand()"
+                 oninput="onInputChange()">
+          <button class="send-btn" onclick="sendCommand()">发送 ✨</button>
+        </div>
+        <div class="voice-wave" id="voice-wave">
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="quick-commands">
+          <div class="quick-label">✅ 试试这些正确指令</div>
+          <div class="quick-btns" id="good-btns"></div>
+          <div class="quick-label" style="margin-top:8px">❌ 试试这些模糊指令</div>
+          <div class="quick-btns" id="bad-btns"></div>
+        </div>
+      </div>
+
+      <div class="challenge-section" id="challenge-section">
+        <div class="challenge-header">
+          <div class="challenge-title" id="ch-title"></div>
+          <div class="challenge-nav" id="ch-nav"></div>
+        </div>
+        <div class="challenge-desc" id="ch-desc"></div>
+        <div class="challenge-tasks" id="ch-tasks"></div>
+        <div id="ch-complete-area"></div>
+      </div>
+
+      <div class="history-section">
+        <div class="section-title">📋 指令记录</div>
+        <div id="history-list"></div>
+      </div>
+
+      <div class="score-section">
+        <div class="section-title">📊 成绩统计</div>
+        <div class="score-grid">
+          <div class="score-item"><div class="num" id="s-total">0</div><div class="label">总指令</div></div>
+          <div class="score-item"><div class="num" id="s-ok" style="color:var(--success)">0</div><div class="label">成功</div></div>
+          <div class="score-item"><div class="num" id="s-fail" style="color:var(--fail)">0</div><div class="label">失败</div></div>
+        </div>
+        <div class="score-bar"><div class="score-bar-fill" id="score-fill" style="width:0%"></div></div>
+        <div class="rank-badge" id="rank-badge">🌟 开始下达指令吧！</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+const D = {
+  lamp:   {name:'智能台灯',icon:'💡',on:false},
+  tv:     {name:'智能电视',icon:'📺',on:false,ch:1},
+  speaker:{name:'智能音箱',icon:'🔊',on:false},
+  robot:  {name:'扫地机器人',icon:'🤖',on:false},
+  curtain:{name:'智能窗帘',icon:'🪟',on:true},
+};
+let stats={total:0,ok:0};
+let mode='free', chIdx=0, chDone=[false,false,false,false,false];
+let dustTimer=null;
+
+// ===== MASSIVE COMMAND DATABASE =====
+const CMD=[
+  // ── LAMP ON ──
+  {p:['打开台灯','开台灯','开灯','把灯打开','台灯打开','请打开台灯','帮我开灯',
+      '开一下灯','把台灯打开','打开灯','灯打开','帮我打开台灯','请开灯',
+      '台灯开','开下灯','我要开灯','把台灯开了','给我开灯','帮忙开灯',
+      '台灯亮起来','让台灯亮','开灯吧','打开那个台灯','请帮我开灯',
+      '把客厅灯打开','打开客厅的灯','打开那盏灯','台灯给我打开'],
+   d:'lamp',a:'on',r:'好的，台灯已打开！💡 房间亮起来啦~'},
+
+  // ── LAMP OFF ──
+  {p:['关闭台灯','关灯','关台灯','把灯关掉','台灯关掉','关上灯','把台灯关了',
+      '关一下灯','请关灯','帮我关灯','灯关掉','台灯关','请关闭台灯',
+      '帮忙关灯','灯关了吧','关掉台灯','请帮我关灯','把灯灭了',
+      '灯灭了吧','让灯暗下来','把那盏灯关了','关掉那个灯','熄灯'],
+   d:'lamp',a:'off',r:'好的，台灯已关闭。🌙'},
+
+  // ── LAMP BRIGHTNESS ──
+  {p:['调亮台灯','灯调亮','灯亮一点','台灯亮一点','把灯调亮',
+      '台灯亮度调高','灯光调亮','调高灯亮度','台灯调到最亮',
+      '把灯光调亮一些','亮一点','灯再亮一些'],
+   d:'lamp',a:'on',r:'好的，台灯已调到最亮！✨'},
+  {p:['调暗台灯','灯调暗','灯暗一点','台灯暗一点','把灯调暗',
+      '台灯亮度调低','灯光调暗','调低灯亮度','灯暗一些',
+      '把灯光调暗一些','暗一点','灯柔和一点'],
+   d:'lamp',a:'on',r:'好的，台灯已调暗，光线更柔和了~'},
+  {p:['台灯调成暖光','暖光模式','把灯调成暖色','灯换暖光','台灯暖光'],
+   d:'lamp',a:'on',r:'好的，台灯已切换为暖光模式~ 🧡'},
+  {p:['台灯调成白光','冷光模式','白光模式','灯换白光','台灯冷光'],
+   d:'lamp',a:'on',r:'好的，台灯已切换为白光模式~'},
+
+  // ── TV ON ──
+  {p:['打开电视','开电视','开电视机','把电视打开','电视打开','打开电视机',
+      '请打开电视','帮我开电视','电视开','开一下电视','把电视机打开',
+      '我要看电视','给我开电视','帮忙开电视','请帮我打开电视',
+      '让电视打开','电视给我打开','打开那个电视','电视机打开'],
+   d:'tv',a:'on',r:'好的，电视已打开！📺 正在播放节目~'},
+
+  // ── TV OFF ──
+  {p:['关闭电视','关电视','关掉电视','把电视关了','电视关掉','关上电视',
+      '请关电视','帮我关电视','电视关','请关闭电视','关一下电视',
+      '把电视机关了','帮忙关电视','电视给我关了','关掉电视机',
+      '不看电视了','电视别放了','把电视关掉'],
+   d:'tv',a:'off',r:'好的，电视已关闭。'},
+
+  // ── TV CHANNEL ──
+  {p:['换台','下一个频道','切换频道','换个台','换一个频道','电视换台',
+      '下一个台','切到下个频道','下一台','跳到下一个频道',
+      '换个频道看看','电视切换频道','电视跳台'],
+   d:'tv',a:'channel',r:'好的，已切换到下一个频道！📡'},
+  {p:['上一个频道','上一个台','回到上一个频道','切到上个频道','往前翻一台'],
+   d:'tv',a:'channel',r:'好的，已切换到上一个频道！'},
+  {p:['播放动画片','看动画片','切到动画频道','放动画','播放卡通',
+      '我要看动画片','调到动画频道','放个动画片'],
+   d:'tv',a:'cartoon',r:'好的，已切换到动画频道！🧸'},
+  {p:['播放新闻','看新闻','切到新闻频道','调到新闻频道','看看新闻'],
+   d:'tv',a:'news',r:'好的，已切换到新闻频道！📰'},
+
+  // ── TV VOLUME ──
+  {p:['电视声音大一点','电视调大声','电视音量增大','调大电视音量','电视大声点',
+      '把电视声音调大','电视音量大一些','声音大一点','电视音量调高',
+      '电视声音再大一些','调高音量'],
+   d:'tv',a:'on',r:'好的，电视音量已调大！🔊'},
+  {p:['电视声音小一点','电视调小声','电视音量减小','调小电视音量','电视小声点',
+      '把电视声音调小','电视音量小一些','声音小一点','电视音量调低',
+      '电视声音再小一些','调低音量'],
+   d:'tv',a:'on',r:'好的，电视音量已调小。🔉'},
+  {p:['电视静音','静音','把电视静音','电视别出声'],
+   d:'tv',a:'on',r:'好的，电视已静音。🔇'},
+
+  // ── SPEAKER ON ──
+  {p:['打开音箱','开音箱','音箱打开','打开智能音箱','开智能音箱','请打开音箱',
+      '帮我开音箱','音箱开','给我开音箱','把音箱打开','启动音箱',
+      '唤醒音箱','音箱醒醒','嗨音箱'],
+   d:'speaker',a:'on',r:'好的，智能音箱已启动！🔊 我在听~'},
+
+  // ── SPEAKER OFF ──
+  {p:['关闭音箱','关音箱','音箱关掉','关掉音箱','关闭智能音箱','请关闭音箱',
+      '帮我关音箱','音箱关','音箱别说了','音箱安静','把音箱关了',
+      '让音箱安静','音箱停','关掉那个音箱'],
+   d:'speaker',a:'off',r:'好的，智能音箱已关闭。再见~ 👋'},
+
+  // ── SPEAKER MUSIC ──
+  {p:['播放音乐','放音乐','来点音乐','音箱播放音乐','放首歌','播放歌曲',
+      '来首歌','音箱放歌','放一首歌','给我放音乐','我要听音乐',
+      '帮我放首歌','来一首歌吧','播放一些音乐','放点音乐',
+      '音箱唱歌','唱首歌','音箱放一首歌','播放儿歌','放儿歌',
+      '来首儿歌','播放摇篮曲','给我唱首歌'],
+   d:'speaker',a:'play',r:'好的，正在为您播放音乐 🎵🎶'},
+  {p:['停止播放','暂停音乐','音乐暂停','停止音乐','暂停','别放了',
+      '音乐停','停下来','不要放了','音乐别放了','暂停播放',
+      '暂停歌曲','停止唱歌','别唱了','安静一下'],
+   d:'speaker',a:'off',r:'好的，音乐已暂停。🔇'},
+  {p:['音箱声音大一点','音箱调大声','把音箱声音调大','音箱大声点','音箱音量调高'],
+   d:'speaker',a:'play',r:'好的，音箱音量已调大！🔊'},
+  {p:['音箱声音小一点','音箱调小声','把音箱声音调小','音箱小声点','音箱音量调低'],
+   d:'speaker',a:'play',r:'好的，音箱音量已调小。🔉'},
+  {p:['下一首歌','下一首','切歌','换一首','放下一首','跳过这首','下一首吧'],
+   d:'speaker',a:'play',r:'好的，已切换到下一首歌！⏭️'},
+  {p:['音箱报时','几点了','现在几点','音箱告诉我时间','报个时'],
+   d:'speaker',a:'on',r:'好的，现在是北京时间' + new Date().getHours() + '点' + new Date().getMinutes() + '分。⏰'},
+  {p:['音箱讲故事','讲个故事','来个故事','给我讲故事','讲故事吧','音箱说个故事'],
+   d:'speaker',a:'play',r:'好的，正在为你讲故事…📖 从前有个小机器人…'},
+  {p:['设置闹钟','帮我定闹钟','定个闹钟','设个闹钟','闹钟设定'],
+   d:'speaker',a:'on',r:'好的，闹钟已设置！⏰ 我会准时提醒你~'},
+
+  // ── ROBOT ON ──
+  {p:['打开扫地机器人','开扫地机器人','扫地机器人打开','开始扫地','机器人扫地',
+      '让扫地机器人工作','扫地机器人开始工作','请开始扫地','开始打扫',
+      '启动扫地机器人','机器人打扫','扫地机器人出发','让机器人扫地',
+      '扫地机器人启动','机器人开始扫','帮我扫地','机器人出发',
+      '让机器人开始工作','扫地机器人开机','开始清扫','启动清扫',
+      '扫地机器人清扫','机器人去扫地','让它去扫地','帮我打扫'],
+   d:'robot',a:'on',r:'好的，扫地机器人已出发！🤖✨ 正在清扫中~'},
+
+  // ── ROBOT OFF ──
+  {p:['关闭扫地机器人','停止扫地','扫地机器人停','扫地机器人关',
+      '停止打扫','扫地机器人回去','扫地机器人回充','机器人停',
+      '机器人回去充电','机器人别扫了','让机器人停下来','停止清扫',
+      '扫地机器人停下来','让机器人回去','扫地机器人关机','机器人回家',
+      '机器人去充电','让它回去','机器人停止工作','别扫了'],
+   d:'robot',a:'off',r:'好的，扫地机器人已返回充电座。🔋'},
+
+  // ── CURTAIN OPEN ──
+  {p:['打开窗帘','开窗帘','拉开窗帘','把窗帘打开','窗帘打开','请打开窗帘',
+      '帮我开窗帘','窗帘拉开','帮忙拉开窗帘','让窗帘打开','窗帘给我打开',
+      '把窗帘拉开','打开那个窗帘','窗帘开了吧','请帮我拉开窗帘',
+      '拉窗帘','把帘子拉开','窗帘拉起来'],
+   d:'curtain',a:'open',r:'好的，窗帘已打开！☀️ 阳光照进来了~'},
+
+  // ── CURTAIN CLOSE ──
+  {p:['关闭窗帘','关窗帘','拉上窗帘','把窗帘关上','窗帘关上','合上窗帘',
+      '请关窗帘','帮我关窗帘','窗帘拉上','帮忙拉上窗帘','让窗帘合上',
+      '窗帘给我关了','把窗帘拉上','关上那个窗帘','请帮我关窗帘',
+      '窗帘合起来','把帘子拉上','窗帘拉下来'],
+   d:'curtain',a:'close',r:'好的，窗帘已关闭。🌙'},
+
+  // ── COMBO COMMANDS ──
+  {p:['全部打开','打开所有设备','全部开','都打开','所有设备打开','全开'],
+   d:'all',a:'on',r:'好的，所有设备已全部打开！⚡'},
+  {p:['全部关闭','关闭所有设备','全部关','都关了','所有设备关闭','全关'],
+   d:'all',a:'off',r:'好的，所有设备已全部关闭。💤'},
+];
+
+// ===== EXPANDED UNCLEAR/INTERFERENCE COMMANDS =====
+const UNCLEAR=[
+  // ── 太模糊：没说具体动作 ──
+  {p:['弄一下灯','搞一下灯','灯那个','灯弄弄','灯搞搞','整一下灯'],
+   fb:'🤔 "弄一下灯"太模糊了！你想"打开台灯"还是"关闭台灯"？智能助手需要明确的动作指令哦。'},
+  {p:['弄一下电视','搞一下电视','电视那个','电视弄弄','整一下电视','动一下电视'],
+   fb:'🤔 "弄一下电视"不够明确！请说"打开电视""关闭电视"或"电视换台"。'},
+  {p:['弄一下窗帘','搞一下窗帘','窗帘那个','窗帘弄弄','整一下窗帘'],
+   fb:'🤔 窗帘要"打开"还是"关闭"？请说清楚动作哦！'},
+  {p:['弄一下音箱','搞一下音箱','音箱那个','音箱弄弄'],
+   fb:'🤔 音箱要做什么？"打开音箱""播放音乐""关闭音箱"？请说具体！'},
+  {p:['弄一下机器人','搞一下机器人','机器人那个','机器人弄弄'],
+   fb:'🤔 机器人要做什么？试试说"开始扫地"或"停止扫地"~'},
+
+  // ── 太模糊：没说具体设备 ──
+  {p:['弄一下','搞一下','整一下','动一下','来一下','处理一下'],
+   fb:'🤔 "弄一下"——弄什么呀？请说出设备名称和动作！比如"打开台灯"。'},
+  {p:['那个','这个','它','开那个','关那个','开这个','关这个','弄那个'],
+   fb:'🤔 "那个"是哪个呢？智能助手看不见你指的方向！请说出具体的设备名称。'},
+  {p:['帮我弄弄','搞一搞','整整','弄弄','搞搞','折腾一下','鼓捣一下'],
+   fb:'🤔 智能助手需要明确的指令：哪个设备+什么动作？比如"打开电视"。'},
+
+  // ── 只说了设备没说动作 ──
+  {p:['灯','台灯','灯灯','那个灯'],
+   fb:'🤔 你提到了灯，但没说要做什么。试试"打开台灯"或"关闭台灯"！'},
+  {p:['电视','电视机','那个电视'],
+   fb:'🤔 电视怎么了？你想"打开电视"还是"关闭电视"？请说完整！'},
+  {p:['音箱','音响','那个音箱','智能音箱'],
+   fb:'🤔 音箱要做什么？请说具体的指令！比如"播放音乐"。'},
+  {p:['窗帘','帘子','那个窗帘'],
+   fb:'🤔 窗帘是要打开还是关闭呢？请说清楚哦！'},
+  {p:['机器人','扫地的','那个机器人'],
+   fb:'🤔 机器人要做什么？"开始扫地"还是"停止扫地"？'},
+
+  // ── 只说了动作没说设备 ──
+  {p:['开','关','打开','关闭','启动','停止'],
+   fb:'🤔 打开/关闭什么呢？请加上设备名称！比如"打开台灯""关闭电视"。'},
+
+  // ── 方言/口语化太重 ──
+  {p:['把灯给我怼开','灯给爷开了','整个灯亮','给灯安排上','拾掇一下灯'],
+   fb:'🤔 智能助手没听懂这个说法~请用标准的指令，比如"打开台灯"！'},
+  {p:['让电视嗨起来','电视给我嗨','电视搞起来','电视整起'],
+   fb:'🤔 这个说法太随意啦！请说"打开电视"或"电视换台"。'},
+  {p:['让机器人嗨起来','机器人给力点','机器人动起来','机器人冲'],
+   fb:'🤔 虽然很有活力，但机器人不理解哦！请说"开始扫地"。'},
+
+  // ── 错误的设备名称 ──
+  {p:['打开空调','关闭空调','空调','开空调','调高空调温度'],
+   fb:'🤔 这个房间没有空调哦！现在有：台灯、电视、音箱、扫地机器人、窗帘。'},
+  {p:['打开冰箱','关冰箱','冰箱','开冰箱'],
+   fb:'🤔 这个房间没有冰箱哦！试试控制台灯、电视、音箱、扫地机器人或窗帘。'},
+  {p:['打开洗衣机','洗衣机','开洗衣机','洗衣服'],
+   fb:'🤔 这里没有洗衣机~可以控制的设备有：台灯、电视、音箱、机器人、窗帘。'},
+  {p:['打开微波炉','微波炉','开微波炉','热个饭'],
+   fb:'🤔 客厅里没有微波炉呢！看看有哪些设备可以控制吧。'},
+  {p:['打开门','关门','开门','锁门'],
+   fb:'🤔 这个实验室里没有智能门锁哦！试试其他设备吧~'},
+  {p:['打开热水器','关热水器','热水器','开热水器'],
+   fb:'🤔 房间里没有热水器~试试"打开台灯"或"播放音乐"。'},
+
+  // ── 语义矛盾/不合逻辑 ──
+  {p:['把灯关亮','灯关亮一点','给灯关到最亮'],
+   fb:'🤔 "关亮"？这个指令矛盾了！你想"调亮台灯"还是"关闭台灯"？'},
+  {p:['打开关闭灯','关闭打开电视','又开又关','打开并关闭'],
+   fb:'🤔 "又开又关"？一条指令只能做一件事哦！先说一个动作吧。'},
+  {p:['小声地打开灯','用力关电视','慢慢打开机器人','轻轻关窗帘'],
+   fb:'🤔 智能设备不需要形容"力度"或"速度"哦~直接说"打开/关闭+设备"就好！'},
+
+  // ── 太长/太啰嗦 ──
+  {p:['麻烦你帮我把客厅里的那个放在桌上的智能台灯给打开一下好吗谢谢'],
+   fb:'🤔 指令太长啦！智能助手喜欢简短指令。直接说"打开台灯"就可以了~'},
+  {p:['如果你方便的话可不可以帮我调一下那个电视的频道换一个好看的台'],
+   fb:'🤔 太啰嗦了~简洁就好！试试"电视换台"。'},
+
+  // ── 非指令类的话 ──
+  {p:['你好','你好啊','嗨','hello','hi','早上好','晚上好'],
+   fb:'👋 你好呀！我是智能助手~ 试试对我说"打开台灯"或"播放音乐"吧！'},
+  {p:['你是谁','你叫什么','你叫什么名字','你是什么'],
+   fb:'🤖 我是智能助手！你可以对我说指令控制家中设备~比如"打开电视"。'},
+  {p:['谢谢','谢谢你','感谢','多谢','辛苦了'],
+   fb:'😊 不客气~很高兴为你服务！还需要控制什么设备吗？'},
+  {p:['再见','拜拜','byebye','bye'],
+   fb:'👋 再见！记住：好的指令 = 动作 + 设备！下次见~'},
+  {p:['厉害','好棒','真聪明','不错'],
+   fb:'😄 谢谢夸奖！试试给我更多指令吧~'},
+  {p:['你会什么','你能做什么','有什么功能','你能干嘛'],
+   fb:'🤖 我可以控制五个设备：台灯、电视、音箱、扫地机器人和窗帘！试试对我说"打开XX"或"关闭XX"吧~'},
+
+  // ── 完全无关 ──
+  {p:['今天天气怎么样','天气','天气预报','会下雨吗'],
+   fb:'🌤️ 我是智能家居助手，天气预报不是我的专长~但我可以帮你"打开窗帘"看看外面！'},
+  {p:['几加几等于几','1加1','算个数','数学题'],
+   fb:'🧮 我是智能家居助手，不太会算数~但我可以帮你控制家里的设备！试试"打开台灯"。'},
+  {p:['讲个笑话','说个笑话','搞笑一下'],
+   fb:'😄 我更擅长控制设备呢~试试"播放音乐"让心情好起来！'},
+];
+
+// ===== CHALLENGES =====
+const CHL=[
+  {title:'🌙 准备睡觉',desc:'天黑了，该准备睡觉了！关掉不需要的设备，拉上窗帘，开一盏小灯阅读。',
+   init:()=>{setDev('lamp',false);setDev('tv',true);setDev('speaker',true);setDev('robot',true);setDev('curtain',true,'open');},
+   tasks:[
+     {text:'关闭电视',ck:()=>!D.tv.on},
+     {text:'关闭音箱',ck:()=>!D.speaker.on},
+     {text:'关闭窗帘',ck:()=>!D.curtain.on},
+     {text:'打开台灯（睡前阅读）',ck:()=>D.lamp.on},
+     {text:'让扫地机器人停下',ck:()=>!D.robot.on},
+   ]},
+  {title:'🌅 早上起床',desc:'美好的早晨！打开窗帘迎接阳光，打开设备开始新的一天。',
+   init:()=>{setDev('lamp',false);setDev('tv',false);setDev('speaker',false);setDev('robot',false);setDev('curtain',false,'close');},
+   tasks:[
+     {text:'打开窗帘',ck:()=>D.curtain.on},
+     {text:'打开电视看新闻',ck:()=>D.tv.on},
+     {text:'播放音乐',ck:()=>D.speaker.on},
+     {text:'启动扫地机器人',ck:()=>D.robot.on},
+   ]},
+  {title:'🎬 家庭电影时间',desc:'全家人看电影啦！营造最佳观影氛围~',
+   init:()=>{setDev('lamp',true);setDev('tv',false);setDev('speaker',true);setDev('robot',true);setDev('curtain',true,'open');},
+   tasks:[
+     {text:'打开电视',ck:()=>D.tv.on},
+     {text:'关闭窗帘（遮光）',ck:()=>!D.curtain.on},
+     {text:'关闭台灯（暗一些）',ck:()=>!D.lamp.on},
+     {text:'关闭音箱',ck:()=>!D.speaker.on},
+     {text:'让机器人安静',ck:()=>!D.robot.on},
+   ]},
+  {title:'🎉 迎接客人',desc:'朋友要来做客了！把家里弄得亮堂舒适~',
+   init:()=>{setDev('lamp',false);setDev('tv',false);setDev('speaker',false);setDev('robot',false);setDev('curtain',false,'close');},
+   tasks:[
+     {text:'打开窗帘',ck:()=>D.curtain.on},
+     {text:'打开台灯',ck:()=>D.lamp.on},
+     {text:'播放音乐',ck:()=>D.speaker.on},
+     {text:'启动扫地机器人打扫',ck:()=>D.robot.on},
+   ]},
+  {title:'📚 安静学习',desc:'要认真写作业了！创造一个安静专注的环境。',
+   init:()=>{setDev('lamp',false);setDev('tv',true);setDev('speaker',true);setDev('robot',true);setDev('curtain',false,'close');},
+   tasks:[
+     {text:'打开台灯',ck:()=>D.lamp.on},
+     {text:'关闭电视',ck:()=>!D.tv.on},
+     {text:'关闭音箱',ck:()=>!D.speaker.on},
+     {text:'让机器人停止',ck:()=>!D.robot.on},
+     {text:'打开窗帘通风',ck:()=>D.curtain.on},
+   ]},
+];
+
+// ===== INIT =====
+function init(){
+  renderBar(); renderQuickBtns(); updateScore();
+}
+
+// ===== COMMAND PROCESSING =====
+function sendCommand(){
+  const inp=document.getElementById('cmd-input');
+  const text=inp.value.trim();
+  if(!text)return;
+  inp.value='';
+  showThinking();
+  setTimeout(()=>processCommand(text), 600);
+}
+
+function showThinking(){
+  const b=document.getElementById('feedback-bubble');
+  b.innerHTML='正在识别指令<span class="thinking"><span></span><span></span><span></span></span>';
+  b.className='feedback-bubble show info';
+}
+
+function processCommand(text){
+  stats.total++;
+
+  // 1. Exact / fuzzy match valid commands
+  for(const cmd of CMD){
+    for(const p of cmd.p){
+      if(text===p || fmatch(text,p)){
+        executeCmd(cmd);
+        showFeedback(cmd.r,'success');
+        addHistory(text,cmd.r,true);
+        stats.ok++;
+        updateScore();
+        if(mode==='challenge') setTimeout(renderChallengeCheck,350);
+        return;
+      }
+    }
+  }
+
+  // 2. Check unclear patterns
+  for(const u of UNCLEAR){
+    for(const p of u.p){
+      if(text===p || text.includes(p)){
+        showFeedback(u.fb,'fail');
+        addHistory(text,u.fb,false);
+        updateScore();
+        return;
+      }
+    }
+  }
+
+  // 3. Keyword decomposition
+  const devK={lamp:['灯','台灯'],tv:['电视','电视机'],speaker:['音箱','音响'],robot:['机器人','扫地','打扫','清扫'],curtain:['窗帘','帘子']};
+  const actK={on:['打开','开','启动','开始','亮','唤醒'],off:['关闭','关','停止','关掉','停','熄']};
+
+  let fd=null,fa=null;
+  for(const[dev,ks]of Object.entries(devK)){if(ks.some(k=>text.includes(k))){fd=dev;break;}}
+  for(const[act,ks]of Object.entries(actK)){if(ks.some(k=>text.includes(k))){fa=act;break;}}
+
+  if(fd&&fa){
+    let a=fa;
+    if(fd==='curtain') a=fa==='on'?'open':'close';
+    if(fd==='speaker'&&(text.includes('音乐')||text.includes('歌')))a='play';
+    const cmd={d:fd,a,r:getResp(fd,a)};
+    executeCmd(cmd);
+    showFeedback(cmd.r,'success');
+    addHistory(text,cmd.r,true);
+    stats.ok++;
+    updateScore();
+    if(mode==='challenge') setTimeout(renderChallengeCheck,350);
+    return;
+  }
+
+  if(fd&&!fa){
+    const fb=`🤔 你想对${D[fd].name}做什么？请说"打开"或"关闭"+设备名，比如"打开${D[fd].name}"！`;
+    showFeedback(fb,'fail'); addHistory(text,fb,false); updateScore(); return;
+  }
+  if(!fd&&fa){
+    const fb=`🤔 要${fa==='on'?'打开':'关闭'}什么设备呢？客厅里有：台灯、电视、音箱、机器人、窗帘。`;
+    showFeedback(fb,'fail'); addHistory(text,fb,false); updateScore(); return;
+  }
+
+  const fb='❓ 抱歉，我没听懂这条指令。好指令 = 动作 + 设备，比如"打开台灯"或"关闭电视"。';
+  showFeedback(fb,'fail'); addHistory(text,fb,false); updateScore();
+}
+
+function fmatch(a,b){
+  const x=a.replace(/\s/g,''),y=b.replace(/\s/g,'');
+  if(x===y||x.includes(y)||y.includes(x))return true;
+  if(x.length>=3&&y.length>=3){
+    let m=0; for(const c of x){if(y.includes(c))m++;}
+    if(m/Math.max(x.length,y.length)>.82)return true;
+  }
+  return false;
+}
+
+function getResp(dev,a){
+  const n=D[dev].name;
+  if(a==='on'||a==='play'||a==='open') return `好的，${n}已${a==='open'?'打开':a==='play'?'开始播放':'打开'}！`;
+  return `好的，${n}已${a==='close'?'关闭':'关闭'}。`;
+}
+
+// ===== EXECUTE =====
+function executeCmd(cmd){
+  if(cmd.d==='all'){
+    const on=cmd.a==='on';
+    setDev('lamp',on); setDev('tv',on);
+    setDev('speaker',on); setDev('robot',on);
+    setDev('curtain',on,on?'open':'close');
+    return;
+  }
+  if(cmd.d==='tv'&&cmd.a==='channel'){D.tv.on=true; D.tv.ch=(D.tv.ch%5)+1; animateTVSwitch(); updateTV();renderBar();return;}
+  if(cmd.d==='tv'&&cmd.a==='cartoon'){D.tv.on=true; D.tv.ch=2; animateTVSwitch(); updateTV();renderBar();return;}
+  if(cmd.d==='tv'&&cmd.a==='news'){D.tv.on=true; D.tv.ch=3; animateTVSwitch(); updateTV();renderBar();return;}
+  if(cmd.d==='curtain'){
+    setDev('curtain',cmd.a==='open',cmd.a);
+  } else {
+    setDev(cmd.d,cmd.a==='on'||cmd.a==='play');
+  }
+}
+
+function setDev(dev,on,extra){
+  D[dev].on=on;
+  switch(dev){
+    case 'lamp': updateLamp(); break;
+    case 'tv': on?animateTVOn():animateTVOff(); updateTV(); break;
+    case 'speaker': updateSpeaker(); break;
+    case 'robot': updateRobot(); break;
+    case 'curtain': updateCurtain(); break;
+  }
+  renderBar();
+}
+
+// ===== DEVICE ANIMATIONS =====
+function updateLamp(){
+  const shade=document.getElementById('lamp-shade');
+  const glow=document.getElementById('lamp-glow');
+  const parts=document.getElementById('lamp-particles');
+  if(D.lamp.on){
+    shade.classList.add('on'); glow.classList.add('on'); parts.classList.add('on');
+  } else {
+    shade.classList.remove('on'); glow.classList.remove('on'); parts.classList.remove('on');
+  }
+}
+
+function updateTV(){
+  const scr=document.getElementById('tv-screen');
+  const cnt=document.getElementById('tv-content');
+  const chNames=['CCTV-1 综合','📺 动画频道 🧸','📰 新闻频道','🦁 动物世界','🧒 少儿频道'];
+  if(D.tv.on){
+    scr.classList.add('on');
+    cnt.innerHTML=chNames[D.tv.ch-1]+'<br><span style="font-size:.7em;opacity:.6">正在播放中...</span>';
+  } else {
+    scr.classList.remove('on');
+  }
+}
+function animateTVOn(){
+  const scr=document.getElementById('tv-screen');
+  scr.classList.remove('turning-off');
+  scr.classList.add('turning-on');
+  setTimeout(()=>scr.classList.remove('turning-on'),500);
+}
+function animateTVOff(){
+  const scr=document.getElementById('tv-screen');
+  scr.classList.remove('turning-on');
+  scr.classList.add('turning-off');
+  setTimeout(()=>{scr.classList.remove('turning-off');scr.classList.remove('on');},400);
+}
+function animateTVSwitch(){
+  const scr=document.getElementById('tv-screen');
+  scr.classList.add('switching');
+  setTimeout(()=>scr.classList.remove('switching'),300);
+}
+
+function updateSpeaker(){
+  const body=document.getElementById('speaker-body');
+  const waves=document.getElementById('sound-waves');
+  if(D.speaker.on){body.classList.add('active');waves.classList.add('active');}
+  else{body.classList.remove('active');waves.classList.remove('active');}
+}
+
+function updateRobot(){
+  const body=document.getElementById('robot-body');
+  const el=document.getElementById('device-robot');
+  if(D.robot.on){
+    body.classList.add('active'); el.classList.add('roaming');
+    startDust();
+  } else {
+    body.classList.remove('active'); el.classList.remove('roaming');
+    if(dustTimer){clearInterval(dustTimer);dustTimer=null;}
+  }
+}
+
+function startDust(){
+  if(dustTimer)clearInterval(dustTimer);
+  dustTimer=setInterval(()=>{
+    if(!D.robot.on){clearInterval(dustTimer);dustTimer=null;return;}
+    const scene=document.getElementById('room-scene');
+    const rb=document.getElementById('device-robot');
+    const r=rb.getBoundingClientRect(), s=scene.getBoundingClientRect();
+    for(let i=0;i<4;i++){
+      const d=document.createElement('div');
+      d.className='dust';
+      const sz=2+Math.random()*4;
+      d.style.width=sz+'px'; d.style.height=sz+'px';
+      d.style.background=`hsl(30,${20+Math.random()*20}%,${75+Math.random()*15}%)`;
+      d.style.left=(r.left-s.left+r.width/2+(Math.random()-.5)*r.width)+'px';
+      d.style.top=(r.top-s.top+r.height*.8)+'px';
+      d.style.setProperty('--dx',(Math.random()-.5)*40+'px');
+      d.style.setProperty('--dy',-(Math.random()*25+8)+'px');
+      scene.appendChild(d);
+      setTimeout(()=>d.remove(),1200);
+    }
+  },500);
+}
+
+function updateCurtain(){
+  const l=document.getElementById('curtain-l');
+  const r=document.getElementById('curtain-r');
+  const wl=document.getElementById('window-light');
+  if(D.curtain.on){
+    l.classList.add('open');l.classList.remove('closed');
+    r.classList.add('open');r.classList.remove('closed');
+    if(wl)wl.style.opacity='1';
+  } else {
+    l.classList.remove('open');l.classList.add('closed');
+    r.classList.remove('open');r.classList.add('closed');
+    if(wl)wl.style.opacity='0';
+  }
+}
+
+function clickDevice(dev){
+  const d=D[dev];
+  showFeedback(`${d.icon} ${d.name} — ${d.on?'✅ 开启中':'⬜ 已关闭'}`,d.on?'success':'info');
+}
+
+// ===== FEEDBACK =====
+function showFeedback(text,type){
+  const b=document.getElementById('feedback-bubble');
+  b.textContent=text;
+  b.className=`feedback-bubble show ${type}`;
+  clearTimeout(b._timer);
+  b._timer=setTimeout(()=>b.classList.remove('show'),3000);
+}
+
+// ===== HISTORY =====
+function addHistory(cmd,result,ok){
+  const list=document.getElementById('history-list');
+  const el=document.createElement('div');
+  el.className='history-item';
+  el.innerHTML=`
+    <div class="history-icon ${ok?'ok':'fail'}">${ok?'✓':'✗'}</div>
+    <div class="history-text">
+      <div class="history-cmd">"${cmd}"</div>
+      <div class="history-result">${result}</div>
+    </div>`;
+  list.insertBefore(el,list.firstChild);
+  // keep max 30
+  while(list.children.length>30) list.removeChild(list.lastChild);
+}
+
+// ===== SCORE =====
+function updateScore(){
+  document.getElementById('s-total').textContent=stats.total;
+  document.getElementById('s-ok').textContent=stats.ok;
+  document.getElementById('s-fail').textContent=stats.total-stats.ok;
+  const rate=stats.total>0?Math.round(stats.ok/stats.total*100):0;
+  document.getElementById('score-fill').style.width=rate+'%';
+
+  let rank;
+  if(stats.total===0) rank='🌟 开始下达指令吧！';
+  else if(stats.total<3) rank='🌱 初学者 — 继续探索！';
+  else if(rate>=90) rank='🏆 智能助手小达人！指令又清晰又准确！';
+  else if(rate>=75) rank='⭐ 指令高手！表达越来越清楚了~';
+  else if(rate>=60) rank='🔧 进步中！记住：动作 + 设备 = 好指令';
+  else if(rate>=40) rank='📖 继续加油！试试更清晰的表达方式~';
+  else rank='💪 要多练习哦！好指令 = "打开/关闭" + "设备名"';
+  document.getElementById('rank-badge').textContent=rank;
+}
+
+// ===== DEVICE BAR =====
+function renderBar(){
+  const bar=document.getElementById('room-bar');
+  bar.innerHTML='';
+  for(const[k,d]of Object.entries(D)){
+    const p=document.createElement('div');
+    p.className='device-pill';
+    p.innerHTML=`<div class="dot ${d.on?'on':'off'}"></div><span>${d.icon} ${d.name}</span>`;
+    p.onclick=()=>clickDevice(k);
+    bar.appendChild(p);
+  }
+}
+
+// ===== QUICK BUTTONS =====
+function renderQuickBtns(){
+  const good=document.getElementById('good-btns');
+  const bad=document.getElementById('bad-btns');
+  const goodList=['打开台灯','关闭电视','播放音乐','开始扫地','关闭窗帘','电视换台','关闭音箱','停止扫地','打开窗帘','调亮台灯'];
+  const badList=['弄一下灯','那个','搞一下电视','开','灯','打开空调','帮我弄弄','灯关亮','你好','动一下'];
+  good.innerHTML='';
+  goodList.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='quick-btn'; b.textContent=t;
+    b.onclick=()=>{document.getElementById('cmd-input').value=t;sendCommand();};
+    good.appendChild(b);
+  });
+  bad.innerHTML='';
+  badList.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='quick-btn fail-demo'; b.textContent=t;
+    b.onclick=()=>{document.getElementById('cmd-input').value=t;sendCommand();};
+    bad.appendChild(b);
+  });
+}
+
+// ===== INPUT VOICE WAVE =====
+function onInputChange(){
+  const v=document.getElementById('voice-wave');
+  const inp=document.getElementById('cmd-input');
+  if(inp.value.length>0){v.classList.add('active');}
+  else{v.classList.remove('active');}
+}
+
+// ===== MODE =====
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('.mode-tab').forEach((t,i)=>t.classList.toggle('active',i===(m==='free'?0:1)));
+  const cs=document.getElementById('challenge-section');
+  if(m==='challenge'){cs.classList.add('active'); loadChallenge(0);}
+  else{cs.classList.remove('active');}
+}
+
+// ===== CHALLENGE =====
+function loadChallenge(idx){
+  chIdx=idx;
+  const ch=CHL[idx];
+  ch.init();
+  document.getElementById('ch-title').textContent=ch.title;
+  document.getElementById('ch-desc').textContent=ch.desc;
+  document.getElementById('ch-complete-area').innerHTML='';
+  renderChallengeNav();
+  renderChallengeCheck();
+}
+
+function renderChallengeNav(){
+  const nav=document.getElementById('ch-nav');
+  nav.innerHTML='';
+  CHL.forEach((_,i)=>{
+    const b=document.createElement('button');
+    b.textContent=i+1;
+    b.className=i===chIdx?'active':'';
+    if(chDone[i])b.classList.add('done');
+    b.onclick=()=>loadChallenge(i);
+    nav.appendChild(b);
+  });
+}
+
+function renderChallengeCheck(){
+  const ch=CHL[chIdx];
+  const container=document.getElementById('ch-tasks');
+  container.innerHTML='';
+  let done=0;
+  ch.tasks.forEach(t=>{
+    const ok=t.ck();
+    if(ok)done++;
+    const el=document.createElement('div');
+    el.className=`challenge-task ${ok?'done':''}`;
+    el.innerHTML=`<div class="check-box">${ok?'✓':''}</div><span>${t.text}</span>`;
+    container.appendChild(el);
+  });
+
+  const area=document.getElementById('ch-complete-area');
+  if(done===ch.tasks.length && !chDone[chIdx]){
+    chDone[chIdx]=true;
+    area.innerHTML='<div class="challenge-complete">🎉 挑战完成！太棒了！</div>';
+    renderChallengeNav();
+    // auto next
+    if(chIdx<CHL.length-1){
+      setTimeout(()=>{
+        if(confirm('🎉 挑战完成！进入下一个场景挑战？')) loadChallenge(chIdx+1);
+      },1000);
+    } else if(chDone.every(x=>x)){
+      setTimeout(()=>alert('🏆 全部挑战通关！你是真正的智能助手小达人！'),800);
+    }
+  } else if(!chDone[chIdx]){
+    area.innerHTML='';
+  }
+}
+
+// ===== START =====
+init();
+</script>
+</body>
+</html>

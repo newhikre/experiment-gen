@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>转轮盘，让AI编故事</title>
+<style>
+  :root{--ink:#1f2937;--muted:#6b7280;--shadow:0 10px 30px rgba(31,41,55,.08)}
+  *{box-sizing:border-box}
+  html,body{margin:0;font-family:"华文圆体","PingFang SC","Microsoft YaHei",system-ui,sans-serif;color:var(--ink)}
+  body{min-height:100vh;background:
+    radial-gradient(1100px 550px at 0% 0%,#fef3c7,transparent 60%),
+    radial-gradient(900px 450px at 100% 100%,#ddd6fe,transparent 60%),
+    radial-gradient(700px 400px at 50% 50%,#fbcfe8,transparent 70%),
+    #fafafa;padding:24px 18px 80px}
+  .wrap{max-width:1440px;margin:0 auto}
+
+  /* Hero */
+  .hero{background:linear-gradient(135deg,#8b5cf6,#ec4899,#f59e0b);color:#fff;border-radius:26px;padding:22px 28px;box-shadow:0 10px 24px rgba(139,92,246,.25);margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;position:relative;overflow:hidden}
+  .hero::before{content:"🎡";position:absolute;right:20px;bottom:-30px;font-size:160px;opacity:.15;animation:spinSlow 20s linear infinite}
+  @keyframes spinSlow{to{transform:rotate(360deg)}}
+  .hero h1{margin:0;font-size:28px;font-weight:800;letter-spacing:1px}
+  .hero-sub{opacity:.92;font-size:14px;margin-top:6px}
+  .hero-badge{background:rgba(255,255,255,.25);backdrop-filter:blur(10px);padding:8px 14px;border-radius:999px;font-size:15px}
+
+  .grid{display:grid;grid-template-columns:420px 1fr 420px;gap:16px}
+  @media(max-width:1200px){.grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:800px){.grid{grid-template-columns:1fr}}
+
+  .card{background:#fff;border-radius:22px;padding:20px;box-shadow:var(--shadow)}
+  h3{margin:0 0 14px;font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px}
+
+  /* Wheels */
+  .wheels{display:flex;flex-direction:column;gap:16px;align-items:center}
+  .wheel-row{display:flex;align-items:center;gap:14px;width:100%;justify-content:center}
+  .wheel-wrap{position:relative;width:180px;height:180px;flex-shrink:0}
+  .wheel{width:100%;height:100%;border-radius:50%;transition:transform 3s cubic-bezier(.17,.67,.16,1);box-shadow:0 10px 24px rgba(0,0,0,.15);position:relative;overflow:hidden}
+  .pointer{position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:18px solid #ef4444;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));z-index:2}
+  .center-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;background:#fff;border:1.5px solid #fbbf24;font-size:15px;font-weight:800;cursor:pointer;z-index:3;color:#92400e;transition:.2s}
+  .center-btn:hover:not(:disabled){transform:translate(-50%,-50%) scale(1.08)}
+  .center-btn:disabled{opacity:.6;cursor:not-allowed}
+  .wheel-info{flex:1;min-width:120px}
+  .wheel-label{font-size:15px;color:var(--muted);font-weight:700;margin-bottom:4px}
+  .picked-word{font-weight:800;color:#8b5cf6;font-size:20px;min-height:28px;background:linear-gradient(135deg,#f5f3ff,#ede9fe);padding:6px 12px;border-radius:10px;display:inline-block;min-width:80px}
+  .picked-word.empty{color:#d1d5db;background:#f9fafb}
+
+  .all-btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .all-btns button{flex:1;padding:10px;border-radius:12px;border:0;cursor:pointer;font-weight:700;font-size:14px;transition:.2s}
+  .all-btns button:hover:not(:disabled){transform:translateY(-2px)}
+  .all-btns button.prim{background:linear-gradient(135deg,#8b5cf6,#ec4899);color:#fff;box-shadow:0 8px 18px rgba(139,92,246,.35)}
+  .all-btns button.sec{background:#f3f4f6;color:#374151}
+  .all-btns button:disabled{opacity:.5;cursor:not-allowed}
+
+  .gen-btn{display:block;width:100%;margin-top:14px;font-size:16px;padding:14px;border-radius:14px;border:0;background:linear-gradient(135deg,#ec4899,#f59e0b);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 10px 24px rgba(236,72,153,.35);transition:.2s}
+  .gen-btn:hover:not(:disabled){transform:translateY(-2px)}
+  .gen-btn:disabled{opacity:.5;cursor:not-allowed}
+
+  /* Story */
+  .story-book{background:linear-gradient(135deg,#fffbeb,#fef3c7);border-radius:16px;padding:22px;min-height:340px;border:2px dashed #fcd34d;font-family:"华文楷体","KaiTi",serif;font-size:17px;line-height:2.1;white-space:pre-wrap;position:relative}
+  .story-book .placeholder{color:#9ca3af;font-style:italic}
+  .story-tools{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .story-tools button{flex:1;min-width:100px;padding:10px;border-radius:12px;border:0;cursor:pointer;font-weight:700;font-size:15px;transition:.2s;background:#f3f4f6;color:#374151}
+  .story-tools button.prim{background:#6366f1;color:#fff}
+  .story-tools button.ai{background:linear-gradient(135deg,#06b6d4,#3b82f6);color:#fff}
+  .story-tools button:disabled{opacity:.5;cursor:not-allowed}
+  .story-tools button:hover:not(:disabled){transform:translateY(-2px)}
+
+  /* Illustration */
+  .illust-area{margin-top:14px;background:#f9fafb;border-radius:14px;padding:14px;display:none;text-align:center}
+  .illust-area.show{display:block}
+  .illust-area img{max-width:100%;border-radius:10px;box-shadow:0 6px 16px rgba(0,0,0,.1)}
+  .illust-area .loading-box{padding:40px;color:#6b7280}
+
+  /* Saved stories */
+  .hist{margin-top:16px;max-height:220px;overflow-y:auto;padding-right:4px}
+  .hist-item{background:#f9fafb;border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:15px;cursor:pointer;transition:.15s;border-left:3px solid #8b5cf6}
+  .hist-item:hover{background:#f3f4f6;transform:translateX(4px)}
+  .hist-item .tags{font-weight:800;color:#5b21b6;font-size:14px;margin-bottom:3px}
+  .hist-item .preview{color:#6b7280}
+
+  /* Drawing canvas */
+  .canvas-wrap{position:relative;background:#fff;border-radius:14px;border:2px solid #e5e7eb;overflow:hidden}
+  canvas#draw{display:block;width:100%;height:340px;cursor:crosshair;background:#fefefe;touch-action:none}
+  .tools{display:flex;gap:6px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  .color{width:28px;height:28px;border-radius:50%;cursor:pointer;border:1.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.15);transition:.15s}
+  .color.on{outline:3px solid #1f2937;transform:scale(1.15)}
+  .size-btn{width:32px;height:32px;border-radius:8px;border:2px solid #e5e7eb;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .size-btn.on{border-color:#6366f1;background:#eef2ff}
+  .size-btn .dot{border-radius:50%;background:#1f2937}
+  .tool-btn{padding:6px 12px;border-radius:10px;border:2px solid #e5e7eb;background:#fff;cursor:pointer;font-weight:700;font-size:15px}
+  .tool-btn.on{border-color:#6366f1;background:#eef2ff}
+  .clear-btn{margin-left:auto;padding:6px 12px;border-radius:10px;border:0;background:#fca5a5;color:#fff;cursor:pointer;font-weight:700;font-size:15px}
+
+  .loading{display:inline-block;width:18px;height:18px;border:1.5px solid #e5e7eb;border-top-color:#8b5cf6;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* Stat strip */
+  .stat-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .stat-strip .s{background:#f9fafb;border-radius:12px;padding:10px;text-align:center}
+  .stat-strip .n{font-size:22px;font-weight:800;color:#8b5cf6}
+  .stat-strip .l{font-size:15px;color:#6b7280;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div>
+      <h1 data-pinyin>🎡 转轮盘，让AI编故事</h1>
+      <div class="hero-sub" data-pinyin>转三个轮盘，让 AI 用你抽到的词编故事——还能请 AI 给故事画幅画！</div>
+    </div>
+    <div class="hero-badge" data-pinyin>第二单元 · 第八课</div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: WHEELS -->
+    <div class="card">
+      <h3 data-pinyin>🎯 三个关键词轮盘</h3>
+      <div class="stat-strip">
+        <div class="s"><div class="n" id="statSpin">0</div><div class="l" data-pinyin>转动次数</div></div>
+        <div class="s"><div class="n" id="statStory">0</div><div class="l" data-pinyin>生成故事</div></div>
+        <div class="s"><div class="n" id="statSave">0</div><div class="l" data-pinyin>保存作品</div></div>
+      </div>
+      <div class="wheels">
+        <div class="wheel-row">
+          <div class="wheel-wrap"><div class="pointer"></div><canvas class="wheel" id="w0" width="180" height="180"></canvas><button class="center-btn" data-idx="0" data-pinyin onclick="spin(0)">🎨<br/>转</button></div>
+          <div class="wheel-info"><div class="wheel-label" data-pinyin>① 角色</div><div class="picked-word empty" id="pick0">未抽取</div></div>
+        </div>
+        <div class="wheel-row">
+          <div class="wheel-wrap"><div class="pointer"></div><canvas class="wheel" id="w1" width="180" height="180"></canvas><button class="center-btn" data-idx="1" data-pinyin onclick="spin(1)">🌍<br/>转</button></div>
+          <div class="wheel-info"><div class="wheel-label" data-pinyin>② 场景</div><div class="picked-word empty" id="pick1">未抽取</div></div>
+        </div>
+        <div class="wheel-row">
+          <div class="wheel-wrap"><div class="pointer"></div><canvas class="wheel" id="w2" width="180" height="180"></canvas><button class="center-btn" data-idx="2" data-pinyin onclick="spin(2)">⚡<br/>转</button></div>
+          <div class="wheel-info"><div class="wheel-label" data-pinyin>③ 事件</div><div class="picked-word empty" id="pick2">未抽取</div></div>
+        </div>
+      </div>
+      <div class="all-btns">
+        <button class="sec" data-pinyin onclick="spinAll()">🎲 三个全转</button>
+        <button class="sec" data-pinyin onclick="resetPicks()">🔄 清空</button>
+      </div>
+      <button class="gen-btn" id="genBtn" data-pinyin onclick="generate()" disabled>✨ 让AI编故事</button>
+    </div>
+
+    <!-- MID: STORY -->
+    <div class="card">
+      <h3 data-pinyin>📖 AI 编的故事</h3>
+      <div class="story-book" id="story"><span class="placeholder">转完三个轮盘，点击"让AI编故事"…</span></div>
+      <div class="story-tools">
+        <button class="prim" id="regen" data-pinyin onclick="generate()" disabled>🔁 再编一次</button>
+        <button id="readBtn" data-pinyin onclick="readAloud()" disabled>🔊 朗读</button>
+        <button class="ai" id="illustBtn" data-pinyin onclick="makeIllust()" disabled>🎨 AI配图</button>
+        <button id="saveBtn" data-pinyin onclick="saveStory()" disabled>💾 存作品</button>
+      </div>
+      <div class="illust-area" id="illust"></div>
+      <h3 style="margin-top:18px;font-size:15px" data-pinyin>📚 作品收藏</h3>
+      <div class="hist" id="hist"><div style="color:#d1d5db;font-size:15px;text-align:center;padding:20px">还没有收藏的作品…</div></div>
+    </div>
+
+    <!-- RIGHT: CANVAS -->
+    <div class="card">
+      <h3 data-pinyin>🖌️ 给故事画张图</h3>
+      <div class="canvas-wrap"><canvas id="draw" width="800" height="500"></canvas></div>
+      <div class="tools">
+        <div class="color on" style="background:#1f2937" data-c="#1f2937"></div>
+        <div class="color" style="background:#ef4444" data-c="#ef4444"></div>
+        <div class="color" style="background:#f59e0b" data-c="#f59e0b"></div>
+        <div class="color" style="background:#10b981" data-c="#10b981"></div>
+        <div class="color" style="background:#3b82f6" data-c="#3b82f6"></div>
+        <div class="color" style="background:#ec4899" data-c="#ec4899"></div>
+        <div class="color" style="background:#8b5cf6" data-c="#8b5cf6"></div>
+        <div class="color" style="background:#fbbf24" data-c="#fbbf24"></div>
+      </div>
+      <div class="tools">
+        <button class="size-btn on" data-s="3"><span class="dot" style="width:4px;height:4px"></span></button>
+        <button class="size-btn" data-s="8"><span class="dot" style="width:10px;height:10px"></span></button>
+        <button class="size-btn" data-s="16"><span class="dot" style="width:18px;height:18px"></span></button>
+        <button class="tool-btn on" data-t="pen" data-pinyin>✏️ 画笔</button>
+        <button class="tool-btn" data-t="eraser" data-pinyin>🧽 橡皮</button>
+        <button class="clear-btn" data-pinyin onclick="clearCanvas()">🗑 清空</button>
+      </div>
+      <div style="margin-top:10px;color:#6b7280;font-size:14px" data-pinyin>🎨 画完可以右键保存图片哦～</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- Data ---
+const WORDS=[
+  ["小猫咪","小狐狸","机器人","恐龙宝宝","小兔子","外星人","会说话的树","小精灵","勇敢小熊","爱吃糖的章鱼"],
+  ["奇幻森林","月亮上","海底城堡","太空飞船","彩虹桥上","云朵之间","火山洞穴","糖果城","古老图书馆","会飞的岛屿"],
+  ["丢了帽子","找到宝藏","交到新朋友","学会飞行","下起糖果雨","遇到神秘信件","被施了魔法","开了一场派对","救了一只小鸟","解开了古老谜题"]
+];
+const PALETTE=[
+  ["#fecaca","#fed7aa","#fde68a","#bbf7d0","#a5f3fc","#bfdbfe","#ddd6fe","#fbcfe8","#fca5a5","#fdba74"],
+];
+const picks=[null,null,null];
+const rotations=[0,0,0];
+let stats={spin:0,story:0,save:0};
+let lastStory=null,lastTags=null;
+
+function setStat(k,v){stats[k]=v;document.getElementById('stat'+k[0].toUpperCase()+k.slice(1)).textContent=v}
+
+function drawWheel(idx){
+  const c=document.getElementById('w'+idx);const ctx=c.getContext('2d');
+  const cx=90,cy=90,r=88,n=WORDS[idx].length;
+  ctx.clearRect(0,0,180,180);
+  for(let i=0;i<n;i++){
+    const a1=i*2*Math.PI/n-Math.PI/2;const a2=(i+1)*2*Math.PI/n-Math.PI/2;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a1,a2);ctx.closePath();
+    ctx.fillStyle=PALETTE[0][i%PALETTE[0].length];ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.save();ctx.translate(cx,cy);ctx.rotate((a1+a2)/2);
+    ctx.fillStyle='#1f2937';ctx.font='bold 11px sans-serif';ctx.textAlign='right';ctx.textBaseline='middle';
+    ctx.fillText(WORDS[idx][i].slice(0,5),r-8,0);ctx.restore();
+  }
+  ctx.beginPath();ctx.arc(cx,cy,30,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+}
+[0,1,2].forEach(drawWheel);
+
+function spin(i){
+  const btn=document.querySelector(`.center-btn[data-idx="${i}"]`);btn.disabled=true;
+  const n=WORDS[i].length;
+  const target=Math.floor(Math.random()*n);
+  const per=360/n;
+  const currentMod=((rotations[i]%360)+360)%360;
+  const targetAngle=360-(target*per+per/2);
+  let delta=targetAngle-currentMod;if(delta<0)delta+=360;
+  const final=rotations[i]+delta+360*(4+Math.floor(Math.random()*3));
+  rotations[i]=final;
+  document.getElementById('w'+i).style.transform=`rotate(${final}deg)`;
+  setStat('spin',stats.spin+1);
+  setTimeout(()=>{
+    picks[i]=WORDS[i][target];
+    const el=document.getElementById('pick'+i);el.textContent=picks[i];el.classList.remove('empty');
+    btn.disabled=false;
+    if(picks.every(p=>p))document.getElementById('genBtn').disabled=false;
+  },3100);
+}
+
+function spinAll(){[0,1,2].forEach((i,k)=>setTimeout(()=>spin(i),k*150))}
+
+function resetPicks(){
+  picks[0]=picks[1]=picks[2]=null;
+  [0,1,2].forEach(i=>{const el=document.getElementById('pick'+i);el.textContent='未抽取';el.classList.add('empty')});
+  document.getElementById('genBtn').disabled=true;
+}
+
+// --- Story ---
+async function generate(){
+  if(!picks.every(p=>p))return;
+  const b=document.getElementById('genBtn');b.disabled=true;
+  document.getElementById('regen').disabled=true;
+  document.getElementById('readBtn').disabled=true;
+  document.getElementById('illustBtn').disabled=true;
+  document.getElementById('saveBtn').disabled=true;
+  const s=document.getElementById('story');
+  s.innerHTML='<span class="loading"></span> AI 正在编故事…';
+  document.getElementById('illust').classList.remove('show');document.getElementById('illust').innerHTML='';
+  const msg=[
+    {role:"system",content:"你是儿童故事作家，用简单温暖的中文写一段约100字的短故事。只输出故事本身，不要标题。"},
+    {role:"user",content:`主角：${picks[0]}，场景：${picks[1]}，事件：${picks[2]}。请围绕这三个关键词写一个有趣温暖的短故事。`}
+  ];
+  try{
+    await chatStream(msg,t=>{s.textContent=t;lastStory=t;lastTags=picks.join(' × ')});
+    setStat('story',stats.story+1);
+    document.getElementById('readBtn').disabled=false;
+    document.getElementById('illustBtn').disabled=false;
+    document.getElementById('saveBtn').disabled=false;
+  }catch(e){s.textContent='（网络出错了，再点一次吧）'}
+  b.disabled=false;document.getElementById('regen').disabled=false;
+}
+
+function readAloud(){
+  if(!lastStory)return;
+  if(!('speechSynthesis' in window)){alert('你的浏览器不支持朗读功能～');return}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(lastStory);u.lang='zh-CN';u.rate=.95;
+  speechSynthesis.speak(u);
+}
+
+async function makeIllust(){
+  if(!lastStory)return;
+  const box=document.getElementById('illust');box.classList.add('show');
+  box.innerHTML='<div class="loading-box"><span class="loading"></span> AI 画师正在作画…（约需 10-20 秒）</div>';
+  const prompt=`儿童插画风格，温馨可爱，主角是${picks[0]}，在${picks[1]}，${picks[2]}`;
+  try{
+    const res=await fetch(`https://api.qa.bingotalk.cn/api/v2/comm/vt/aigcImg?question=${encodeURIComponent(prompt)}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:"student",score:100})
+    });
+    const data=await res.json();
+    // 尝试从各种可能的字段中提取图片
+    const d=data?.data;
+    let imgSrc=null;
+    // 1. 直接是 URL 字符串
+    if(typeof d==='string'&&/^https?:/.test(d))imgSrc=d;
+    // 2. 常见字段名
+    if(!imgSrc)imgSrc=[d?.url,d?.imageUrl,d?.image,d?.result,d?.img,d?.src].find(v=>typeof v==='string'&&/^https?:/.test(v));
+    // 3. 可能是 base64（带或不带 data: 前缀）
+    if(!imgSrc){const b64=[d?.image,d?.img,d?.result,d?.data,d?.base64,d?.imageBase64].find(v=>typeof v==='string'&&v.length>100);if(b64)imgSrc=b64.startsWith('data:')?b64:'data:image/png;base64,'+b64}
+    // 4. 遍历 data 对象查找任意 URL/base64 字段
+    if(!imgSrc&&d&&typeof d==='object'){for(const[k,v]of Object.entries(d)){if(typeof v==='string'&&(v.startsWith('http')||v.startsWith('data:')||v.length>200)){imgSrc=v;break}}}
+    if(imgSrc){
+      box.innerHTML=`<img src="${imgSrc}" alt="AI配图" style="max-width:100%;border-radius:10px;box-shadow:0 6px 16px rgba(0,0,0,.1)" onerror="this.parentElement.innerHTML='<div style=\\'color:#ef4444\\'>图片加载失败</div>'"/><div style="margin-top:8px;color:#6b7280;font-size:14px">🎨 AI 根据故事画的图</div>`;
+    }else{
+      const keys=d&&typeof d==='object'?Object.keys(d).join(', '):typeof d;
+      box.innerHTML=`<div style="color:#6b7280;font-size:15px">收到响应，但暂时没有图片链接。<br/>data 类型: ${typeof d}<br/>data 字段: ${keys||'(空)'}<br/><pre style="text-align:left;background:#fff;padding:8px;border-radius:8px;font-size:15px;overflow:auto;max-height:150px">${JSON.stringify(data).slice(0,500)}</pre></div>`;
+    }
+  }catch(e){box.innerHTML='<div style="color:#ef4444;font-size:15px">配图请求失败：'+e.message+'</div>'}
+}
+
+function saveStory(){
+  if(!lastStory)return;
+  const box=document.getElementById('hist');
+  if(box.querySelector('div[style*="d1d5db"]'))box.innerHTML='';
+  const item=document.createElement('div');item.className='hist-item';
+  item.innerHTML=`<div class="tags">🏷️ ${lastTags}</div><div class="preview">${lastStory.slice(0,60)}…</div>`;
+  item.onclick=()=>{document.getElementById('story').textContent=lastStory};
+  box.prepend(item);
+  setStat('save',stats.save+1);
+}
+
+async function chatStream(messages,onDelta){
+  const res=await fetch('https://api.qa.bingotalk.cn/api/v2/comm/vt/aiChat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(messages)});
+  const reader=res.body.getReader();const dec=new TextDecoder();let buf='',full='';
+  while(true){const {value,done}=await reader.read();if(done)break;
+    buf+=dec.decode(value,{stream:true});
+    const parts=buf.replace(/}\s*{/g,'}\n{').split('\n');buf=parts.pop();
+    for(const p of parts){const s=p.trim();if(!s)continue;try{const d=JSON.parse(s);const t=d?.data?.result||'';if(t){full+=t;onDelta(full)}}catch(e){}}
+  }
+  if(buf.trim()){try{const d=JSON.parse(buf);const t=d?.data?.result||'';if(t){full+=t;onDelta(full)}}catch(e){}}
+}
+
+// --- Drawing canvas ---
+const dcv=document.getElementById('draw');const dctx=dcv.getContext('2d');
+dctx.lineCap='round';dctx.lineJoin='round';
+let drawing=false,color='#1f2937',size=3,tool='pen',last=null;
+function pos(e){const r=dcv.getBoundingClientRect();const sx=dcv.width/r.width,sy=dcv.height/r.height;
+  const t=e.touches?e.touches[0]:e;return {x:(t.clientX-r.left)*sx,y:(t.clientY-r.top)*sy}}
+function start(e){drawing=true;last=pos(e);e.preventDefault()}
+function move(e){if(!drawing)return;const p=pos(e);
+  dctx.strokeStyle=tool==='eraser'?'#fefefe':color;
+  dctx.lineWidth=tool==='eraser'?size*4:size;
+  dctx.beginPath();dctx.moveTo(last.x,last.y);dctx.lineTo(p.x,p.y);dctx.stroke();last=p;e.preventDefault()}
+function end(){drawing=false;last=null}
+dcv.addEventListener('mousedown',start);dcv.addEventListener('mousemove',move);
+window.addEventListener('mouseup',end);dcv.addEventListener('mouseleave',end);
+dcv.addEventListener('touchstart',start,{passive:false});dcv.addEventListener('touchmove',move,{passive:false});
+dcv.addEventListener('touchend',end);
+
+document.querySelectorAll('.color').forEach(el=>el.onclick=()=>{document.querySelectorAll('.color').forEach(x=>x.classList.remove('on'));el.classList.add('on');color=el.dataset.c});
+document.querySelectorAll('.size-btn').forEach(el=>el.onclick=()=>{document.querySelectorAll('.size-btn').forEach(x=>x.classList.remove('on'));el.classList.add('on');size=+el.dataset.s});
+document.querySelectorAll('.tool-btn').forEach(el=>el.onclick=()=>{document.querySelectorAll('.tool-btn').forEach(x=>x.classList.remove('on'));el.classList.add('on');tool=el.dataset.t});
+function clearCanvas(){dctx.fillStyle='#fefefe';dctx.fillRect(0,0,dcv.width,dcv.height)}
+clearCanvas();
+</script>
+<script>
+/* 给页面中标记了 data-pinyin 的元素自动加拼音（面向二年级小朋友）
+   给需要注音的元素加上 data-pinyin 属性，只有这些元素内的文字才会加拼音。
+*/
+(function () {
+  const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT', 'RUBY', 'RT', 'RP', 'CODE', 'PRE']);
+  const HAS_HAN = /[\u4e00-\u9fa5]/;
+  const HAN_RUN = /^[\u4e00-\u9fa5]+$/;
+  let observer = null;
+
+  function injectStyles() {
+    if (document.getElementById('__pyStyle')) return;
+    const s = document.createElement('style');
+    s.id = '__pyStyle';
+    s.textContent = `
+      ruby { ruby-position: over; ruby-align: center; }
+      ruby > rt {
+        font-size: 0.55em;
+        color: #ec4899;
+        font-weight: 500;
+        font-family: "Microsoft YaHei", system-ui, sans-serif;
+        line-height: 1.1;
+        opacity: 0.92;
+        user-select: none;
+        letter-spacing: 0;
+      }
+      h1 ruby > rt, h2 ruby > rt, h3 ruby > rt { color: inherit; opacity: 0.85; }
+      button ruby > rt, .btn ruby > rt { color: inherit; opacity: 0.9; }
+    `;
+    (document.head || document.documentElement).appendChild(s);
+  }
+
+  function hasPinyinMarker(node) {
+    let el = node.nodeType === 3 ? node.parentNode : node;
+    while (el) {
+      if (el.nodeType !== 1) { el = el.parentNode; continue; }
+      if (el.dataset && el.dataset.pinyin !== undefined) return true;
+      if (el === document.body) break;
+      el = el.parentNode;
+    }
+    return false;
+  }
+
+  function annotateText(node) {
+    if (!hasPinyinMarker(node)) return;
+    const text = node.nodeValue;
+    if (!text || !HAS_HAN.test(text)) return;
+    const parent = node.parentNode;
+    if (!parent) return;
+    const tag = parent.tagName;
+    if (tag && SKIP_TAGS.has(tag)) return;
+
+    const parts = text.split(/([\u4e00-\u9fa5]+)/);
+    if (parts.length <= 1) return;
+
+    const frag = document.createDocumentFragment();
+    for (const part of parts) {
+      if (!part) continue;
+      if (HAN_RUN.test(part)) {
+        let arr;
+        try {
+          arr = window.pinyinPro.pinyin(part, { toneType: 'symbol', type: 'array', nonZh: 'consecutive' });
+        } catch (e) {
+          arr = [];
+        }
+        for (let i = 0; i < part.length; i++) {
+          const r = document.createElement('ruby');
+          r.appendChild(document.createTextNode(part[i]));
+          const rt = document.createElement('rt');
+          rt.textContent = arr[i] || '';
+          r.appendChild(rt);
+          frag.appendChild(r);
+        }
+      } else {
+        frag.appendChild(document.createTextNode(part));
+      }
+    }
+    parent.replaceChild(frag, node);
+  }
+
+  function annotate(node) {
+    if (!node) return;
+    if (node.nodeType === 3) { annotateText(node); return; }
+    if (node.nodeType !== 1) return;
+    const tag = node.tagName;
+    if (SKIP_TAGS.has(tag)) return;
+    const kids = Array.from(node.childNodes);
+    for (const k of kids) annotate(k);
+  }
+
+  function startObserver() {
+    if (!('MutationObserver' in window)) return;
+    observer = new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === 'childList') {
+          for (const n of m.addedNodes) annotate(n);
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function run() {
+    if (!window.pinyinPro || !window.pinyinPro.pinyin) {
+      setTimeout(run, 80);
+      return;
+    }
+    injectStyles();
+    annotate(document.body);
+    startObserver();
+  }
+
+  function bootstrap() {
+    if (window.pinyinPro) { run(); return; }
+    const tryLoad = (urls) => {
+      if (!urls.length) { console.warn('[pinyin] CDN 加载失败，未能注音'); return; }
+      const s = document.createElement('script');
+      s.src = urls[0];
+      s.onload = run;
+      s.onerror = () => tryLoad(urls.slice(1));
+      (document.head || document.documentElement).appendChild(s);
+    };
+    tryLoad([
+      'https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js',
+      'https://unpkg.com/pinyin-pro@3.26.0/dist/index.js',
+      'https://fastly.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js'
+    ]);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrap);
+  } else {
+    bootstrap();
+  }
+})();
+
+</script>
+</body>
+</html>

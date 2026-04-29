@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🤖 小扫扫的大冒险！</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Nunito:wght@700;800;900&display=swap');
+
+/* ===== 全局 ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sky: #e0f4ff;
+  --grass: #d4f0a0;
+  --wall: #fffbe6;
+  --orange: #ff8c42;
+  --red: #ff4757;
+  --green: #2ed573;
+  --blue: #1e90ff;
+  --yellow: #ffd32a;
+  --purple: #9b59b6;
+  --pink: #ff6b9d;
+  --brown: #b8860b;
+  --dark: #2d3436;
+  --white: #ffffff;
+  --shadow: 0 6px 0 rgba(0,0,0,0.15);
+  --shadow-sm: 0 3px 0 rgba(0,0,0,0.12);
+  --radius: 20px;
+  --radius-sm: 12px;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: #87CEEB;
+  font-family: 'Nunito', 'Ma Shan Zheng', sans-serif;
+}
+
+/* ===== 背景 ===== */
+.bg {
+  position: fixed; inset: 0;
+  background: linear-gradient(180deg, #87CEEB 0%, #b0e0f5 40%, #d4f0a0 100%);
+  z-index: 0;
+}
+.cloud {
+  position: absolute; background: white; border-radius: 50px;
+  opacity: 0.85;
+  animation: float linear infinite;
+}
+.cloud::before, .cloud::after {
+  content: ''; position: absolute; background: white; border-radius: 50%;
+}
+@keyframes float {
+  from { transform: translateX(-200px); }
+  to   { transform: translateX(calc(100vw + 200px)); }
+}
+
+/* ===== 主框架 ===== */
+.app {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 12px 8px;
+  gap: 8px;
+}
+
+/* ===== 顶部导航 ===== */
+.topbar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.title-box {
+  background: var(--orange);
+  border-radius: var(--radius);
+  padding: 6px 18px;
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 8px;
+}
+.title-box .robot-icon {
+  font-size: 28px;
+  animation: wiggle 2s ease-in-out infinite;
+}
+@keyframes wiggle {
+  0%,100%{transform:rotate(-8deg)}
+  50%{transform:rotate(8deg)}
+}
+.title-box h1 {
+  font-size: 18px; font-weight: 900; color: white;
+  text-shadow: 0 2px 0 rgba(0,0,0,0.2);
+  white-space: nowrap;
+}
+
+/* Phase Steps */
+.phase-steps {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.step-item {
+  display: flex; align-items: center; gap: 4px;
+}
+.step-dot {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  border: 3px solid rgba(255,255,255,0.6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.15);
+  position: relative;
+}
+.step-dot.active {
+  background: var(--yellow); border-color: var(--orange);
+  transform: scale(1.15);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.2), 0 0 0 4px rgba(255,211,42,0.35);
+}
+.step-dot.done {
+  background: var(--green); border-color: #27ae60;
+}
+.step-dot.locked {
+  opacity: 0.4; cursor: not-allowed;
+}
+.step-dot .step-label {
+  position: absolute; top: 44px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; font-weight: 800; color: var(--dark);
+  white-space: nowrap; background: white; border-radius: 6px;
+  padding: 1px 5px; box-shadow: var(--shadow-sm); display: none;
+}
+.step-dot.active .step-label { display: block; }
+.step-arrow { font-size: 14px; color: rgba(255,255,255,0.7); }
+
+/* Score */
+.score-box {
+  background: var(--yellow);
+  border-radius: var(--radius);
+  padding: 6px 16px;
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 10px;
+}
+.score-item { text-align: center; }
+.score-item .s-num {
+  font-size: 22px; font-weight: 900; color: var(--dark);
+  line-height: 1;
+}
+.score-item .s-lbl {
+  font-size: 10px; font-weight: 800; color: rgba(0,0,0,0.5);
+}
+
+/* ===== 主区域 ===== */
+.main-area {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 10px;
+  overflow: hidden;
+}
+
+/* ===== 教室地图 ===== */
+.classroom-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Task Banner */
+.task-banner {
+  background: white;
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 12px;
+  border-left: 6px solid var(--orange);
+  min-height: 60px;
+}
+.task-banner .mascot { font-size: 36px; flex-shrink: 0; }
+.task-banner .task-text { flex: 1; }
+.task-banner .task-text .task-title {
+  font-size: 15px; font-weight: 900; color: var(--dark); margin-bottom: 2px;
+}
+.task-banner .task-text .task-hint {
+  font-size: 12px; font-weight: 700; color: #636e72;
+}
+.task-banner .task-text .task-hint b { color: var(--orange); }
+.task-banner .task-text .task-hint .tip {
+  display: inline-block; background: #fff3cd; border-radius: 6px;
+  padding: 1px 7px; color: var(--brown); font-size: 11px;
+}
+
+/* Classroom Canvas */
+.classroom-container {
+  flex: 1;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+#gameCanvas { display: block; border-radius: 14px; }
+
+/* ===== 右侧面板 ===== */
+.side-panel {
+  display: flex; flex-direction: column; gap: 8px;
+  overflow: hidden;
+}
+
+/* Battery */
+.battery-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  box-shadow: var(--shadow);
+}
+.battery-card .bc-title {
+  font-size: 13px; font-weight: 900; color: var(--dark); margin-bottom: 6px;
+  display: flex; align-items: center; gap: 4px;
+}
+.batt-outer {
+  background: #f0f0f0; border-radius: 20px; height: 22px;
+  position: relative; overflow: hidden;
+  border: 2px solid #ddd;
+}
+.batt-inner {
+  height: 100%; border-radius: 18px;
+  transition: width 0.5s ease, background 0.3s;
+  position: relative;
+}
+.batt-inner::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+  animation: shine 1.5s ease infinite;
+}
+@keyframes shine { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }
+.batt-label {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900; color: rgba(0,0,0,0.6);
+}
+.batt-steps {
+  display: flex; gap: 6px; margin-top: 8px; justify-content: center;
+}
+.step-block {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+.step-block.full { background: var(--green); }
+.step-block.empty { background: #dfe6e9; }
+
+/* Code blocks */
+.code-card {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex; flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+.code-card .cc-title {
+  padding: 8px 14px 4px;
+  font-size: 13px; font-weight: 900; color: var(--dark);
+  display: flex; align-items: center; gap: 4px;
+  border-bottom: 2px dashed #f0f0f0;
+}
+
+/* Command buttons grid */
+.cmd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 2px dashed #f0f0f0;
+}
+.cmd-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px;
+  padding: 8px 4px;
+  border: none; border-radius: var(--radius-sm);
+  cursor: pointer; font-family: inherit; font-weight: 900;
+  transition: all 0.12s;
+  box-shadow: var(--shadow-sm);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.cmd-btn:active { transform: scale(0.92) translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.1); }
+.cmd-btn .b-icon { font-size: 20px; }
+.cmd-btn .b-label { font-size: 11px; }
+.cmd-btn.dir-btn { background: #e8f4fd; color: #1565c0; }
+.cmd-btn.dir-btn:hover { background: #bbdefb; }
+.cmd-btn.action-btn { background: #e8f5e9; color: #2e7d32; }
+.cmd-btn.action-btn:hover { background: #c8e6c9; }
+.cmd-btn.logic-btn { background: #f3e5f5; color: #6a1b9a; }
+.cmd-btn.logic-btn:hover { background: #e1bee7; }
+.cmd-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
+
+/* Direction cross layout */
+.dir-cross {
+  display: grid;
+  grid-template-areas:
+    ". up ."
+    "left . right"
+    ". down .";
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+  padding: 6px 10px;
+  border-bottom: 2px dashed #f0f0f0;
+}
+.dir-cross .up    { grid-area: up; }
+.dir-cross .left  { grid-area: left; }
+.dir-cross .right { grid-area: right; }
+.dir-cross .down  { grid-area: down; }
+.dir-btn-big {
+  aspect-ratio: 1;
+  border: none; border-radius: 14px;
+  font-size: 26px;
+  cursor: pointer;
+  background: linear-gradient(145deg, #4fc3f7, #0288d1);
+  box-shadow: 0 5px 0 #01579b;
+  transition: all 0.1s;
+  display: flex; align-items: center; justify-content: center;
+}
+.dir-btn-big:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #01579b;
+}
+
+/* Action buttons row */
+.action-row {
+  display: flex; gap: 5px; padding: 6px 10px;
+  border-bottom: 2px dashed #f0f0f0;
+}
+.action-btn-big {
+  flex: 1; padding: 8px 4px;
+  border: none; border-radius: 12px;
+  font-family: inherit; font-weight: 900; font-size: 12px;
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  transition: all 0.1s;
+}
+.action-btn-big .ab-icon { font-size: 20px; }
+.action-btn-big.charge { background: linear-gradient(145deg,#ffd54f,#ff8f00); box-shadow: 0 4px 0 #e65100; color: white; }
+.action-btn-big.observe { background: linear-gradient(145deg,#a5d6a7,#2e7d32); box-shadow: 0 4px 0 #1b5e20; color: white; }
+.action-btn-big.sweep { background: linear-gradient(145deg,#80cbc4,#00695c); box-shadow: 0 4px 0 #004d40; color: white; }
+.action-btn-big.wait { background: linear-gradient(145deg,#ce93d8,#7b1fa2); box-shadow: 0 4px 0 #4a148c; color: white; }
+.action-btn-big:active { transform: translateY(3px); box-shadow: 0 1px 0; }
+.action-btn-big:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
+
+/* Program sequence */
+.prog-list {
+  flex: 1; overflow-y: auto;
+  padding: 6px 8px;
+  display: flex; flex-direction: column; gap: 3px;
+  min-height: 0;
+}
+.prog-list::-webkit-scrollbar { width: 4px; }
+.prog-list::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+
+.prog-empty {
+  text-align: center; color: #b2bec3;
+  font-size: 12px; font-weight: 800;
+  padding: 16px 0;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.prog-empty .pe-icon { font-size: 28px; opacity: 0.4; }
+
+.prog-item {
+  display: flex; align-items: center; gap: 6px;
+  background: #f8f9fa; border-radius: 10px;
+  padding: 5px 8px;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  user-select: none;
+}
+.prog-item.running {
+  background: #fff3cd; border-color: var(--orange);
+  animation: blink-border 0.5s ease infinite alternate;
+}
+@keyframes blink-border {
+  from { border-color: var(--orange); }
+  to   { border-color: var(--yellow); box-shadow: 0 0 8px rgba(255,140,42,0.5); }
+}
+.prog-item .pi-num { font-size: 10px; font-weight: 900; color: #adb5bd; min-width: 16px; }
+.prog-item .pi-icon { font-size: 16px; }
+.prog-item .pi-text { flex: 1; font-size: 12px; font-weight: 800; color: var(--dark); }
+.prog-item .pi-del {
+  font-size: 14px; cursor: pointer; color: #dfe6e9;
+  line-height: 1; padding: 2px 4px; border-radius: 4px;
+  transition: all 0.15s;
+}
+.prog-item .pi-del:hover { color: var(--red); background: #fff5f5; }
+
+/* Run controls */
+.run-controls {
+  display: flex; gap: 6px; padding: 8px 10px;
+}
+.run-btn {
+  flex: 2; padding: 10px;
+  border: none; border-radius: 14px;
+  font-family: inherit; font-weight: 900; font-size: 16px;
+  cursor: pointer; color: white;
+  background: linear-gradient(145deg, #69f0ae, #00c853);
+  box-shadow: 0 5px 0 #00701a;
+  transition: all 0.1s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.run-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #00701a; }
+.run-btn:disabled { background: #b2bec3; box-shadow: 0 5px 0 #8e9ba3; cursor: not-allowed; transform: none !important; }
+.run-btn .rb-icon { font-size: 20px; }
+
+.clear-btn {
+  flex: 1; padding: 10px;
+  border: none; border-radius: 14px;
+  font-family: inherit; font-weight: 900; font-size: 13px;
+  cursor: pointer; color: white;
+  background: linear-gradient(145deg, #ff6b6b, #c0392b);
+  box-shadow: 0 5px 0 #922b21;
+  transition: all 0.1s;
+}
+.clear-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #922b21; }
+.clear-btn:disabled { background: #b2bec3; box-shadow: 0 5px 0 #8e9ba3; cursor: not-allowed; transform: none !important; }
+
+/* ===== 消息提示 ===== */
+.toast-container {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 500;
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+  pointer-events: none;
+}
+.toast {
+  background: var(--dark); color: white;
+  padding: 10px 20px; border-radius: 20px;
+  font-size: 14px; font-weight: 800;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  display: flex; align-items: center; gap: 8px;
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2s forwards;
+  max-width: 400px; text-align: center;
+}
+.toast.ok { background: var(--green); color: white; }
+.toast.er { background: var(--red); }
+.toast.wr { background: var(--orange); }
+@keyframes toastIn  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+@keyframes toastOut { to{opacity:0;transform:translateY(-10px)} }
+
+/* ===== 粒子 ===== */
+#particles { position:fixed;inset:0;pointer-events:none;z-index:400; }
+.particle { position:absolute; font-size:28px; pointer-events:none;
+  animation: pFly 1.4s ease-out forwards; }
+@keyframes pFly {
+  0%   { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-180px) scale(0.1) rotate(360deg); opacity: 0; }
+}
+
+/* ===== 模态弹窗 ===== */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(6px);
+  z-index: 600;
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn 0.25s;
+}
+@keyframes fadeIn { from{opacity:0} }
+.modal-box {
+  background: white;
+  border-radius: 28px;
+  padding: 30px 36px;
+  text-align: center;
+  max-width: 460px; width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 0 0 6px rgba(255,255,255,0.5);
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes popIn { from{transform:scale(0.5);opacity:0} }
+.modal-box .m-emoji { font-size: 72px; margin-bottom: 10px; display: block; }
+.modal-box .m-title {
+  font-size: 26px; font-weight: 900; color: var(--dark);
+  margin-bottom: 8px;
+}
+.modal-box .m-msg {
+  font-size: 14px; font-weight: 700; color: #636e72;
+  line-height: 1.7; margin-bottom: 16px;
+}
+.modal-box .m-msg b { color: var(--orange); }
+.modal-box .m-score {
+  background: #fff9c4; border-radius: 14px; padding: 10px 16px;
+  font-size: 15px; font-weight: 900; color: var(--dark);
+  margin-bottom: 20px;
+}
+.modal-box .m-btn {
+  display: inline-block; padding: 12px 32px;
+  border: none; border-radius: 16px;
+  font-family: inherit; font-weight: 900; font-size: 17px;
+  cursor: pointer; color: white;
+  background: linear-gradient(145deg, #69f0ae, #00c853);
+  box-shadow: 0 5px 0 #00701a;
+  transition: all 0.1s; margin: 4px;
+}
+.modal-box .m-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #00701a; }
+.modal-box .m-btn.secondary {
+  background: linear-gradient(145deg, #90caf9, #1565c0);
+  box-shadow: 0 5px 0 #0d47a1;
+}
+
+/* Think question */
+.think-box {
+  background: linear-gradient(135deg, #e8f4fd, #d4eeff);
+  border-radius: 14px; padding: 10px 14px;
+  text-align: left; margin-bottom: 14px;
+  border-left: 4px solid var(--blue);
+}
+.think-box .think-title { font-size: 12px; font-weight: 900; color: var(--blue); margin-bottom: 4px; }
+.think-box .think-q { font-size: 13px; font-weight: 700; color: var(--dark); line-height: 1.5; }
+
+/* Welcome */
+.welcome-phases {
+  display: flex; gap: 8px; margin: 14px 0;
+}
+.wp-item {
+  flex: 1; background: #f8f9fa; border-radius: 14px;
+  padding: 12px 8px; text-align: center;
+}
+.wp-item .wp-icon { font-size: 28px; margin-bottom: 4px; }
+.wp-item .wp-name { font-size: 11px; font-weight: 900; color: var(--dark); }
+.wp-item .wp-desc { font-size: 10px; font-weight: 700; color: #636e72; margin-top: 2px; line-height: 1.4; }
+
+/* ===== 响应式 ===== */
+@media (max-width: 768px) {
+  html, body { overflow: auto; height: auto; }
+
+  .app {
+    grid-template-rows: auto auto;
+    height: auto; min-height: 100vh;
+    padding: 6px 8px 16px;
+    gap: 6px;
+  }
+
+  /* 顶栏收紧 */
+  .topbar { grid-template-columns: auto 1fr auto; gap: 6px; }
+  .title-box { padding: 5px 12px; }
+  .title-box .robot-icon { font-size: 22px; }
+  .title-box h1 { font-size: 13px; }
+  .step-dot { width: 34px; height: 34px; font-size: 15px; }
+  .score-box { padding: 5px 10px; }
+  .score-item .s-num { font-size: 18px; }
+
+  /* 主区域：上方画布，下方面板 */
+  .main-area {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    gap: 6px;
+    overflow: visible;
+  }
+  .classroom-wrap { gap: 6px; }
+  .classroom-container { min-height: 220px; }
+
+  /* 任务横幅 */
+  .task-banner { padding: 8px 12px; gap: 8px; min-height: 50px; }
+  .task-banner .mascot { font-size: 26px; }
+  .task-banner .task-text .task-title { font-size: 13px; }
+  .task-banner .task-text .task-hint { font-size: 11px; }
+
+  /* 右侧面板：横向排列但允许换行 */
+  .side-panel {
+    flex-direction: row;
+    flex-wrap: wrap;
+    overflow: visible;
+    gap: 6px;
+  }
+  .battery-card { flex: 1 1 auto; min-width: 140px; padding: 8px 10px; }
+  .battery-card .bc-title { font-size: 12px; }
+  .batt-outer { height: 18px; }
+  .code-card { flex: 2 1 240px; min-width: 0; }
+
+  /* 方向键 */
+  .dir-cross { gap: 3px; padding: 5px 8px; }
+  .dir-btn-big { font-size: 22px; border-radius: 12px; }
+
+  /* 动作按钮 */
+  .action-row { padding: 5px 8px; gap: 4px; }
+  .action-btn-big { padding: 7px 3px; font-size: 11px; min-height: 52px; border-radius: 10px; }
+  .action-btn-big .ab-icon { font-size: 18px; }
+
+  /* 指令列表 */
+  .prog-list { min-height: 60px; max-height: 120px; padding: 4px 6px; }
+  .prog-item { padding: 4px 6px; }
+  .prog-item .pi-text { font-size: 11px; }
+
+  /* 运行按钮 */
+  .run-controls { gap: 5px; padding: 6px 8px; }
+  .run-btn { font-size: 14px; padding: 9px; min-height: 44px; }
+  .clear-btn { font-size: 12px; padding: 9px; min-height: 44px; }
+
+  /* toast位置 */
+  .toast-container { bottom: 10px; width: 90%; left: 5%; transform: none; }
+  .toast { font-size: 13px; padding: 8px 16px; max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .topbar { grid-template-columns: auto 1fr auto; gap: 4px; }
+  .title-box h1 { font-size: 11px; }
+  .title-box .robot-icon { font-size: 18px; }
+  .title-box { padding: 4px 8px; }
+  .phase-steps { gap: 3px; }
+  .step-dot { width: 30px; height: 30px; font-size: 13px; }
+  .step-arrow { font-size: 11px; }
+  .score-item .s-num { font-size: 16px; }
+  .score-box { padding: 4px 8px; gap: 6px; }
+
+  .dir-btn-big { font-size: 20px; }
+  .action-btn-big { min-height: 46px; font-size: 10px; }
+  .run-btn { font-size: 13px; }
+  .clear-btn { font-size: 11px; }
+
+  .battery-card { flex: 1 1 100%; }
+  .code-card { flex: 1 1 100%; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="bg" id="bgLayer"></div>
+<div id="particles"></div>
+
+<div class="app">
+
+  <!-- 顶栏 -->
+  <div class="topbar">
+    <div class="title-box">
+      <span class="robot-icon">🤖</span>
+      <h1>小扫扫的大冒险！</h1>
+    </div>
+
+    <div class="phase-steps" id="phaseSteps">
+      <div class="step-item">
+        <div class="step-dot active" data-phase="1" id="dot1">
+          ⚡<div class="step-label">充电</div>
+        </div>
+      </div>
+      <div class="step-arrow">➡</div>
+      <div class="step-item">
+        <div class="step-dot locked" data-phase="2" id="dot2">
+          🧹<div class="step-label">清扫</div>
+        </div>
+      </div>
+      <div class="step-arrow">➡</div>
+      <div class="step-item">
+        <div class="step-dot locked" data-phase="3" id="dot3">
+          🚀<div class="step-label">闯关</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="score-box">
+      <div class="score-item">
+        <div class="s-num" id="sScore">0</div>
+        <div class="s-lbl">⭐ 积分</div>
+      </div>
+      <div class="score-item" style="border-left:2px dashed rgba(0,0,0,0.15);padding-left:10px;margin-left:2px">
+        <div class="s-num" id="sSteps">0</div>
+        <div class="s-lbl">👣 步数</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 主区域 -->
+  <div class="main-area">
+
+    <!-- 左：教室 -->
+    <div class="classroom-wrap">
+      <!-- 任务横幅 -->
+      <div class="task-banner" id="taskBanner">
+        <div class="mascot" id="taskMascot">🤖</div>
+        <div class="task-text">
+          <div class="task-title" id="taskTitle">加载中...</div>
+          <div class="task-hint" id="taskHint"></div>
+        </div>
+      </div>
+
+      <!-- 教室画布 -->
+      <div class="classroom-container" id="classroomCont">
+        <canvas id="gameCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- 右：控制面板 -->
+    <div class="side-panel">
+
+      <!-- 电量显示 -->
+      <div class="battery-card">
+        <div class="bc-title">🔋 机器人电量</div>
+        <div class="batt-outer">
+          <div class="batt-inner" id="battFill"></div>
+          <div class="batt-label" id="battLabel"></div>
+        </div>
+        <div class="batt-steps" id="battSteps"></div>
+      </div>
+
+      <!-- 指令面板 -->
+      <div class="code-card">
+        <div class="cc-title">🕹️ 编写指令</div>
+
+        <!-- 方向键 -->
+        <div class="dir-cross">
+          <button class="dir-btn-big up"    onclick="G.addCmd('上移')"  title="向上走一格">⬆️</button>
+          <button class="dir-btn-big left"  onclick="G.addCmd('左移')"  title="向左走一格">⬅️</button>
+          <button class="dir-btn-big right" onclick="G.addCmd('右移')"  title="向右走一格">➡️</button>
+          <button class="dir-btn-big down"  onclick="G.addCmd('下移')"  title="向下走一格">⬇️</button>
+        </div>
+
+        <!-- 动作按钮 -->
+        <div class="action-row" id="actionRow"></div>
+
+        <!-- 指令列表 -->
+        <div class="prog-list" id="progList">
+          <div class="prog-empty">
+            <span class="pe-icon">📝</span>
+            点击上方按钮<br>把指令加进来！
+          </div>
+        </div>
+
+        <!-- 运行 & 清空 -->
+        <div class="run-controls">
+          <button class="run-btn" id="runBtn" onclick="G.run()">
+            <span class="rb-icon">▶</span> 开始运行！
+          </button>
+          <button class="clear-btn" id="clearBtn" onclick="G.clearAll()">🗑️ 清空</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastC"></div>
+<div id="modalC"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  工具函数
+// ══════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function showToast(msg, type='ok', dur=2500) {
+  const c = $('toastC');
+  const d = document.createElement('div');
+  d.className = `toast ${type}`;
+  d.textContent = msg;
+  c.appendChild(d);
+  setTimeout(() => d.remove(), dur + 300);
+}
+
+function spawnParticles(canvasX, canvasY, emojis, n=8) {
+  const rect = $('gameCanvas').getBoundingClientRect();
+  const container = $('particles');
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const em = Array.isArray(emojis) ? emojis[Math.floor(Math.random()*emojis.length)] : emojis;
+    p.textContent = em;
+    p.style.left = (rect.left + canvasX + (Math.random()*60-30)) + 'px';
+    p.style.top  = (rect.top  + canvasY + (Math.random()*30-15)) + 'px';
+    p.style.animationDelay = (Math.random()*0.3) + 's';
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 1700);
+  }
+}
+
+function showModal(opts) {
+  $('modalC').innerHTML = `
+    <div class="modal-bg" id="mbg">
+      <div class="modal-box">
+        <span class="m-emoji">${opts.emoji||'⭐'}</span>
+        <div class="m-title">${opts.title||''}</div>
+        <div class="m-msg">${opts.msg||''}</div>
+        ${opts.think ? `<div class="think-box"><div class="think-title">🤔 动动脑筋</div><div class="think-q">${opts.think}</div></div>` : ''}
+        ${opts.score ? `<div class="m-score">${opts.score}</div>` : ''}
+        <div>
+          ${opts.btns.map(b=>`<button class="m-btn ${b.cls||''}" onclick="${b.fn}">${b.text}</button>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+function closeModal() { $('modalC').innerHTML = ''; }
+
+// ══════════════════════════════════════════════════
+//  画布 & 渲染
+// ══════════════════════════════════════════════════
+const COLS = 7, ROWS = 7;
+let CELL = 64;
+let canvas, ctx;
+let animX = 0, animY = 0;
+let bounce = 0;
+let flashCells = {}; // key → {color, alpha}
+
+function initCanvas() {
+  canvas = $('gameCanvas');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();
+  window.addEventListener('resize', () => { resizeCanvas(); });
+}
+
+function resizeCanvas() {
+  const cont = $('classroomCont');
+  const maxW = cont.clientWidth - 20;
+  const maxH = cont.clientHeight - 20;
+  CELL = Math.floor(Math.min(maxW / COLS, maxH / ROWS, 72));
+  CELL = Math.max(CELL, 40);
+  canvas.width  = COLS * CELL;
+  canvas.height = ROWS * CELL;
+  animX = G.bot.x * CELL;
+  animY = G.bot.y * CELL;
+}
+
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawFloor();
+  drawHighlights();
+  drawItems();
+  drawRobot();
+  drawOverlayLabels();
+  bounce += 0.07;
+  requestAnimationFrame(render);
+}
+
+// 地板 + 网格
+function drawFloor() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      ctx.fillStyle = (r + c) % 2 === 0 ? '#fff9e6' : '#fef3c7';
+      ctx.fillRect(c*CELL, r*CELL, CELL, CELL);
+    }
+  }
+  // 黑板（顶部一整行）
+  ctx.fillStyle = '#3d8b37';
+  ctx.fillRect(0, 0, COLS*CELL, CELL * 0.18);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.font = `bold ${Math.max(9, CELL*0.15)}px 'Nunito'`;
+  ctx.textAlign = 'center';
+  ctx.fillText('📚  黑 板  📚', COLS*CELL/2, CELL*0.14);
+
+  // 网格线
+  ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= COLS; i++) {
+    ctx.beginPath(); ctx.moveTo(i*CELL, 0); ctx.lineTo(i*CELL, ROWS*CELL); ctx.stroke();
+  }
+  for (let i = 0; i <= ROWS; i++) {
+    ctx.beginPath(); ctx.moveTo(0, i*CELL); ctx.lineTo(COLS*CELL, i*CELL); ctx.stroke();
+  }
+
+  // 坐标标签
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.font = `bold ${Math.max(7, CELL*0.13)}px 'Nunito'`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      ctx.fillText(`${c},${r}`, c*CELL + CELL/2, (r+1)*CELL - 2);
+    }
+  }
+  ctx.textBaseline = 'alphabetic';
+}
+
+// 路径高亮 / flash
+function drawHighlights() {
+  // Draw charger glow
+  G.chargers.forEach(ch => {
+    const t = Date.now()/700;
+    const a = 0.12 + 0.08 * Math.sin(t);
+    ctx.fillStyle = `rgba(255, 200, 0, ${a})`;
+    ctx.fillRect(ch.x*CELL, ch.y*CELL, CELL, CELL);
+    // dashed border
+    ctx.strokeStyle = `rgba(255,180,0,${0.4 + 0.3*Math.sin(t)})`;
+    ctx.lineWidth = 2; ctx.setLineDash([5,4]);
+    ctx.strokeRect(ch.x*CELL+2, ch.y*CELL+2, CELL-4, CELL-4);
+    ctx.setLineDash([]);
+  });
+  // Trash glow
+  G.trash.forEach(t => {
+    if (t.clean) return;
+    const pulse = 0.07 + 0.05*Math.sin(Date.now()/500);
+    if (t.hidden && !t.seen) {
+      ctx.fillStyle = `rgba(255,100,100,${pulse})`;
+    } else {
+      ctx.fillStyle = `rgba(255,200,0,${pulse + 0.05})`;
+    }
+    ctx.fillRect(t.x*CELL, t.y*CELL, CELL, CELL);
+  });
+}
+
+// 所有物件
+function drawItems() {
+  // Chargers
+  G.chargers.forEach(ch => drawEmoji('🔌', ch.x, ch.y, 0.48, 0));
+
+  // Desks (furniture)
+  G.desks.forEach(d => {
+    drawDesk(d.x, d.y);
+  });
+
+  // Trash
+  G.trash.forEach(t => {
+    if (t.clean) {
+      // sparkle for 1s after cleaned
+      if (Date.now() - t.cleanedAt < 800) {
+        drawEmoji('✨', t.x, t.y, 0.4, 0);
+      }
+      return;
+    }
+    if (t.hidden && !t.seen) {
+      drawEmoji('❓', t.x, t.y, 0.35, Math.sin(Date.now()/600)*0.08);
+    } else {
+      drawEmoji(t.em, t.x, t.y, 0.42, 0);
+      // Label
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.font = `bold ${Math.max(7,CELL*0.13)}px 'Nunito'`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(t.label, t.x*CELL+CELL/2, t.y*CELL+2);
+      ctx.textBaseline = 'alphabetic';
+    }
+  });
+
+  // Obstacles
+  G.obstacles.forEach(o => {
+    drawObstacle(o.x, o.y, o.em);
+  });
+}
+
+function drawDesk(col, row) {
+  const x = col*CELL+3, y = row*CELL+3, w = CELL-6, h = CELL-6;
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.1)';
+  ctx.beginPath(); ctx.roundRect(x+2, y+2, w, h, 6); ctx.fill();
+  // Body
+  const g = ctx.createLinearGradient(x, y, x+w, y+h);
+  g.addColorStop(0, '#d4a843'); g.addColorStop(1, '#a67c2e');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 6); ctx.fill();
+  // Shine
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.beginPath(); ctx.roundRect(x+3, y+3, w-6, h*0.35, 4); ctx.fill();
+  // Icon
+  ctx.font = `${CELL*0.35}px sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('🪑', col*CELL+CELL/2, row*CELL+CELL/2);
+  ctx.textBaseline = 'alphabetic';
+}
+
+function drawObstacle(col, row, em) {
+  const x = col*CELL, y = row*CELL;
+  ctx.fillStyle = 'rgba(244,67,54,0.08)';
+  ctx.fillRect(x, y, CELL, CELL);
+  // Striped warning border
+  ctx.strokeStyle = 'rgba(244,67,54,0.3)'; ctx.lineWidth = 2; ctx.setLineDash([4,4]);
+  ctx.strokeRect(x+2, y+2, CELL-4, CELL-4); ctx.setLineDash([]);
+  drawEmoji(em, col, row, 0.42, 0);
+}
+
+function drawEmoji(em, col, row, sizeFrac, offsetY) {
+  const sz = CELL * sizeFrac;
+  ctx.font = `${sz}px sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(em, col*CELL+CELL/2, row*CELL+CELL/2 + (offsetY||0)*CELL);
+  ctx.textBaseline = 'alphabetic';
+}
+
+// 机器人
+function drawRobot() {
+  const px = animX + CELL/2;
+  const py = animY + CELL/2;
+  const sz = CELL * 0.78;
+  const bob = Math.sin(bounce) * 1.8;
+
+  // 阴影
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  ctx.beginPath();
+  ctx.ellipse(px+1, py+sz*0.46+2, sz*0.36, sz*0.11, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // 身体发光
+  const glow = ctx.createRadialGradient(px, py+bob, sz*0.05, px, py+bob, sz*0.65);
+  glow.addColorStop(0, 'rgba(100,200,255,0.15)');
+  glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow; ctx.fillRect(px-sz, py-sz+bob, sz*2, sz*2);
+
+  // 主体
+  const bodyGrad = ctx.createRadialGradient(px-sz*0.1, py-sz*0.15+bob, sz*0.05, px, py+bob, sz*0.5);
+  bodyGrad.addColorStop(0, '#a8d8ff');
+  bodyGrad.addColorStop(0.5, '#4ba3f0');
+  bodyGrad.addColorStop(1, '#1a6cc7');
+  ctx.fillStyle = bodyGrad;
+  ctx.beginPath(); ctx.arc(px, py+bob, sz/2, 0, Math.PI*2); ctx.fill();
+
+  // 高光环
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(px, py+bob, sz/2, 0, Math.PI*2); ctx.stroke();
+
+  // 脸部屏幕
+  ctx.fillStyle = '#0a1832';
+  ctx.beginPath(); ctx.arc(px, py-sz*0.04+bob, sz*0.31, 0, Math.PI*2); ctx.fill();
+
+  const battery = G.bot.battery, maxBatt = G.bot.maxBatt;
+  const happy = battery > 0;
+
+  // 眼睛
+  const ey = py - sz*0.11 + bob;
+  const esp = sz*0.12;
+  ctx.fillStyle = happy ? '#4cff8a' : '#ff6060';
+  ctx.beginPath(); ctx.arc(px-esp, ey, sz*0.075, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(px+esp, ey, sz*0.075, 0, Math.PI*2); ctx.fill();
+
+  // 眼珠方向
+  let pdx=0, pdy=0;
+  const dir = G.bot.dir;
+  if (dir==='up') pdy=-1.5; else if (dir==='down') pdy=1.5;
+  else if (dir==='left') pdx=-1.5; else pdx=1.5;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(px-esp+pdx, ey+pdy, sz*0.033, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(px+esp+pdx, ey+pdy, sz*0.033, 0, Math.PI*2); ctx.fill();
+
+  // 嘴巴
+  if (happy) {
+    ctx.strokeStyle = '#4cff8a'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(px, py+sz*0.02+bob, sz*0.13, 0.2, Math.PI-0.2); ctx.stroke();
+  } else {
+    ctx.strokeStyle = '#ff6060'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(px, py+sz*0.14+bob, sz*0.1, Math.PI+0.3, -0.3); ctx.stroke();
+    // 泪珠
+    ctx.fillStyle = 'rgba(100,200,255,0.6)';
+    ctx.beginPath(); ctx.arc(px-esp, ey+sz*0.1, sz*0.03, 0, Math.PI*2); ctx.fill();
+  }
+
+  // 腮红
+  ctx.fillStyle = 'rgba(255,100,150,0.22)';
+  ctx.beginPath(); ctx.arc(px-sz*0.25, py+bob, sz*0.07, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(px+sz*0.25, py+bob, sz*0.07, 0, Math.PI*2); ctx.fill();
+
+  // 天线
+  ctx.strokeStyle = '#90caf9'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(px, py-sz/2+bob); ctx.lineTo(px, py-sz/2-7+bob); ctx.stroke();
+  ctx.fillStyle = battery > maxBatt*0.2 ? '#ff5252' : '#555';
+  ctx.beginPath(); ctx.arc(px, py-sz/2-9+bob, 3, 0, Math.PI*2); ctx.fill();
+  // 天线光晕
+  if (battery > 0) {
+    ctx.fillStyle = `rgba(255,82,82,${0.15+0.12*Math.sin(Date.now()/300)})`;
+    ctx.beginPath(); ctx.arc(px, py-sz/2-9+bob, 6+Math.sin(Date.now()/300)*2, 0, Math.PI*2); ctx.fill();
+  }
+
+  // 电量迷你条
+  const bw=sz*0.46, bh=4;
+  const bx=px-bw/2, by=py+sz*0.22+bob;
+  ctx.fillStyle='rgba(0,0,0,0.25)';
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 2); ctx.fill();
+  const bp = Math.max(0, battery/maxBatt);
+  ctx.fillStyle = bp>0.5?'#4cff8a': bp>0.2?'#ffd32a':'#ff5252';
+  ctx.beginPath(); ctx.roundRect(bx, by, bw*bp, bh, 2); ctx.fill();
+}
+
+function drawOverlayLabels() {
+  // Robot pos label
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillStyle = '#3d3d3d';
+  ctx.font = `bold ${Math.max(9,CELL*0.16)}px 'Nunito'`;
+  ctx.textAlign = 'center';
+  const rx = G.bot.x*CELL + CELL/2;
+  const ry = G.bot.y*CELL + CELL - 3;
+}
+
+// 平滑动画
+function animateMove(tx, ty) {
+  const sx=animX, sy=animY, ex=tx*CELL, ey=ty*CELL, dur=300;
+  const t0 = performance.now();
+  return new Promise(res => {
+    const step = now => {
+      let p = Math.min(1, (now-t0)/dur);
+      p = 1 - Math.pow(1-p, 3);
+      animX = sx + (ex-sx)*p;
+      animY = sy + (ey-sy)*p;
+      if (p < 1) requestAnimationFrame(step);
+      else { animX = ex; animY = ey; res(); }
+    };
+    requestAnimationFrame(step);
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  游戏逻辑
+// ══════════════════════════════════════════════════
+const G = {
+  phase: 1,
+  score: 0,
+  steps: 0,
+  done: [false, false, false],
+  bot: { x:0, y:0, dir:'down', battery:3, maxBatt:3 },
+  cmds: [],
+  executing: false,
+  desks: [], chargers: [], trash: [], obstacles: [],
+  trashCollected: 0, trashTotal: 0,
+  charged: false,
+  obTimer: null,
+
+  // ── 初始化阶段 ──
+  initPhase(p) {
+    this.phase = p;
+    this.executing = false;
+    this.charged = false;
+    if (this.obTimer) { clearInterval(this.obTimer); this.obTimer = null; }
+
+    // 固定课桌位置（不挡路）
+    this.desks = [
+      {x:1,y:2},{x:3,y:2},{x:5,y:2},
+      {x:1,y:4},{x:3,y:4},{x:5,y:4}
+    ];
+
+    if (p === 1) {
+      // 阶段一：机器人在(0,0)，电量只有3步，两个电源点
+      this.bot = { x:0, y:0, dir:'right', battery:3, maxBatt:3 };
+      this.chargers = [{x:2,y:0,label:'1号'},{x:5,y:6,label:'2号'}];
+      this.trash = []; this.obstacles = [];
+      this.trashTotal = 0; this.trashCollected = 0;
+    } else if (p === 2) {
+      // 阶段二：已充电，电量充足，清扫隐藏垃圾
+      this.bot = { x:2, y:0, dir:'down', battery:12, maxBatt:12 };
+      this.chargers = [{x:2,y:0,label:'电源'}];
+      this.trash = [
+        { x:4, y:0, em:'🌫️', label:'粉笔灰', hidden:true, seen:false, clean:false, cleanedAt:0 },
+        { x:0, y:5, em:'🍌', label:'香蕉皮', hidden:true, seen:false, clean:false, cleanedAt:0 }
+      ];
+      this.obstacles = [];
+      this.trashTotal = 2; this.trashCollected = 0;
+    } else {
+      // 阶段三：全功能，随机移动障碍
+      this.bot = { x:0, y:6, dir:'up', battery:20, maxBatt:20 };
+      this.chargers = [{x:6,y:6,label:'电源'}];
+      this.trash = [
+        { x:6, y:0, em:'📄', label:'纸团', hidden:false, seen:true, clean:false, cleanedAt:0 },
+        { x:0, y:0, em:'🍫', label:'糖纸', hidden:false, seen:true, clean:false, cleanedAt:0 },
+        { x:6, y:3, em:'🥤', label:'杯子', hidden:false, seen:true, clean:false, cleanedAt:0 }
+      ];
+      this.obstacles = [
+        { x:3, y:3, em:'📦' },
+        { x:4, y:5, em:'🪑' }
+      ];
+      this.trashTotal = 3; this.trashCollected = 0;
+      this.startObstacles();
+    }
+
+    animX = this.bot.x * CELL;
+    animY = this.bot.y * CELL;
+    this.updateSidePanel();
+    this.updateTask();
+    this.updateBattery();
+    this.updateScore();
+    this.updatePhaseDots();
+    this.renderProg();
+    resizeCanvas();
+  },
+
+  // ── 添加指令 ──
+  addCmd(cmd) {
+    if (this.executing) return;
+    this.cmds.push(cmd);
+    this.renderProg();
+    // 自动滚到底
+    const el = $('progList');
+    el.scrollTop = el.scrollHeight;
+  },
+  removeCmd(i) {
+    if (this.executing) return;
+    this.cmds.splice(i, 1);
+    this.renderProg();
+  },
+  clearAll() {
+    if (this.executing) return;
+    this.cmds = [];
+    this.renderProg();
+  },
+
+  // ── 渲染指令列表 ──
+  renderProg() {
+    const el = $('progList');
+    if (!this.cmds.length) {
+      el.innerHTML = `<div class="prog-empty"><span class="pe-icon">📝</span>点击上方按钮<br>把指令加进来！</div>`;
+      return;
+    }
+    const icons = {'上移':'⬆️','下移':'⬇️','左移':'⬅️','右移':'➡️','充电':'🔌','观察':'👁️','清扫':'🧹','等待':'⏳'};
+    el.innerHTML = this.cmds.map((c, i) => `
+      <div class="prog-item" id="pi${i}">
+        <span class="pi-num">${i+1}</span>
+        <span class="pi-icon">${icons[c]||'▪️'}</span>
+        <span class="pi-text">${c}</span>
+        <span class="pi-del" onclick="G.removeCmd(${i})">×</span>
+      </div>`).join('');
+  },
+
+  // ── 运行 ──
+  async run() {
+    if (this.executing || !this.cmds.length) {
+      if (!this.cmds.length) showToast('还没有指令哦！先点按钮加一些吧 👆', 'wr');
+      return;
+    }
+    this.executing = true;
+    $('runBtn').disabled = true;
+    $('clearBtn').disabled = true;
+
+    for (let i = 0; i < this.cmds.length; i++) {
+      // 高亮当前行
+      document.querySelectorAll('.prog-item').forEach(el => el.classList.remove('running'));
+      const row = $('pi'+i);
+      if (row) { row.classList.add('running'); row.scrollIntoView({block:'nearest',behavior:'smooth'}); }
+
+      const ok = await this.execOne(this.cmds[i]);
+      if (!ok) break;
+      await sleep(350);
+    }
+
+    document.querySelectorAll('.prog-item').forEach(el => el.classList.remove('running'));
+    this.executing = false;
+    this.cmds = [];
+    this.renderProg();
+    $('runBtn').disabled = false;
+    $('clearBtn').disabled = false;
+    this.checkWin();
+  },
+
+  async execOne(cmd) {
+    const b = this.bot;
+
+    if (['上移','下移','左移','右移'].includes(cmd)) {
+      if (b.battery <= 0) {
+        showToast('😰 没电啦！需要先去充电站充电！', 'er');
+        spawnParticles(animX+CELL/2, animY+CELL/2, ['💀','⚡','😵'], 6);
+        return false;
+      }
+      let nx = b.x, ny = b.y;
+      if (cmd==='上移') { ny--; b.dir='up'; }
+      if (cmd==='下移') { ny++; b.dir='down'; }
+      if (cmd==='左移') { nx--; b.dir='left'; }
+      if (cmd==='右移') { nx++; b.dir='right'; }
+
+      if (nx<0||nx>=COLS||ny<0||ny>=ROWS) {
+        showToast('🚫 哎呀！走到墙外面了！', 'er');
+        return false;
+      }
+      if (this.desks.some(d=>d.x===nx&&d.y===ny)) {
+        showToast('🪑 撞到课桌了！要绕路走哦~', 'er');
+        return false;
+      }
+      if (this.obstacles.some(o=>o.x===nx&&o.y===ny)) {
+        showToast('🚧 前面有东西挡着！试试用"等待"指令', 'er');
+        return false;
+      }
+
+      b.x = nx; b.y = ny; b.battery--; this.steps++;
+      await animateMove(nx, ny);
+      this.updateBattery();
+      this.updateScore();
+      return true;
+    }
+
+    if (cmd === '充电') {
+      const ch = this.chargers.find(c=>c.x===b.x&&c.y===b.y);
+      if (!ch) {
+        showToast('❓ 这里没有充电站！要走到🔌那个格子才能充电', 'er');
+        return false;
+      }
+      b.battery = b.maxBatt;
+      this.charged = true;
+      showToast('⚡ 充电完成！电量满满的！', 'ok');
+      spawnParticles(animX+CELL/2, animY+CELL/2, ['⚡','🌟','✨','💛'], 12);
+      this.updateBattery();
+      return true;
+    }
+
+    if (cmd === '观察') {
+      let found = false;
+      this.trash.forEach(t => {
+        if (t.hidden && !t.seen && Math.abs(t.x-b.x)<=1 && Math.abs(t.y-b.y)<=1) {
+          t.seen = true; found = true;
+          showToast(`👀 发现了${t.em}${t.label}！在(${t.x},${t.y})`, 'ok');
+          spawnParticles(t.x*CELL+CELL/2, t.y*CELL+CELL/2, ['👀','❗','✨'], 5);
+        }
+      });
+      if (!found) showToast('🔍 周围没发现新东西...', 'wr');
+      spawnParticles(animX+CELL/2, animY+CELL/2, ['👁️'], 3);
+      return true;
+    }
+
+    if (cmd === '清扫') {
+      const t = this.trash.find(t=>!t.clean && t.x===b.x && t.y===b.y);
+      if (!t) {
+        showToast('🧹 这里没有垃圾哦~', 'wr');
+        return true;
+      }
+      if (t.hidden && !t.seen) {
+        showToast('❓ 感觉有什么东西...但是看不见！需要先"观察"哦', 'wr');
+        return true;
+      }
+      t.clean = true; t.cleanedAt = Date.now();
+      this.trashCollected++; this.score += 30;
+      showToast(`✅ 清扫了${t.em}${t.label}！+30分 (${this.trashCollected}/${this.trashTotal})`, 'ok');
+      spawnParticles(animX+CELL/2, animY+CELL/2, ['🌟','✨','🎉','💚'], 10);
+      this.updateScore();
+      return true;
+    }
+
+    if (cmd === '等待') {
+      showToast('⏳ 小扫扫等了一会儿...障碍物动了！', 'wr');
+      await sleep(600);
+      this.moveObstacles();
+      await sleep(300);
+      return true;
+    }
+
+    return true;
+  },
+
+  // ── 胜利判定 ──
+  checkWin() {
+    if (this.phase === 1) {
+      if (this.charged) {
+        this.score += 50; this.done[0] = true;
+        this.updateScore(); this.updatePhaseDots();
+        setTimeout(() => showModal({
+          emoji: '⚡',
+          title: '太棒啦！充上电了！',
+          msg: `小扫扫的电量满满当当了！<br>你选择了<b>最近的路线</b>！`,
+          think: '想一想：为什么要先找最近的电源？如果走远路会怎样？',
+          score: `⭐ 本关得分：+50分`,
+          btns: [{ text:'下一关 ➡️', fn:"closeModal();G.goNext(2);" }]
+        }), 300);
+      } else {
+        showToast('💡 还没充上电！需要走到🔌位置，再用"充电"指令', 'wr', 3500);
+      }
+    } else if (this.phase === 2) {
+      if (this.trashCollected >= this.trashTotal) {
+        this.score += 80; this.done[1] = true;
+        this.updateScore(); this.updatePhaseDots();
+        setTimeout(() => showModal({
+          emoji: '🧹',
+          title: '教室干净啦！',
+          msg: `两个隐藏垃圾都找到并清扫干净了！<br>你学会了<b>先观察、再清扫</b>的方法！`,
+          think: '想一想：如果不先"观察"，直接"清扫"，会发生什么？',
+          score: `⭐ 本关得分：+80分`,
+          btns: [{ text:'下一关 ➡️', fn:"closeModal();G.goNext(3);" }]
+        }), 300);
+      } else {
+        showToast(`💡 还有${this.trashTotal-this.trashCollected}个垃圾！记住：先到旁边→观察→再去格子上→清扫`, 'wr', 3500);
+      }
+    } else {
+      if (this.trashCollected >= this.trashTotal) {
+        this.score += 100; this.done[2] = true;
+        if (this.obTimer) { clearInterval(this.obTimer); this.obTimer = null; }
+        this.updateScore(); this.updatePhaseDots();
+        const eff = this.steps<=15?'⭐⭐⭐ 太厉害了！':this.steps<=25?'⭐⭐ 很棒！':'⭐ 完成了！';
+        setTimeout(() => showModal({
+          emoji: '🏆',
+          title: '恭喜！获得"编程小战神"！',
+          msg: `三关全部通过，教室超级干净！<br>你学会了<b>顺序指令</b>和<b>条件判断</b>！`,
+          think: '遇到随机障碍时，你是怎么处理的？"等待"指令代表什么？',
+          score: `🏆 总分：${this.score}分 | 👣步数：${this.steps}步<br>${eff}`,
+          btns: [
+            { text:'🎉 再玩一次！', fn:"closeModal();G.fullReset();" },
+            { text:'🏠 回到开始', fn:"closeModal();G.fullReset();G.showWelcome();", cls:'secondary' }
+          ]
+        }), 300);
+      } else {
+        showToast(`💡 还有${this.trashTotal-this.trashCollected}个垃圾！遇到障碍试试"等待"`, 'wr', 3000);
+      }
+    }
+  },
+
+  // ── 障碍物移动 ──
+  startObstacles() {
+    if (this.obTimer) clearInterval(this.obTimer);
+    this.obTimer = setInterval(() => {
+      if (!this.executing) this.moveObstacles();
+    }, 2500);
+  },
+  moveObstacles() {
+    this.obstacles.forEach(o => {
+      const dirs = [[0,-1],[0,1],[-1,0],[1,0]].sort(() => Math.random()-0.5);
+      for (const [dx,dy] of dirs) {
+        const nx=o.x+dx, ny=o.y+dy;
+        if (nx>=0&&nx<COLS&&ny>=0&&ny<ROWS
+          && !this.desks.some(d=>d.x===nx&&d.y===ny)
+          && !this.obstacles.some(b=>b!==o&&b.x===nx&&b.y===ny)
+          && !(this.bot.x===nx&&this.bot.y===ny)
+          && !this.trash.some(t=>!t.clean&&t.x===nx&&t.y===ny)
+          && !this.chargers.some(c=>c.x===nx&&c.y===ny)) {
+          o.x=nx; o.y=ny; break;
+        }
+      }
+    });
+  },
+
+  // ── UI 更新 ──
+  updateBattery() {
+    const b = this.bot;
+    const pct = Math.max(0, b.battery / b.maxBatt * 100);
+    const fill = $('battFill');
+    fill.style.width = pct + '%';
+    fill.style.background = pct>50 ? 'linear-gradient(90deg,#69f0ae,#00c853)'
+                          : pct>20 ? 'linear-gradient(90deg,#ffd740,#ff9800)'
+                                   : 'linear-gradient(90deg,#ff5252,#d32f2f)';
+    $('battLabel').textContent = `${b.battery} / ${b.maxBatt} 格`;
+
+    // 方块显示
+    const steps = $('battSteps');
+    let html = '';
+    for (let i = 0; i < b.maxBatt; i++) {
+      const full = i < b.battery;
+      const icon = full ? (pct>50?'🟩':pct>20?'🟨':'🟥') : '⬜';
+      html += `<span style="font-size:${Math.max(10,Math.min(18,CELL*0.28))}px">${icon}</span>`;
+    }
+    steps.innerHTML = html;
+  },
+
+  updateTask() {
+    const tasks = {
+      1: {
+        mascot: '😰',
+        title: '⚡ 紧急任务：小扫扫快没电了！',
+        hint: '电量只剩 <b>3格</b>！只够走3步！\n找到<b>最近</b>的🔌充电站，走过去然后点"充电"！\n<span class="tip">💡 1号在(2,0)只需2步，2号在(5,6)需要很多步</span>'
+      },
+      2: {
+        mascot: '🔍',
+        title: '🧹 任务：清扫隐藏的垃圾！',
+        hint: '垃圾藏起来了，要先走到<b>旁边</b>，用"观察"发现它，<br>再走到<b>垃圾格子上</b>，用"清扫"清掉！\n<span class="tip">💡 顺序：移动 → 观察 → 移动 → 清扫</span>'
+      },
+      3: {
+        mascot: '🚀',
+        title: '🚀 终极挑战：有东西在移动！',
+        hint: '教室里有东西在<b>随机走动</b>！清扫3个垃圾：📄纸团、🍫糖纸、🥤杯子<br><span class="tip">💡 被挡住了就用"等待"指令，等对方让路</span>'
+      }
+    };
+    const t = tasks[this.phase];
+    $('taskMascot').textContent = t.mascot;
+    $('taskTitle').textContent = t.title;
+    $('taskHint').innerHTML = t.hint;
+    $('taskBanner').style.borderLeftColor = this.phase===1?'#ff8c42':this.phase===2?'#2ed573':'#1e90ff';
+  },
+
+  updateSidePanel() {
+    // Action buttons based on phase
+    const row = $('actionRow');
+    if (this.phase === 1) {
+      row.innerHTML = `
+        <button class="action-btn-big charge" onclick="G.addCmd('充电')">
+          <span class="ab-icon">🔌</span>充电
+        </button>`;
+    } else if (this.phase === 2) {
+      row.innerHTML = `
+        <button class="action-btn-big observe" onclick="G.addCmd('观察')">
+          <span class="ab-icon">👁️</span>观察
+        </button>
+        <button class="action-btn-big sweep" onclick="G.addCmd('清扫')">
+          <span class="ab-icon">🧹</span>清扫
+        </button>`;
+    } else {
+      row.innerHTML = `
+        <button class="action-btn-big observe" onclick="G.addCmd('观察')">
+          <span class="ab-icon">👁️</span>观察
+        </button>
+        <button class="action-btn-big sweep" onclick="G.addCmd('清扫')">
+          <span class="ab-icon">🧹</span>清扫
+        </button>
+        <button class="action-btn-big wait" onclick="G.addCmd('等待')">
+          <span class="ab-icon">⏳</span>等待
+        </button>`;
+    }
+  },
+
+  updateScore() {
+    $('sScore').textContent = this.score;
+    $('sSteps').textContent = this.steps;
+  },
+
+  updatePhaseDots() {
+    for (let p = 1; p <= 3; p++) {
+      const dot = $('dot'+p);
+      dot.className = 'step-dot';
+      if (p === this.phase) dot.classList.add('active');
+      else if (this.done[p-1]) dot.classList.add('done');
+      else if (p > 1 && !this.done[p-2]) dot.classList.add('locked');
+      dot.onclick = () => {
+        if (this.executing) return;
+        if (p > 1 && !this.done[p-2]) { showToast('🔒 先完成前面的关卡哦！', 'wr'); return; }
+        this.cmds = []; this.renderProg();
+        this.initPhase(p);
+      };
+    }
+  },
+
+  goNext(p) { closeModal(); this.cmds = []; this.renderProg(); this.initPhase(p); },
+  fullReset() { this.score=0; this.steps=0; this.done=[false,false,false]; this.cmds=[]; this.renderProg(); this.initPhase(1); },
+
+  // ── 欢迎界面 ──
+  showWelcome() {
+    showModal({
+      emoji: '🤖',
+      title: '嗨！我是小扫扫！',
+      msg: '我是一个扫地机器人！<br>我自己不会动，需要<b>你来写指令</b>告诉我怎么走！<br>一起来帮我打扫教室吧！',
+      think: null,
+      score: null,
+      btns: [{ text:'出发！🚀', fn:"closeModal();" }]
+    });
+    // Add phase cards inside modal
+    setTimeout(() => {
+      const mb = document.querySelector('.modal-box');
+      if (!mb) return;
+      const cards = document.createElement('div');
+      cards.className = 'welcome-phases';
+      cards.innerHTML = `
+        <div class="wp-item"><div class="wp-icon">⚡</div><div class="wp-name">关卡一</div><div class="wp-desc">紧急充电<br>只剩3步！</div></div>
+        <div class="wp-item"><div class="wp-icon">🔍</div><div class="wp-name">关卡二</div><div class="wp-desc">找隐藏垃圾<br>先观察！</div></div>
+        <div class="wp-item"><div class="wp-icon">🚀</div><div class="wp-name">关卡三</div><div class="wp-desc">避开障碍<br>清扫全部！</div></div>`;
+      mb.insertBefore(cards, mb.querySelector('.m-btn').parentElement);
+    }, 50);
+  }
+};
+
+// ══════════════════════════════════════════════════
+//  云朵背景
+// ══════════════════════════════════════════════════
+function makeClouds() {
+  const bg = $('bgLayer');
+  const cloudData = [
+    {w:120,h:40,top:8,dur:28,delay:0},
+    {w:90,h:30,top:15,dur:22,delay:-8},
+    {w:140,h:50,top:5,dur:35,delay:-15},
+    {w:80,h:28,top:20,dur:18,delay:-4},
+  ];
+  cloudData.forEach(d => {
+    const c = document.createElement('div');
+    c.className = 'cloud';
+    c.style.cssText = `width:${d.w}px;height:${d.h}px;top:${d.top}%;
+      animation-duration:${d.dur}s;animation-delay:${d.delay}s;`;
+    c.style.before = `width:${d.w*0.6}px;height:${d.h*1.5}px;`;
+    bg.appendChild(c);
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  启动
+// ══════════════════════════════════════════════════
+makeClouds();
+initCanvas();
+G.initPhase(1);
+render();
+setTimeout(() => G.showWelcome(), 300);
+</script>
+</body>
+</html>

@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>扫地机器人迷宫闯关</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+
+:root {
+  --bg-primary: #0f1729;
+  --bg-secondary: #1a2744;
+  --bg-card: #1e3050;
+  --accent-blue: #4fc3f7;
+  --accent-green: #66bb6a;
+  --accent-orange: #ffa726;
+  --accent-red: #ef5350;
+  --accent-purple: #ab47bc;
+  --accent-yellow: #ffee58;
+  --text-primary: #e8f0fe;
+  --text-secondary: #90a4ae;
+  --grid-line: rgba(79, 195, 247, 0.15);
+  --glow-blue: 0 0 20px rgba(79, 195, 247, 0.3);
+  --glow-green: 0 0 15px rgba(102, 187, 106, 0.4);
+  --glow-orange: 0 0 15px rgba(255, 167, 38, 0.4);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Sans SC', 'Fredoka', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Background grid effect */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(79,195,247,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,195,247,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 20px 0 16px;
+}
+
+.header h1 {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 2.2em;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  letter-spacing: 2px;
+}
+
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95em;
+  margin-top: 4px;
+}
+
+/* Level selector */
+.level-bar {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 12px 0 16px;
+  flex-wrap: wrap;
+}
+
+.level-btn {
+  background: var(--bg-card);
+  border: 2px solid transparent;
+  color: var(--text-secondary);
+  padding: 8px 24px;
+  border-radius: 30px;
+  font-size: 0.95em;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.level-btn:hover { border-color: var(--accent-blue); color: var(--text-primary); }
+.level-btn.active { background: linear-gradient(135deg, #1a5276, #1e6f50); border-color: var(--accent-green); color: #fff; box-shadow: var(--glow-green); }
+.level-btn.locked { opacity: 0.4; cursor: not-allowed; }
+.level-btn .star { font-size: 1.1em; }
+
+/* Main layout */
+.main-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .main-layout { grid-template-columns: 1fr; }
+  .right-panel { order: -1; }
+  .maze-panel { order: 1; }
+}
+
+/* ===== 移动端适配 ===== */
+@media (max-width: 700px) {
+  .app-container { padding: 10px 10px 20px; }
+
+  .header { padding: 14px 0 10px; }
+  .header h1 { font-size: 1.5em; letter-spacing: 1px; }
+  .header .subtitle { font-size: .82em; }
+
+  /* 关卡按钮 */
+  .level-bar { gap: 8px; margin: 8px 0 12px; }
+  .level-btn { padding: 7px 16px; font-size: .84em; }
+
+  /* 迷宫面板 */
+  .maze-panel { padding: 12px; border-radius: 12px; }
+  .maze-info { margin-bottom: 10px; }
+  .maze-title { font-size: 1em; }
+  .stats { gap: 10px; font-size: .8em; }
+  .maze-grid { max-width: 100%; padding: 4px; gap: 1px; border-radius: 8px; }
+  .cell { border-radius: 4px; font-size: 1.3em; }
+
+  /* 图例 */
+  .legend { gap: 6px; font-size: .72em; margin-top: 8px; }
+
+  /* 右侧面板 */
+  .palette { padding: 10px; border-radius: 12px; }
+  .palette-title { font-size: .82em; margin-bottom: 8px; }
+  .palette-cards { gap: 6px; }
+  .card { padding: 10px 14px; font-size: .88em; border-radius: 8px; min-height: 44px; display: flex; align-items: center; }
+  .card:active { transform: scale(0.96); }
+
+  /* 程序区 */
+  .program-area { padding: 10px; min-height: 120px; border-radius: 12px; }
+  .program-title { font-size: .82em; margin-bottom: 8px; }
+  .program-list { min-height: 80px; gap: 3px; }
+  .program-item { padding: 8px 10px; font-size: .82em; }
+  .loop-input { width: 40px; font-size: .95em; padding: 3px 5px; }
+  .empty-hint { font-size: .75em; padding: 14px; }
+
+  /* 速度控制 */
+  .speed-control { justify-content: center; }
+  .speed-control input[type="range"] { width: 100px; }
+
+  /* 控制按钮 */
+  .controls { gap: 6px; }
+  .run-btn, .reset-btn, .step-btn { padding: 13px 8px; font-size: .92em; border-radius: 10px; min-height: 48px; }
+
+  /* 消息栏 */
+  .message-bar { font-size: .8em; padding: 8px 12px; }
+
+  /* 教程提示 */
+  .tutorial-tip { font-size: .8em; padding: 10px 14px; }
+
+  /* 弹窗 */
+  .modal { padding: 22px 18px; }
+  .modal h2 { font-size: 1.3em; }
+  .modal .result-stats { font-size: .85em; }
+  .modal-btn { padding: 9px 26px; }
+}
+
+@media (max-width: 420px) {
+  .header h1 { font-size: 1.25em; }
+  .level-btn { padding: 6px 12px; font-size: .78em; }
+  .cell { font-size: 1.1em; }
+  .card { padding: 9px 10px; font-size: .82em; }
+  .run-btn, .step-btn, .reset-btn { font-size: .82em; min-height: 44px; }
+  .controls { gap: 5px; }
+}
+
+/* 触摸优化 */
+.card, .level-btn, .run-btn, .step-btn, .reset-btn, .clear-btn, .modal-btn {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.speed-control input[type="range"] { cursor: pointer; }
+
+
+/* Maze panel */
+.maze-panel {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(79,195,247,0.1);
+}
+
+.maze-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.maze-title {
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.2em;
+  font-weight: 600;
+  color: var(--accent-blue);
+}
+
+.stats {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
+
+.stats span { display: flex; align-items: center; gap: 4px; }
+.stats .icon { font-size: 1.1em; }
+
+/* Grid */
+.maze-grid {
+  display: grid;
+  gap: 2px;
+  margin: 0 auto;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  padding: 6px;
+  border: 2px solid rgba(79,195,247,0.1);
+  max-width: 560px;
+}
+
+.cell {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8em;
+  position: relative;
+  transition: all 0.3s;
+  background: var(--bg-card);
+  border: 1px solid var(--grid-line);
+}
+
+.cell.wall {
+  background: #263238;
+  border-color: #37474f;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+}
+
+.cell.wall::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(55,71,79,0.5) 3px, rgba(55,71,79,0.5) 6px);
+}
+
+.cell.start { background: rgba(79,195,247,0.15); border-color: var(--accent-blue); }
+.cell.end { background: rgba(102,187,106,0.15); border-color: var(--accent-green); }
+.cell.trash { }
+.cell.charger { background: rgba(255,167,38,0.1); }
+
+.cell .emoji {
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  line-height: 1;
+}
+
+/* Robot */
+.robot {
+  position: absolute;
+  width: 80%;
+  height: 80%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6em;
+  z-index: 10;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 0 8px rgba(79,195,247,0.5));
+}
+
+.robot.bump {
+  animation: bump 0.3s ease;
+}
+
+@keyframes bump {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(0.8); filter: drop-shadow(0 0 12px rgba(239,83,80,0.8)); }
+}
+
+.cell.cleaned {
+  background: rgba(102,187,106,0.08);
+}
+
+.cell.cleaned::before {
+  content: '✨';
+  position: absolute;
+  font-size: 0.6em;
+  opacity: 0.5;
+  z-index: 1;
+}
+
+/* Right panel */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Instruction palette */
+.palette {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid rgba(79,195,247,0.1);
+}
+
+.palette-title {
+  font-weight: 600;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.palette-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: grab;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.card:active { cursor: grabbing; transform: scale(0.95); }
+
+.card.dir { border-color: rgba(79,195,247,0.3); color: var(--accent-blue); }
+.card.dir:hover { border-color: var(--accent-blue); box-shadow: var(--glow-blue); }
+
+.card.loop { border-color: rgba(255,167,38,0.3); color: var(--accent-orange); }
+.card.loop:hover { border-color: var(--accent-orange); box-shadow: var(--glow-orange); }
+
+.card.cond { border-color: rgba(171,71,188,0.3); color: var(--accent-purple); }
+.card.cond:hover { border-color: var(--accent-purple); box-shadow: 0 0 15px rgba(171,71,188,0.4); }
+
+.card.disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+
+/* Program area */
+.program-area {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid rgba(79,195,247,0.1);
+  min-height: 200px;
+}
+
+.program-title {
+  font-weight: 600;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.clear-btn {
+  background: rgba(239,83,80,0.15);
+  border: 1px solid rgba(239,83,80,0.3);
+  color: var(--accent-red);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8em;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.clear-btn:hover { background: rgba(239,83,80,0.3); }
+
+.program-list {
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.program-list.drag-over {
+  background: rgba(79,195,247,0.05);
+  border-radius: 8px;
+}
+
+.program-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.85em;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.program-item.dir-item { background: rgba(79,195,247,0.1); border-left: 3px solid var(--accent-blue); }
+.program-item.loop-item { background: rgba(255,167,38,0.1); border-left: 3px solid var(--accent-orange); }
+.program-item.cond-item { background: rgba(171,71,188,0.1); border-left: 3px solid var(--accent-purple); }
+
+.program-item.executing {
+  box-shadow: 0 0 12px rgba(79,195,247,0.4);
+  transform: scale(1.02);
+}
+
+.program-item .remove-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1em;
+  padding: 0 4px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.program-item .remove-btn:hover { opacity: 1; color: var(--accent-red); }
+
+.program-item .loop-input {
+  width: 36px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,167,38,0.3);
+  color: var(--accent-orange);
+  border-radius: 4px;
+  padding: 2px 4px;
+  text-align: center;
+  font-family: inherit;
+  font-size: 1em;
+}
+
+/* Loop children container */
+.loop-children {
+  margin-left: 20px;
+  padding: 4px 0 4px 8px;
+  border-left: 2px dashed rgba(255,167,38,0.3);
+  min-height: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.loop-children.drag-over {
+  background: rgba(255,167,38,0.08);
+  border-radius: 6px;
+}
+
+.loop-drop-hint {
+  color: var(--text-secondary);
+  font-size: 0.75em;
+  opacity: 0.5;
+  padding: 4px;
+  text-align: center;
+}
+
+/* Cond children */
+.cond-children {
+  margin-left: 20px;
+  padding: 4px 0 4px 8px;
+  border-left: 2px dashed rgba(171,71,188,0.3);
+  min-height: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cond-children.drag-over {
+  background: rgba(171,71,188,0.08);
+  border-radius: 6px;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 8px;
+}
+
+.run-btn, .reset-btn, .step-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.run-btn {
+  background: linear-gradient(135deg, #1b5e20, #2e7d32);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(46,125,50,0.3);
+}
+
+.run-btn:hover { box-shadow: 0 4px 20px rgba(46,125,50,0.5); transform: translateY(-1px); }
+.run-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.step-btn {
+  background: linear-gradient(135deg, #1a5276, #1e88e5);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(30,136,229,0.3);
+}
+
+.step-btn:hover { box-shadow: 0 4px 20px rgba(30,136,229,0.5); transform: translateY(-1px); }
+.step-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.reset-btn {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.reset-btn:hover { background: #263238; color: var(--text-primary); }
+
+/* Result modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  padding: 32px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  border: 1px solid rgba(79,195,247,0.2);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalIn {
+  from { transform: scale(0.8) translateY(20px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.modal .result-icon { font-size: 3em; margin-bottom: 12px; }
+.modal h2 { font-family: 'Fredoka', sans-serif; font-size: 1.5em; margin-bottom: 8px; }
+.modal .result-stats { color: var(--text-secondary); font-size: 0.9em; margin: 12px 0; line-height: 1.8; }
+.modal .result-stats strong { color: var(--text-primary); }
+
+.modal-btn {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+  border: none;
+  color: #fff;
+  padding: 10px 32px;
+  border-radius: 25px;
+  font-family: inherit;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: transform 0.2s;
+}
+
+.modal-btn:hover { transform: scale(1.05); }
+
+/* Fail modal */
+.modal.fail h2 { color: var(--accent-red); }
+
+/* Message bar */
+.message-bar {
+  background: var(--bg-card);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.85em;
+  color: var(--text-secondary);
+  text-align: center;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s;
+}
+
+.message-bar.error { color: var(--accent-red); background: rgba(239,83,80,0.1); }
+.message-bar.success { color: var(--accent-green); background: rgba(102,187,106,0.1); }
+
+/* Legend */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 10px;
+  font-size: 0.8em;
+  color: var(--text-secondary);
+}
+
+.legend-item { display: flex; align-items: center; gap: 4px; }
+
+/* Speed control */
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8em;
+  color: var(--text-secondary);
+  padding: 0 4px;
+}
+
+.speed-control input[type="range"] {
+  width: 80px;
+  accent-color: var(--accent-blue);
+}
+
+/* Empty program hint */
+.empty-hint {
+  color: var(--text-secondary);
+  font-size: 0.8em;
+  text-align: center;
+  padding: 20px;
+  opacity: 0.5;
+  line-height: 1.6;
+}
+
+/* Trash collect animation */
+@keyframes collectTrash {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5) rotate(20deg); opacity: 0.5; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+.collecting {
+  animation: collectTrash 0.4s ease forwards;
+}
+
+/* Tutorial tooltip */
+.tutorial-tip {
+  background: linear-gradient(135deg, #1a5276, #1e3050);
+  border: 1px solid var(--accent-blue);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 0.85em;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.tutorial-tip .tip-icon { font-size: 1.1em; margin-right: 4px; }
+
+.tutorial-tip .close-tip {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 1em;
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <div class="header">
+    <h1>🤖 扫地机器人迷宫闯关</h1>
+    <div class="subtitle">编程控制机器人，清扫垃圾到达终点！</div>
+  </div>
+
+  <div class="level-bar">
+    <button class="level-btn active" onclick="selectLevel(0)">
+      <span class="star">⭐</span> 第一关 · 简单
+    </button>
+    <button class="level-btn locked" onclick="selectLevel(1)" id="lvl1-btn">
+      <span class="star">🔒</span> 第二关 · 中等
+    </button>
+    <button class="level-btn locked" onclick="selectLevel(2)" id="lvl2-btn">
+      <span class="star">🔒</span> 第三关 · 困难
+    </button>
+  </div>
+
+  <div class="main-layout">
+    <div class="maze-panel">
+      <div class="maze-info">
+        <div class="maze-title" id="maze-title">第一关：方向指令入门</div>
+        <div class="stats">
+          <span><span class="icon">🗑️</span> 垃圾: <strong id="trash-count">0/2</strong></span>
+          <span><span class="icon">👣</span> 步数: <strong id="step-count">0</strong></span>
+          <span><span class="icon">⏱️</span> <strong id="timer">0s</strong></span>
+        </div>
+      </div>
+
+      <div class="maze-grid" id="maze-grid"></div>
+
+      <div class="legend">
+        <span class="legend-item">🤖 机器人</span>
+        <span class="legend-item">🏁 起点</span>
+        <span class="legend-item">⚡ 终点</span>
+        <span class="legend-item">🗑️ 垃圾</span>
+        <span class="legend-item">🧱 障碍</span>
+        <span class="legend-item">🔋 充电桩</span>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div id="tutorial-area"></div>
+
+      <div class="palette">
+        <div class="palette-title">📦 指令卡</div>
+        <div class="palette-cards" id="palette-cards"></div>
+      </div>
+
+      <div class="program-area">
+        <div class="program-title">
+          <span>📝 程序区</span>
+          <button class="clear-btn" onclick="clearProgram()">清空</button>
+        </div>
+        <div class="program-list" id="program-list"
+             ondragover="handleDragOver(event)" ondrop="handleDrop(event, 'main')">
+          <div class="empty-hint" id="empty-hint">👆 点击上方指令卡添加到这里<br>组合指令让机器人行动吧！</div>
+        </div>
+      </div>
+
+      <div class="speed-control">
+        <span>🐢</span>
+        <input type="range" id="speed-slider" min="1" max="5" value="3">
+        <span>🐇</span>
+        <span>速度</span>
+      </div>
+
+      <div class="controls">
+        <button class="run-btn" id="run-btn" onclick="runProgram()">▶ 运行</button>
+        <button class="step-btn" id="step-btn" onclick="stepProgram()">⏭ 单步</button>
+        <button class="reset-btn" onclick="resetLevel()">↺ 重置</button>
+      </div>
+
+      <div class="message-bar" id="message-bar">准备就绪，添加指令开始编程吧！</div>
+    </div>
+  </div>
+</div>
+
+<!-- Result modal -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <div class="result-icon" id="result-icon">🎉</div>
+    <h2 id="result-title">闯关成功！</h2>
+    <div class="result-stats" id="result-stats"></div>
+    <button class="modal-btn" id="modal-btn" onclick="closeModal()">继续</button>
+  </div>
+</div>
+
+<script>
+// ===== GAME STATE =====
+let currentLevel = 0;
+let unlockedLevels = [true, false, false];
+let grid = [];
+let robotPos = { r: 0, c: 0 };
+let robotDir = 'right'; // for conditional turns
+let program = []; // [{type, dir?, count?, children?}]
+let isRunning = false;
+let stepMode = false;
+let stepQueue = [];
+let stepIndex = 0;
+let trashCollected = 0;
+let totalTrash = 0;
+let stepCount = 0;
+let timerVal = 0;
+let timerInterval = null;
+let executingIndex = -1;
+
+// ===== LEVEL DEFINITIONS =====
+const levels = [
+  {
+    name: '第一关：方向指令入门',
+    cols: 6, rows: 6,
+    cards: ['up','down','left','right'],
+    tip: '💡 提示：只需使用方向卡（↑↓←→），规划路线清扫2个垃圾后到达终点！先想好路线再拖入指令。',
+    // 0=empty, 1=wall, 2=start, 3=end, 4=trash, 5=charger
+    map: [
+      [2,0,0,1,0,0],
+      [0,1,0,1,0,0],
+      [0,1,0,0,4,0],
+      [0,0,0,1,1,0],
+      [0,1,0,0,0,0],
+      [0,1,0,4,0,3],
+    ]
+  },
+  {
+    name: '第二关：循环的力量',
+    cols: 7, rows: 7,
+    cards: ['up','down','left','right','loop'],
+    tip: '💡 提示：循环卡可以重复执行里面的指令。例如"重复3次→"等于3个→。找到重复的移动模式，用更少的指令完成！',
+    map: [
+      [2,0,0,0,1,0,0],
+      [1,1,1,0,1,0,0],
+      [0,0,0,0,0,0,1],
+      [0,1,1,1,1,0,0],
+      [0,4,0,0,0,4,0],
+      [0,1,0,1,1,1,0],
+      [0,0,0,4,0,0,3],
+    ]
+  },
+  {
+    name: '第三关：智能避障',
+    cols: 8, rows: 7,
+    cards: ['up','down','left','right','loop','cond'],
+    tip: '💡 提示：判断卡会在机器人遇到障碍时执行里面的指令（自动转弯）。配合循环卡可以让机器人自动寻路！',
+    map: [
+      [2,0,0,1,0,4,0,0],
+      [0,1,0,0,0,1,0,0],
+      [0,1,0,1,0,0,4,0],
+      [0,0,0,1,5,1,0,1],
+      [1,1,0,0,0,0,0,0],
+      [0,0,4,1,0,1,4,0],
+      [0,0,0,0,0,1,0,3],
+    ]
+  }
+];
+
+// ===== CARD DEFINITIONS =====
+const cardDefs = {
+  up:    { label: '↑ 上', type: 'dir', cls: 'dir', dir: 'up' },
+  down:  { label: '↓ 下', type: 'dir', cls: 'dir', dir: 'down' },
+  left:  { label: '← 左', type: 'dir', cls: 'dir', dir: 'left' },
+  right: { label: '→ 右', type: 'dir', cls: 'dir', dir: 'right' },
+  loop:  { label: '🔄 循环', type: 'loop', cls: 'loop' },
+  cond:  { label: '🛡️ 遇障转弯', type: 'cond', cls: 'cond' },
+};
+
+// ===== INIT =====
+function init() {
+  loadLevel(0);
+}
+
+function selectLevel(idx) {
+  if (!unlockedLevels[idx]) return;
+  currentLevel = idx;
+  document.querySelectorAll('.level-btn').forEach((b,i) => {
+    b.classList.toggle('active', i === idx);
+  });
+  loadLevel(idx);
+}
+
+function loadLevel(idx) {
+  const lvl = levels[idx];
+  stopTimer();
+  timerVal = 0;
+  stepCount = 0;
+  trashCollected = 0;
+  isRunning = false;
+  stepMode = false;
+  stepQueue = [];
+  stepIndex = 0;
+  executingIndex = -1;
+  program = [];
+
+  // count trash
+  totalTrash = 0;
+  grid = lvl.map.map(row => [...row]);
+  for (let r = 0; r < lvl.rows; r++)
+    for (let c = 0; c < lvl.cols; c++)
+      if (grid[r][c] === 4) totalTrash++;
+
+  // find start
+  for (let r = 0; r < lvl.rows; r++)
+    for (let c = 0; c < lvl.cols; c++)
+      if (grid[r][c] === 2) robotPos = { r, c };
+
+  robotDir = 'right';
+  document.getElementById('maze-title').textContent = lvl.name;
+  updateStats();
+  renderMaze();
+  renderPalette();
+  renderProgram();
+  setMessage('准备就绪，添加指令开始编程吧！', '');
+  showTutorial(lvl.tip);
+  updateButtons(false);
+}
+
+// ===== RENDER MAZE =====
+function renderMaze() {
+  const lvl = levels[currentLevel];
+  const mazeGrid = document.getElementById('maze-grid');
+  mazeGrid.style.gridTemplateColumns = `repeat(${lvl.cols}, 1fr)`;
+  mazeGrid.innerHTML = '';
+
+  for (let r = 0; r < lvl.rows; r++) {
+    for (let c = 0; c < lvl.cols; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.id = `cell-${r}-${c}`;
+      const val = grid[r][c];
+      if (val === 1) cell.classList.add('wall');
+      else if (val === 2) { cell.classList.add('start'); cell.innerHTML = '<span class="emoji">🏁</span>'; }
+      else if (val === 3) { cell.classList.add('end'); cell.innerHTML = '<span class="emoji">⚡</span>'; }
+      else if (val === 4) { cell.classList.add('trash'); cell.innerHTML = '<span class="emoji">🗑️</span>'; }
+      else if (val === 5) { cell.classList.add('charger'); cell.innerHTML = '<span class="emoji">🔋</span>'; }
+
+      // robot
+      if (r === robotPos.r && c === robotPos.c) {
+        const bot = document.createElement('div');
+        bot.className = 'robot';
+        bot.id = 'robot';
+        bot.textContent = '🤖';
+        cell.appendChild(bot);
+      }
+
+      mazeGrid.appendChild(cell);
+    }
+  }
+}
+
+// ===== RENDER PALETTE =====
+function renderPalette() {
+  const lvl = levels[currentLevel];
+  const container = document.getElementById('palette-cards');
+  container.innerHTML = '';
+  for (const key of lvl.cards) {
+    const def = cardDefs[key];
+    const card = document.createElement('div');
+    card.className = `card ${def.cls}`;
+    card.textContent = def.label;
+    card.draggable = true;
+    card.dataset.cardType = key;
+    card.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', key);
+    });
+    card.addEventListener('click', () => addCardToProgram(key, 'main'));
+    container.appendChild(card);
+  }
+}
+
+// ===== PROGRAM MANAGEMENT =====
+function addCardToProgram(key, target, targetIdx) {
+  if (isRunning) return;
+  const def = cardDefs[key];
+  let item;
+  if (def.type === 'dir') {
+    item = { type: 'dir', dir: def.dir, label: def.label };
+  } else if (def.type === 'loop') {
+    item = { type: 'loop', count: 2, children: [], label: def.label };
+  } else if (def.type === 'cond') {
+    item = { type: 'cond', children: [], label: def.label };
+  }
+
+  if (target === 'main') {
+    if (targetIdx !== undefined) program.splice(targetIdx, 0, item);
+    else program.push(item);
+  } else if (target.startsWith('loop-') || target.startsWith('cond-')) {
+    const idx = parseInt(target.split('-')[1]);
+    program[idx].children.push(item);
+  }
+
+  renderProgram();
+  updateButtons(false);
+}
+
+function removeFromProgram(idx, parentIdx) {
+  if (isRunning) return;
+  if (parentIdx !== undefined) {
+    program[parentIdx].children.splice(idx, 1);
+  } else {
+    program.splice(idx, 1);
+  }
+  renderProgram();
+}
+
+function clearProgram() {
+  if (isRunning) return;
+  program = [];
+  renderProgram();
+  updateButtons(false);
+  setMessage('程序已清空', '');
+}
+
+function renderProgram() {
+  const list = document.getElementById('program-list');
+  const hint = document.getElementById('empty-hint');
+
+  // Remove all except hint
+  while (list.firstChild) list.removeChild(list.firstChild);
+
+  if (program.length === 0) {
+    const h = document.createElement('div');
+    h.className = 'empty-hint';
+    h.id = 'empty-hint';
+    h.innerHTML = '👆 点击上方指令卡添加到这里<br>组合指令让机器人行动吧！';
+    list.appendChild(h);
+    return;
+  }
+
+  program.forEach((item, i) => {
+    const el = createProgramItem(item, i);
+    list.appendChild(el);
+
+    if (item.type === 'loop') {
+      const childContainer = document.createElement('div');
+      childContainer.className = 'loop-children';
+      childContainer.ondragover = (e) => { e.preventDefault(); childContainer.classList.add('drag-over'); };
+      childContainer.ondragleave = () => childContainer.classList.remove('drag-over');
+      childContainer.ondrop = (e) => {
+        e.preventDefault(); e.stopPropagation();
+        childContainer.classList.remove('drag-over');
+        const key = e.dataTransfer.getData('text/plain');
+        if (key && cardDefs[key] && cardDefs[key].type === 'dir') {
+          addCardToProgram(key, `loop-${i}`);
+        }
+      };
+
+      if (item.children.length === 0) {
+        const hint = document.createElement('div');
+        hint.className = 'loop-drop-hint';
+        hint.textContent = '← 拖入或点击方向卡';
+        childContainer.appendChild(hint);
+      } else {
+        item.children.forEach((child, ci) => {
+          const childEl = createProgramItem(child, ci, i);
+          childContainer.appendChild(childEl);
+        });
+      }
+      list.appendChild(childContainer);
+    }
+
+    if (item.type === 'cond') {
+      const childContainer = document.createElement('div');
+      childContainer.className = 'cond-children';
+      childContainer.ondragover = (e) => { e.preventDefault(); childContainer.classList.add('drag-over'); };
+      childContainer.ondragleave = () => childContainer.classList.remove('drag-over');
+      childContainer.ondrop = (e) => {
+        e.preventDefault(); e.stopPropagation();
+        childContainer.classList.remove('drag-over');
+        const key = e.dataTransfer.getData('text/plain');
+        if (key && cardDefs[key] && cardDefs[key].type === 'dir') {
+          addCardToProgram(key, `cond-${i}`);
+        }
+      };
+
+      if (item.children.length === 0) {
+        const hint = document.createElement('div');
+        hint.className = 'loop-drop-hint';
+        hint.textContent = '← 拖入转弯方向';
+        childContainer.appendChild(hint);
+      } else {
+        item.children.forEach((child, ci) => {
+          const childEl = createProgramItem(child, ci, i);
+          childContainer.appendChild(childEl);
+        });
+      }
+      list.appendChild(childContainer);
+    }
+  });
+}
+
+function createProgramItem(item, idx, parentIdx) {
+  const el = document.createElement('div');
+  el.className = `program-item ${item.type}-item`;
+  el.dataset.idx = idx;
+
+  if (item.type === 'dir') {
+    el.innerHTML = `<span>${item.label}</span>`;
+  } else if (item.type === 'loop') {
+    el.innerHTML = `<span>🔄 重复</span><input class="loop-input" type="number" min="1" max="9" value="${item.count}" onchange="updateLoopCount(${idx}, this.value)"><span>次 ↓</span>`;
+  } else if (item.type === 'cond') {
+    el.innerHTML = `<span>🛡️ 遇障碍时 ↓</span>`;
+  }
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'remove-btn';
+  removeBtn.textContent = '✕';
+  removeBtn.onclick = () => removeFromProgram(idx, parentIdx);
+  el.appendChild(removeBtn);
+
+  return el;
+}
+
+function updateLoopCount(idx, val) {
+  const n = Math.max(1, Math.min(9, parseInt(val) || 1));
+  program[idx].count = n;
+}
+
+// ===== DRAG & DROP =====
+function handleDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+
+function handleDrop(e, target) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const key = e.dataTransfer.getData('text/plain');
+  if (key && cardDefs[key]) {
+    addCardToProgram(key, target);
+  }
+}
+
+// ===== EXECUTION ENGINE =====
+function flattenProgram(prog) {
+  const actions = [];
+  for (let i = 0; i < prog.length; i++) {
+    const item = prog[i];
+    if (item.type === 'dir') {
+      actions.push({ type: 'move', dir: item.dir, progIdx: i });
+    } else if (item.type === 'loop') {
+      for (let n = 0; n < item.count; n++) {
+        for (const child of item.children) {
+          if (child.type === 'dir') {
+            actions.push({ type: 'move', dir: child.dir, progIdx: i });
+          }
+        }
+      }
+    } else if (item.type === 'cond') {
+      // conditional: check at runtime
+      actions.push({ type: 'cond', children: item.children, progIdx: i });
+    }
+  }
+  return actions;
+}
+
+function runProgram() {
+  if (isRunning) return;
+  if (program.length === 0) {
+    setMessage('请先添加指令！', 'error');
+    return;
+  }
+  isRunning = true;
+  stepMode = false;
+  stepQueue = flattenProgram(program);
+  stepIndex = 0;
+  startTimer();
+  updateButtons(true);
+  executeNext();
+}
+
+function stepProgram() {
+  if (program.length === 0) {
+    setMessage('请先添加指令！', 'error');
+    return;
+  }
+  if (!isRunning) {
+    isRunning = true;
+    stepMode = true;
+    stepQueue = flattenProgram(program);
+    stepIndex = 0;
+    startTimer();
+    updateButtons(true);
+  }
+  executeSingleStep();
+}
+
+function getSpeed() {
+  const v = parseInt(document.getElementById('speed-slider').value);
+  return [800, 600, 400, 250, 150][v - 1];
+}
+
+function executeNext() {
+  if (!isRunning || stepIndex >= stepQueue.length) {
+    finishExecution();
+    return;
+  }
+  executeSingleStep();
+  if (!stepMode && isRunning) {
+    setTimeout(executeNext, getSpeed());
+  }
+}
+
+function executeSingleStep() {
+  if (stepIndex >= stepQueue.length) {
+    finishExecution();
+    return;
+  }
+
+  const action = stepQueue[stepIndex];
+  highlightProgramItem(action.progIdx);
+
+  if (action.type === 'move') {
+    const result = moveRobot(action.dir);
+    stepIndex++;
+    if (!result.ok) {
+      // hit wall
+      setMessage('💥 撞到障碍物了！', 'error');
+      bumpRobot();
+      stopExecution();
+      return;
+    }
+    stepCount++;
+    updateStats();
+    checkCollect();
+
+    // check if on end and all trash collected
+    if (grid[robotPos.r][robotPos.c] === 3 && trashCollected >= totalTrash) {
+      setTimeout(() => showWin(), 400);
+      return;
+    }
+  } else if (action.type === 'cond') {
+    // check what's ahead in current robot direction
+    const ahead = getAhead(robotDir);
+    const nr = robotPos.r + ahead.dr;
+    const nc = robotPos.c + ahead.dc;
+    const blocked = isBlocked(nr, nc);
+
+    if (blocked && action.children.length > 0) {
+      // execute children (direction cards)
+      const extraActions = [];
+      for (const child of action.children) {
+        if (child.type === 'dir') {
+          extraActions.push({ type: 'move', dir: child.dir, progIdx: action.progIdx });
+        }
+      }
+      // insert after current
+      stepQueue.splice(stepIndex + 1, 0, ...extraActions);
+    }
+    stepIndex++;
+
+    // if not in step mode, continue immediately
+    if (stepMode) return;
+  }
+}
+
+function moveRobot(dir) {
+  let dr = 0, dc = 0;
+  if (dir === 'up') dr = -1;
+  else if (dir === 'down') dr = 1;
+  else if (dir === 'left') dc = -1;
+  else if (dir === 'right') dc = 1;
+
+  const nr = robotPos.r + dr;
+  const nc = robotPos.c + dc;
+
+  robotDir = dir;
+
+  if (isBlocked(nr, nc)) return { ok: false };
+
+  // move
+  robotPos = { r: nr, c: nc };
+  renderMaze();
+  return { ok: true };
+}
+
+function isBlocked(r, c) {
+  const lvl = levels[currentLevel];
+  if (r < 0 || r >= lvl.rows || c < 0 || c >= lvl.cols) return true;
+  if (grid[r][c] === 1) return true;
+  return false;
+}
+
+function getAhead(dir) {
+  if (dir === 'up') return { dr: -1, dc: 0 };
+  if (dir === 'down') return { dr: 1, dc: 0 };
+  if (dir === 'left') return { dr: 0, dc: -1 };
+  if (dir === 'right') return { dr: 0, dc: 1 };
+  return { dr: 0, dc: 1 };
+}
+
+function checkCollect() {
+  const { r, c } = robotPos;
+  if (grid[r][c] === 4) {
+    // collect trash
+    const cell = document.getElementById(`cell-${r}-${c}`);
+    const emoji = cell.querySelector('.emoji');
+    if (emoji) emoji.classList.add('collecting');
+    setTimeout(() => {
+      grid[r][c] = 0;
+      trashCollected++;
+      updateStats();
+      renderMaze();
+      // mark as cleaned
+      const cleanedCell = document.getElementById(`cell-${r}-${c}`);
+      if (cleanedCell) cleanedCell.classList.add('cleaned');
+    }, 350);
+  }
+}
+
+function bumpRobot() {
+  const bot = document.getElementById('robot');
+  if (bot) bot.classList.add('bump');
+}
+
+function highlightProgramItem(progIdx) {
+  document.querySelectorAll('.program-item').forEach(el => el.classList.remove('executing'));
+  const items = document.querySelectorAll('.program-item');
+  // highlight the top-level item
+  for (const item of items) {
+    if (parseInt(item.dataset.idx) === progIdx && !item.parentElement.classList.contains('loop-children') && !item.parentElement.classList.contains('cond-children')) {
+      item.classList.add('executing');
+      break;
+    }
+  }
+}
+
+function finishExecution() {
+  stopTimer();
+  isRunning = false;
+  updateButtons(false);
+  document.querySelectorAll('.program-item').forEach(el => el.classList.remove('executing'));
+
+  // Check win condition
+  if (trashCollected >= totalTrash && grid[robotPos.r][robotPos.c] === 3) {
+    showWin();
+  } else if (trashCollected < totalTrash) {
+    setMessage(`还有 ${totalTrash - trashCollected} 个垃圾没清扫！`, 'error');
+  } else {
+    setMessage('垃圾都清扫了，但还没到达终点 ⚡', 'error');
+  }
+}
+
+function stopExecution() {
+  stopTimer();
+  isRunning = false;
+  updateButtons(false);
+  document.querySelectorAll('.program-item').forEach(el => el.classList.remove('executing'));
+}
+
+// ===== WIN / FAIL =====
+function showWin() {
+  stopTimer();
+  isRunning = false;
+  updateButtons(false);
+
+  const instrCount = countInstructions();
+  const overlay = document.getElementById('modal-overlay');
+  const modal = document.getElementById('modal');
+  modal.classList.remove('fail');
+  document.getElementById('result-icon').textContent = '🎉';
+  document.getElementById('result-title').textContent = '闯关成功！';
+  document.getElementById('result-stats').innerHTML = `
+    <div>🗑️ 清扫垃圾：<strong>${trashCollected}/${totalTrash}</strong></div>
+    <div>👣 移动步数：<strong>${stepCount}</strong></div>
+    <div>📝 使用指令数：<strong>${instrCount}</strong></div>
+    <div>⏱️ 用时：<strong>${timerVal}秒</strong></div>
+  `;
+
+  const nextLevel = currentLevel + 1;
+  const btn = document.getElementById('modal-btn');
+  if (nextLevel < levels.length) {
+    btn.textContent = '进入下一关 →';
+    btn.onclick = () => { closeModal(); unlockAndGo(nextLevel); };
+  } else {
+    document.getElementById('result-icon').textContent = '🏆';
+    document.getElementById('result-title').textContent = '全部通关！';
+    btn.textContent = '太棒了！';
+    btn.onclick = closeModal;
+  }
+
+  overlay.classList.add('show');
+}
+
+function unlockAndGo(idx) {
+  unlockedLevels[idx] = true;
+  const btns = document.querySelectorAll('.level-btn');
+  btns[idx].classList.remove('locked');
+  btns[idx].querySelector('.star').textContent = '⭐';
+  selectLevel(idx);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
+function countInstructions() {
+  let count = 0;
+  for (const item of program) {
+    count++;
+    if (item.children) count += item.children.length;
+  }
+  return count;
+}
+
+// ===== TIMER =====
+function startTimer() {
+  stopTimer();
+  timerVal = 0;
+  timerInterval = setInterval(() => {
+    timerVal++;
+    document.getElementById('timer').textContent = timerVal + 's';
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+// ===== UI HELPERS =====
+function updateStats() {
+  document.getElementById('trash-count').textContent = `${trashCollected}/${totalTrash}`;
+  document.getElementById('step-count').textContent = stepCount;
+  document.getElementById('timer').textContent = timerVal + 's';
+}
+
+function setMessage(text, type) {
+  const bar = document.getElementById('message-bar');
+  bar.textContent = text;
+  bar.className = 'message-bar' + (type ? ` ${type}` : '');
+}
+
+function updateButtons(running) {
+  document.getElementById('run-btn').disabled = running;
+  document.getElementById('step-btn').disabled = running && !stepMode;
+}
+
+function resetLevel() {
+  loadLevel(currentLevel);
+}
+
+function showTutorial(tip) {
+  const area = document.getElementById('tutorial-area');
+  area.innerHTML = `
+    <div class="tutorial-tip">
+      <button class="close-tip" onclick="this.parentElement.remove()">✕</button>
+      ${tip}
+    </div>
+  `;
+}
+
+// ===== INIT =====
+init();
+</script>
+</body>
+</html>

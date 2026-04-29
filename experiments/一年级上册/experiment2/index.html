@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>动物感官大比拼</title>
+  <style>
+    :root {
+      --ink: #183042;
+      --muted: #597081;
+      --panel: rgba(255, 255, 255, 0.92);
+      --line: rgba(24, 48, 66, 0.12);
+      --warm: #ff8f4c;
+      --leaf: #27a47d;
+      --sky: #4a78ff;
+      --night: #162138;
+      --shadow: 0 24px 60px rgba(19, 31, 53, 0.14);
+      --radius: 26px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 15%, rgba(255, 196, 126, 0.4), transparent 24%),
+        radial-gradient(circle at 86% 10%, rgba(74, 120, 255, 0.2), transparent 22%),
+        linear-gradient(180deg, #f7fbff 0%, #ecf8ef 100%);
+    }
+
+    .page {
+      width: min(1340px, calc(100vw - 24px));
+      margin: 16px auto 24px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero,
+    .shell,
+    .footer-card {
+      background: var(--panel);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      padding: 20px 24px;
+      display: grid;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      top: -48px;
+      right: -36px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(39, 164, 125, 0.2), transparent 70%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #186a51;
+      background: rgba(39, 164, 125, 0.12);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.06;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 980px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .hero-meta span {
+      padding: 10px 14px;
+      border-radius: 16px;
+      background: rgba(24, 48, 66, 0.05);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .shell {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .guide-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(255, 143, 76, 0.1), rgba(74, 120, 255, 0.08));
+      border: 1px solid rgba(255, 143, 76, 0.12);
+    }
+
+    .guide-button {
+      appearance: none;
+      border: 0;
+      border-radius: 18px;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, var(--warm), #ffc354);
+      color: white;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 24px rgba(255, 143, 76, 0.24);
+    }
+
+    .guide-button:hover,
+    .guide-button:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .guide-text {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .progress-wrap {
+      min-width: min(680px, 100%);
+      display: grid;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .progress-bar {
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(24, 48, 66, 0.08);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 33.33%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--leaf), #90d38f);
+      transition: width 220ms ease;
+    }
+
+    .score-card {
+      padding: 12px 16px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(74, 120, 255, 0.12), rgba(255, 143, 76, 0.12));
+      font-weight: 700;
+    }
+
+    .mission-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .mission-tab {
+      appearance: none;
+      border: 0;
+      border-radius: 18px;
+      padding: 12px 16px;
+      font-weight: 700;
+      color: var(--muted);
+      background: rgba(24, 48, 66, 0.06);
+      cursor: pointer;
+      transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+
+    .mission-tab:hover,
+    .mission-tab:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .mission-tab.active {
+      background: linear-gradient(135deg, var(--sky), #7ba0ff);
+      color: white;
+    }
+
+    .mission-board {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.8);
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .panel-title h2,
+    .panel-title h3 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(255, 143, 76, 0.12);
+      color: #a75022;
+    }
+
+    .mission-copy {
+      color: var(--muted);
+      line-height: 1.55;
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .cta-row,
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 16px;
+      padding: 13px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+    }
+
+    .btn:hover,
+    .btn:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      color: white;
+      background: linear-gradient(135deg, var(--warm), #ffc354);
+      box-shadow: 0 12px 24px rgba(255, 143, 76, 0.22);
+    }
+
+    .btn-secondary {
+      color: var(--ink);
+      background: rgba(24, 48, 66, 0.08);
+    }
+
+    .btn-accent {
+      color: white;
+      background: linear-gradient(135deg, var(--leaf), #73cda8);
+      box-shadow: 0 12px 24px rgba(39, 164, 125, 0.22);
+    }
+
+    .btn[disabled] {
+      cursor: not-allowed;
+      opacity: 0.5;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .feedback {
+      padding: 16px 18px;
+      border-radius: 18px;
+      display: none;
+      line-height: 1.7;
+      font-size: 16px;
+      border: 1px solid var(--line);
+    }
+
+    .feedback.show {
+      display: block;
+    }
+
+    .feedback.success {
+      background: rgba(39, 164, 125, 0.08);
+      border-color: rgba(39, 164, 125, 0.18);
+      color: #14624a;
+    }
+
+    .feedback.error {
+      background: rgba(255, 143, 76, 0.08);
+      border-color: rgba(255, 143, 76, 0.18);
+      color: #93461d;
+    }
+
+    .scene-panel {
+      position: relative;
+      min-height: 500px;
+      overflow: hidden;
+    }
+
+    .night-scene {
+      position: relative;
+      min-height: 340px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background:
+        radial-gradient(circle at 50% -10%, rgba(255, 247, 170, 0.12), transparent 26%),
+        linear-gradient(180deg, #243156 0%, #182440 45%, #10192f 100%);
+    }
+
+    .moon {
+      position: absolute;
+      top: 24px;
+      right: 36px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #ffefad;
+      box-shadow: 0 0 22px rgba(255, 239, 173, 0.5);
+    }
+
+    .ground {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 108px;
+      background: linear-gradient(180deg, #20304d, #151f35);
+    }
+
+    .crate {
+      position: absolute;
+      right: 54px;
+      bottom: 82px;
+      width: 120px;
+      height: 88px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #83543a, #5a3727);
+      box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.08);
+    }
+
+    .plant {
+      position: absolute;
+      left: 34px;
+      bottom: 96px;
+      width: 110px;
+      height: 150px;
+    }
+
+    .plant::before,
+    .plant::after {
+      content: "";
+      position: absolute;
+      background: #335f47;
+      border-radius: 90px 90px 0 90px;
+      transform-origin: bottom center;
+    }
+
+    .plant::before {
+      left: 32px;
+      bottom: 34px;
+      width: 22px;
+      height: 96px;
+      transform: rotate(-18deg);
+    }
+
+    .plant::after {
+      left: 54px;
+      bottom: 48px;
+      width: 24px;
+      height: 90px;
+      transform: rotate(16deg);
+    }
+
+    .basket {
+      position: absolute;
+      left: 150px;
+      bottom: 72px;
+      width: 118px;
+      height: 84px;
+      border-radius: 24px 24px 14px 14px;
+      background: linear-gradient(180deg, #c4935e, #98673c);
+      box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.08);
+    }
+
+    .mouse-target {
+      position: absolute;
+      right: 96px;
+      bottom: 98px;
+      width: 56px;
+      height: 36px;
+      border-radius: 36px 36px 24px 24px;
+      background: #adb9cd;
+      transform: rotate(-8deg);
+      transition: opacity 220ms ease, box-shadow 220ms ease, filter 220ms ease;
+    }
+
+    .mouse-target::before,
+    .mouse-target::after {
+      content: "";
+      position: absolute;
+      top: -10px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: inherit;
+    }
+
+    .mouse-target::before {
+      left: 6px;
+    }
+
+    .mouse-target::after {
+      left: 24px;
+    }
+
+    .mouse-tail {
+      position: absolute;
+      right: 74px;
+      bottom: 110px;
+      width: 34px;
+      height: 22px;
+      border-bottom: 4px solid #d8afab;
+      border-radius: 0 0 24px 24px;
+      transform: rotate(-8deg);
+      transition: opacity 220ms ease, filter 220ms ease;
+    }
+
+    .hotspot {
+      position: absolute;
+      border-radius: 22px;
+      border: 2px dashed rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.02);
+      cursor: pointer;
+      transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .hotspot:hover,
+    .hotspot:focus-visible {
+      border-color: rgba(255, 255, 255, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .hotspot.selected {
+      border-color: #ffe48d;
+      background: rgba(255, 228, 141, 0.14);
+    }
+
+    .night-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 72% 62%, rgba(10, 14, 24, 0.18), transparent 16%),
+        rgba(4, 8, 16, 0.82);
+      transition: opacity 220ms ease;
+      pointer-events: none;
+    }
+
+    .night-scene.cat-mode .night-overlay {
+      opacity: 0.06;
+    }
+
+    .night-glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 74% 62%, rgba(255, 239, 173, 0.12), transparent 18%);
+      opacity: 0;
+      transition: opacity 220ms ease;
+      pointer-events: none;
+    }
+
+    .night-scene.cat-mode .night-glow {
+      opacity: 1;
+    }
+
+    .night-scene:not(.cat-mode) .mouse-target,
+    .night-scene:not(.cat-mode) .mouse-tail {
+      opacity: 0.14;
+      filter: brightness(0.55);
+    }
+
+    .night-scene.cat-mode .mouse-target,
+    .night-scene.cat-mode .mouse-tail {
+      opacity: 1;
+      filter: brightness(1.18);
+    }
+
+    .night-scene.cat-mode .mouse-target {
+      box-shadow: 0 0 18px rgba(255, 239, 173, 0.34);
+    }
+
+    .view-tag {
+      position: absolute;
+      left: 16px;
+      top: 16px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(8, 14, 25, 0.5);
+      color: white;
+      font-weight: 700;
+      font-size: 13px;
+      z-index: 2;
+    }
+
+    .observation-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mini-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(24, 48, 66, 0.05);
+      display: grid;
+      gap: 8px;
+    }
+
+    .mini-card strong {
+      font-size: 16px;
+    }
+
+    .mini-card span {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.55;
+    }
+
+    .echo-stage {
+      min-height: 340px;
+      border-radius: 24px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at center, rgba(255,255,255,0.08), transparent 40%),
+        linear-gradient(180deg, #132744, #102138);
+      position: relative;
+      display: grid;
+      place-items: center;
+    }
+
+    .bat {
+      position: relative;
+      width: 140px;
+      height: 76px;
+      border-radius: 44px;
+      background: linear-gradient(180deg, #5d6b87, #3d4a63);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+    }
+
+    .bat::before,
+    .bat::after {
+      content: "";
+      position: absolute;
+      top: 8px;
+      width: 54px;
+      height: 44px;
+      background: linear-gradient(180deg, #667490, #3f4d66);
+      border-radius: 10px 44px 44px 10px;
+    }
+
+    .bat::before {
+      left: -42px;
+      transform: rotate(-18deg);
+    }
+
+    .bat::after {
+      right: -42px;
+      transform: scaleX(-1) rotate(-18deg);
+    }
+
+    .pulse {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 2px solid rgba(123, 160, 255, 0.1);
+      opacity: 0;
+      transform: scale(0.55);
+    }
+
+    .pulse.run {
+      animation: pulseOut 1.1s ease-out;
+    }
+
+    @keyframes pulseOut {
+      0% {
+        opacity: 0.65;
+        transform: scale(0.55);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(2.5);
+      }
+    }
+
+    .bat-direction-panel {
+      display: grid;
+      gap: 14px;
+    }
+
+    .bat-direction-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .direction-btn {
+      appearance: none;
+      border: 2px solid rgba(24, 48, 66, 0.1);
+      border-radius: 20px;
+      padding: 18px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.96);
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      display: grid;
+      gap: 8px;
+      justify-items: start;
+      text-align: left;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .direction-btn:hover,
+    .direction-btn:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(74, 120, 255, 0.3);
+      box-shadow: 0 12px 22px rgba(24, 48, 66, 0.08);
+    }
+
+    .direction-btn.selected {
+      border-color: rgba(74, 120, 255, 0.55);
+      background: rgba(74, 120, 255, 0.08);
+      box-shadow: 0 12px 22px rgba(74, 120, 255, 0.12);
+    }
+
+    .direction-btn strong {
+      font-size: 22px;
+    }
+
+    .direction-btn span {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .direction-note {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(24, 48, 66, 0.05);
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.6;
+    }
+
+    .bat-answer-box {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .bat-answer-box strong {
+      color: white;
+      font-size: 17px;
+    }
+
+    .bat-answer-box p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.6;
+      font-size: 17px;
+    }
+
+    .scan-stage {
+      min-height: 340px;
+      border-radius: 24px;
+      overflow: hidden;
+      position: relative;
+      background:
+        radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.08), transparent 24%),
+        linear-gradient(180deg, #fcf5d8, #f4ead0);
+      border: 1px solid rgba(24, 48, 66, 0.08);
+      display: grid;
+      place-items: center;
+    }
+
+    .scan-card {
+      width: min(300px, calc(100% - 36px));
+      aspect-ratio: 1;
+      border-radius: 30px;
+      background: rgba(255, 255, 255, 0.64);
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(24, 48, 66, 0.08);
+    }
+
+    .scan-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .scan-mask {
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          180deg,
+          rgba(244, 234, 208, 0.92) 0,
+          rgba(244, 234, 208, 0.92) 48px,
+          rgba(244, 234, 208, 0.22) 48px,
+          rgba(244, 234, 208, 0.22) 60px
+        );
+      transition: clip-path 220ms ease;
+      clip-path: inset(0 0 0 0);
+      pointer-events: none;
+    }
+
+    .scan-meter {
+      display: grid;
+      gap: 10px;
+    }
+
+    .scan-meter strong {
+      font-size: 17px;
+    }
+
+    .scan-bar {
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(24, 48, 66, 0.08);
+      overflow: hidden;
+    }
+
+    .scan-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--warm), #ffd267);
+      transition: width 220ms ease;
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .option-btn {
+      appearance: none;
+      border: 2px solid rgba(24, 48, 66, 0.1);
+      border-radius: 18px;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.92);
+      font-size: 21px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .option-btn small {
+      display: block;
+      margin-top: 4px;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .option-btn:hover,
+    .option-btn:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(39, 164, 125, 0.4);
+      box-shadow: 0 12px 22px rgba(24, 48, 66, 0.08);
+    }
+
+    .option-btn.selected {
+      border-color: rgba(39, 164, 125, 0.6);
+      background: rgba(39, 164, 125, 0.08);
+    }
+
+    .footer-card {
+      padding: 16px 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .footer-card h3 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .footer-card ul {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .footer-card li {
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .summary-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(19, 28, 43, 0.58);
+      display: none;
+      place-items: center;
+      padding: 20px;
+      z-index: 20;
+    }
+
+    .summary-modal.show {
+      display: grid;
+    }
+
+    .summary-card {
+      width: min(720px, 100%);
+      background: #fffef9;
+      border-radius: 28px;
+      box-shadow: 0 28px 64px rgba(19, 28, 43, 0.28);
+      padding: 28px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .summary-card h2,
+    .summary-card p {
+      margin: 0;
+    }
+
+    .summary-card p {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .badge-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .badge {
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(24, 48, 66, 0.05);
+      display: grid;
+      gap: 8px;
+    }
+
+    .badge strong {
+      font-size: 28px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 960px) {
+      .mission-board {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .page {
+        width: min(100vw - 16px, 100%);
+        margin: 12px auto 22px;
+      }
+
+      .hero,
+      .shell,
+      .footer-card,
+      .summary-card {
+        padding: 18px;
+      }
+
+      .option-grid,
+      .observation-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bat-direction-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <span class="eyebrow">一年级上册 · 第二课 · 线上实验 02</span>
+      <h1>动物感官大比拼</h1>
+      <p>切换动物视角，做完 3 个小挑战：看暗处、听方向、猜轮廓。</p>
+      <div class="hero-meta">
+        <span>小猫夜视</span>
+        <span>蝙蝠听音</span>
+        <span>蚂蚁触角</span>
+      </div>
+    </section>
+
+    <section class="shell">
+      <div class="topbar">
+        <div class="progress-wrap">
+          <div class="progress-head">
+            <span id="progressText">当前任务：1 / 3</span>
+            <span id="tipText">先观察，再动手完成挑战</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+        <div class="score-card" id="scoreCard">当前得分：0 / 100</div>
+      </div>
+
+      <div class="guide-bar">
+        <button class="guide-button" id="tutorialButton" type="button">🔊 听老师讲规则</button>
+        <span class="guide-text" id="tutorialText">先听这一关怎么玩，再开始操作。</span>
+      </div>
+
+      <div class="mission-tabs">
+        <button class="mission-tab active" id="tabCat" type="button">小猫夜视</button>
+        <button class="mission-tab" id="tabBat" type="button">蝙蝠听音</button>
+        <button class="mission-tab" id="tabAnt" type="button">蚂蚁触角</button>
+      </div>
+
+      <div class="mission-board">
+        <div class="panel">
+          <div class="panel-title">
+            <h2 id="missionTitle">任务 1：我是黑暗中行走的小猫</h2>
+            <span class="chip" id="missionChip">夜视观察</span>
+          </div>
+          <p class="mission-copy" id="missionDescription">
+            先看暗处，再切到小猫夜视，找出小老鼠。
+          </p>
+          <div class="observation-grid" id="observationGrid"></div>
+          <div class="feedback" id="feedbackBox"></div>
+          <div class="action-row" id="actionRow">
+            <button class="btn btn-accent" id="missionActionPrimary" type="button">切换猫咪夜视</button>
+            <button class="btn btn-primary hidden" id="missionActionSecondary" type="button">下一任务</button>
+          </div>
+        </div>
+
+        <div class="panel scene-panel">
+          <div id="catMission">
+            <div class="night-scene" id="nightScene">
+              <div class="view-tag" id="viewTag">当前视角：人类</div>
+              <div class="moon"></div>
+              <div class="plant"></div>
+              <div class="basket"></div>
+              <div class="crate"></div>
+              <div class="mouse-target"></div>
+              <div class="mouse-tail"></div>
+              <div class="ground"></div>
+              <button class="hotspot" id="catSpotPlant" type="button" style="left:22px;bottom:112px;width:124px;height:168px;" aria-label="植物区域"></button>
+              <button class="hotspot" id="catSpotBasket" type="button" style="left:148px;bottom:96px;width:122px;height:104px;" aria-label="篮子区域"></button>
+              <button class="hotspot" id="catSpotCrate" type="button" style="right:48px;bottom:96px;width:126px;height:108px;" aria-label="纸箱区域"></button>
+              <div class="night-glow"></div>
+              <div class="night-overlay"></div>
+            </div>
+          </div>
+
+          <div id="batMission" class="hidden">
+            <div class="echo-stage">
+              <div class="pulse" id="pulseA"></div>
+              <div class="pulse" id="pulseB"></div>
+              <div class="bat"></div>
+            </div>
+            <div class="cta-row">
+              <button class="btn btn-accent" id="playBatSoundButton" type="button">播放回声线索</button>
+            </div>
+            <div class="bat-direction-panel">
+              <div class="direction-note" id="batRoundText">第 1 次听音：先播放回声，再点选一个方向按钮。</div>
+              <div class="bat-direction-grid">
+                <button class="direction-btn" data-direction="front" type="button">
+                  <strong>前方 ↑</strong>
+                  <span>声音更亮、更近，回声更短</span>
+                </button>
+                <button class="direction-btn" data-direction="back" type="button">
+                  <strong>后方 ↓</strong>
+                  <span>声音更闷、更远，回声更拖后</span>
+                </button>
+                <button class="direction-btn" data-direction="left" type="button">
+                  <strong>左边 ←</strong>
+                  <span>左侧感更强，音色稍亮</span>
+                </button>
+                <button class="direction-btn" data-direction="right" type="button">
+                  <strong>右边 →</strong>
+                  <span>右侧感更强，音色稍尖</span>
+                </button>
+              </div>
+            </div>
+            <div class="bat-answer-box">
+              <strong>答题区</strong>
+              <p id="batSelectionText">步骤 1：先播放回声线索。步骤 2：点击一个方向。步骤 3：点击“提交方向答案”。</p>
+              <div class="action-row">
+                <button class="btn btn-primary" id="submitBatAnswerButton" type="button" disabled>提交方向答案</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="antMission" class="hidden">
+            <div class="scan-stage">
+              <div class="scan-card">
+                <canvas class="scan-canvas" id="antCanvas" width="300" height="300"></canvas>
+                <div class="scan-mask" id="scanMask"></div>
+              </div>
+            </div>
+            <div class="scan-meter">
+              <strong id="scanText">触角扫描进度：0 / 5</strong>
+              <div class="scan-bar">
+                <div class="scan-fill" id="scanFill"></div>
+              </div>
+            </div>
+            <div class="cta-row">
+              <button class="btn btn-accent" id="scanButton" type="button">触角再探一次</button>
+            </div>
+            <div class="option-grid" id="antOptionGrid">
+              <button class="option-btn" data-option="leaf" type="button">树叶<small>shù yè</small></button>
+              <button class="option-btn" data-option="banana" type="button">香蕉<small>xiāng jiāo</small></button>
+              <button class="option-btn" data-option="fish" type="button">小鱼<small>xiǎo yú</small></button>
+              <button class="option-btn" data-option="cup" type="button">杯子<small>bēi zi</small></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="footer-card">
+      <h3>观察点</h3>
+      <ul>
+        <li>能不能说出动物在哪种环境里更厉害。</li>
+        <li>能不能比较动物和人的感知差别。</li>
+      </ul>
+    </section>
+  </div>
+
+  <div class="summary-modal" id="summaryModal" aria-hidden="true">
+    <div class="summary-card">
+      <span class="eyebrow">实验完成</span>
+      <h2>你完成了“动物感官大比拼”</h2>
+      <p id="summaryText"></p>
+      <div class="badge-grid">
+        <div class="badge">
+          <span>总得分</span>
+          <strong id="finalScore">0</strong>
+        </div>
+        <div class="badge">
+          <span>夜视挑战</span>
+          <strong id="finalCat">未完成</strong>
+        </div>
+        <div class="badge">
+          <span>听音辨位</span>
+          <strong id="finalBat">0/4</strong>
+        </div>
+        <div class="badge">
+          <span>触角探索</span>
+          <strong id="finalAnt">未完成</strong>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary" id="restartButton" type="button">重新开始</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const progressText = document.getElementById("progressText");
+    const tipText = document.getElementById("tipText");
+    const progressFill = document.getElementById("progressFill");
+    const scoreCard = document.getElementById("scoreCard");
+    const missionTitle = document.getElementById("missionTitle");
+    const missionChip = document.getElementById("missionChip");
+    const missionDescription = document.getElementById("missionDescription");
+    const feedbackBox = document.getElementById("feedbackBox");
+    const missionActionPrimary = document.getElementById("missionActionPrimary");
+    const missionActionSecondary = document.getElementById("missionActionSecondary");
+    const observationGrid = document.getElementById("observationGrid");
+    const tabCat = document.getElementById("tabCat");
+    const tabBat = document.getElementById("tabBat");
+    const tabAnt = document.getElementById("tabAnt");
+    const tutorialButton = document.getElementById("tutorialButton");
+    const tutorialText = document.getElementById("tutorialText");
+    const catMission = document.getElementById("catMission");
+    const batMission = document.getElementById("batMission");
+    const antMission = document.getElementById("antMission");
+    const nightScene = document.getElementById("nightScene");
+    const viewTag = document.getElementById("viewTag");
+    const catSpotPlant = document.getElementById("catSpotPlant");
+    const catSpotBasket = document.getElementById("catSpotBasket");
+    const catSpotCrate = document.getElementById("catSpotCrate");
+    const playBatSoundButton = document.getElementById("playBatSoundButton");
+    const submitBatAnswerButton = document.getElementById("submitBatAnswerButton");
+    const batSelectionText = document.getElementById("batSelectionText");
+    const batRoundText = document.getElementById("batRoundText");
+    const pulseA = document.getElementById("pulseA");
+    const pulseB = document.getElementById("pulseB");
+    const scanButton = document.getElementById("scanButton");
+    const antCanvas = document.getElementById("antCanvas");
+    const antCtx = antCanvas.getContext("2d");
+    const scanMask = document.getElementById("scanMask");
+    const scanFill = document.getElementById("scanFill");
+    const scanText = document.getElementById("scanText");
+    const antOptionGrid = document.getElementById("antOptionGrid");
+    const summaryModal = document.getElementById("summaryModal");
+    const summaryText = document.getElementById("summaryText");
+    const finalScore = document.getElementById("finalScore");
+    const finalCat = document.getElementById("finalCat");
+    const finalBat = document.getElementById("finalBat");
+    const finalAnt = document.getElementById("finalAnt");
+    const restartButton = document.getElementById("restartButton");
+
+    const batDirections = ["left", "front", "right", "back"];
+
+    let audioContext;
+    let currentMission = 0;
+    let score = 0;
+
+    function pickTutorialVoice(synth) {
+      const voices = synth.getVoices ? synth.getVoices() : [];
+      const preferredNames = [
+        "Xiaoxiao",
+        "Xiaoyi",
+        "Yunxi",
+        "Yaoyao",
+        "Meijia",
+        "Sin-ji",
+        "Tingting"
+      ];
+      return (
+        voices.find((voice) => preferredNames.some((name) => voice.name.includes(name))) ||
+        voices.find((voice) => voice.lang && voice.lang.toLowerCase().includes("zh")) ||
+        null
+      );
+    }
+
+    function speakTutorial() {
+      const synth = window.speechSynthesis;
+      const scripts = [
+        "小朋友们，先看暗暗的场景，再点切换夜视。找到你觉得藏着小老鼠的位置，点一下就可以了。",
+        "这一关先点播放回声，再选前后左右中的一个方向，最后提交方向答案。",
+        "这一关每点一次按钮，就会多看清一点轮廓。你可以边扫边猜，也可以全部看清再选。"
+      ];
+      tutorialText.textContent = "正在播报这一关的玩法。";
+
+      if (!synth) {
+        tutorialText.textContent = "当前浏览器不支持语音播报。";
+        return;
+      }
+
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(scripts[currentMission]);
+      utterance.lang = "zh-CN";
+      const preferredVoice = pickTutorialVoice(synth);
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+      utterance.rate = 0.72;
+      utterance.pitch = 1.03;
+      utterance.volume = 1;
+      utterance.onend = () => {
+        tutorialText.textContent = "规则播报完成，可以开始操作。";
+      };
+      utterance.onerror = () => {
+        tutorialText.textContent = "语音播报没有成功，请再点一次。";
+      };
+      synth.speak(utterance);
+    }
+
+    const state = {
+      cat: {
+        catMode: false,
+        selected: "",
+        completed: false
+      },
+      bat: {
+        round: 0,
+        selected: "",
+        correct: 0,
+        played: false,
+        canAnswer: false,
+        completed: false
+      },
+      ant: {
+        scanCount: 0,
+        selected: "",
+        completed: false
+      }
+    };
+
+    function setFeedback(type, html) {
+      feedbackBox.className = `feedback show ${type}`;
+      feedbackBox.innerHTML = html;
+    }
+
+    function clearFeedback() {
+      feedbackBox.className = "feedback";
+      feedbackBox.innerHTML = "";
+    }
+
+    function renderObservationCards(cards) {
+      observationGrid.innerHTML = cards.map((card) => `
+        <div class="mini-card">
+          <strong>${card.title}</strong>
+          <span>${card.body}</span>
+        </div>
+      `).join("");
+    }
+
+    function applyExperiment2Tweaks() {
+      const footerCard = document.querySelector(".footer-card");
+      if (footerCard) {
+        footerCard.remove();
+      }
+
+      const directionLabels = {
+        front: "前方 ↑",
+        back: "后方 ↓",
+        left: "左方 ←",
+        right: "右方 →"
+      };
+
+      document.querySelectorAll(".direction-btn").forEach((btn) => {
+        const label = btn.querySelector("strong");
+        if (label && directionLabels[btn.dataset.direction]) {
+          label.textContent = directionLabels[btn.dataset.direction];
+        }
+      });
+
+      if (currentMission !== 1) {
+        return;
+      }
+
+      missionDescription.textContent = "听回声，选方向。";
+      tipText.textContent = "先听，再选。";
+      tutorialText.textContent = "任务 2：听回声，选方向。";
+      renderObservationCards([
+        { title: "听", body: "回声从哪边来？" },
+        { title: "做", body: "听完直接选。" }
+      ]);
+
+      batRoundText.textContent = state.bat.completed
+        ? `已完成：答对 ${state.bat.correct} 次。`
+        : `第 ${state.bat.round + 1} 次：先听，再选。`;
+
+      batSelectionText.textContent = state.bat.completed
+        ? `已完成 4 次判断，答对 ${state.bat.correct} 次。`
+        : !state.bat.played
+          ? "听回声，选方向，提交。"
+          : state.bat.selected
+            ? `已选：${{ left: "左方", right: "右方", front: "前方", back: "后方" }[state.bat.selected]}。提交即可。`
+            : "先选一个方向。";
+    }
+
+    function updateScore() {
+      scoreCard.textContent = `当前得分：${score} / 100`;
+    }
+
+    function drawAntObject() {
+      antCtx.clearRect(0, 0, antCanvas.width, antCanvas.height);
+      antCtx.fillStyle = "#fffdf8";
+      antCtx.fillRect(0, 0, antCanvas.width, antCanvas.height);
+      antCtx.save();
+      antCtx.translate(150, 148);
+      antCtx.rotate(-0.22);
+      antCtx.fillStyle = "#6db36d";
+      antCtx.beginPath();
+      antCtx.moveTo(-12, -104);
+      antCtx.quadraticCurveTo(78, -68, 84, 0);
+      antCtx.quadraticCurveTo(76, 76, -10, 112);
+      antCtx.quadraticCurveTo(-92, 76, -104, 0);
+      antCtx.quadraticCurveTo(-92, -70, -12, -104);
+      antCtx.closePath();
+      antCtx.fill();
+      antCtx.strokeStyle = "#3b7d4d";
+      antCtx.lineWidth = 6;
+      antCtx.beginPath();
+      antCtx.moveTo(-8, -98);
+      antCtx.quadraticCurveTo(8, -6, 20, 102);
+      antCtx.stroke();
+      antCtx.restore();
+    }
+
+    function updateProgress() {
+      progressText.textContent = `当前任务：${currentMission + 1} / 3`;
+      progressFill.style.width = `${(currentMission + 1) / 3 * 100}%`;
+    }
+
+    function renderTabs() {
+      [tabCat, tabBat, tabAnt].forEach((tab, index) => {
+        tab.classList.toggle("active", currentMission === index);
+      });
+    }
+
+    function showMission(index) {
+      currentMission = index;
+      renderTabs();
+      updateProgress();
+      clearFeedback();
+      catMission.classList.toggle("hidden", index !== 0);
+      batMission.classList.toggle("hidden", index !== 1);
+      antMission.classList.toggle("hidden", index !== 2);
+
+      if (index === 0) {
+        missionTitle.textContent = "任务 1：我是黑暗中行走的小猫";
+        missionChip.textContent = "夜视观察";
+        missionDescription.textContent = "先看暗处，再切到小猫夜视，找出小老鼠。";
+        tipText.textContent = "先切夜视，再找小老鼠";
+        tutorialText.textContent = "任务 1：切换夜视，找出小老鼠。";
+        renderObservationCards([
+          { title: "看哪里", body: "找出藏在角落里的小老鼠。" },
+          { title: "怎么做", body: "先切夜视，再点你怀疑的位置。" }
+        ]);
+        missionActionPrimary.textContent = state.cat.catMode ? "回到人类视角" : "切换猫咪夜视";
+        missionActionPrimary.classList.remove("hidden");
+        missionActionSecondary.classList.toggle("hidden", !state.cat.completed);
+        missionActionSecondary.textContent = "下一任务";
+        renderCatMission();
+      }
+
+      if (index === 1) {
+        missionTitle.textContent = "任务 2：我是听音辨位的蝙蝠";
+        missionChip.textContent = "方向判断";
+        missionDescription.textContent = "先播放回声，再判断声音来自哪里。";
+        tipText.textContent = "先播放回声，再选方向";
+        tutorialText.textContent = "任务 2：先听回声，再选前后左右。";
+        renderObservationCards([
+          { title: "听什么", body: "听出声音更像来自哪一边。" },
+          { title: "怎么做", body: "先播放，再选方向，最后提交。" }
+        ]);
+        missionActionPrimary.classList.add("hidden");
+        missionActionSecondary.classList.toggle("hidden", !state.bat.completed);
+        missionActionSecondary.textContent = "下一任务";
+        renderBatMission();
+      }
+
+      if (index === 2) {
+        missionTitle.textContent = "任务 3：我是用触角探索的蚂蚁";
+        missionChip.textContent = "局部轮廓探索";
+        missionDescription.textContent = "每扫一次，就会多看清一点轮廓。";
+        tipText.textContent = "一点点扫描，再猜轮廓";
+        tutorialText.textContent = "任务 3：一边扫描，一边猜这是什么。";
+        renderObservationCards([
+          { title: "看什么", body: "根据轮廓猜出隐藏物体。" },
+          { title: "怎么做", body: "点按钮继续扫描，也可以随时作答。" }
+        ]);
+        missionActionPrimary.classList.add("hidden");
+        missionActionSecondary.classList.toggle("hidden", !state.ant.completed);
+        missionActionSecondary.textContent = "查看结果";
+        renderAntMission();
+      }
+      applyExperiment2Tweaks();
+    }
+
+    function renderCatMission() {
+      viewTag.textContent = `当前视角：${state.cat.catMode ? "小猫夜视" : "人类"}`;
+      nightScene.classList.toggle("cat-mode", state.cat.catMode);
+      [catSpotPlant, catSpotBasket, catSpotCrate].forEach((spot) => {
+        spot.classList.toggle("selected", state.cat.selected === spot.id);
+      });
+    }
+
+    function handleCatPick(spotId) {
+      if (state.cat.completed) {
+        return;
+      }
+      state.cat.selected = spotId;
+      renderCatMission();
+
+      if (spotId === "catSpotCrate") {
+        score += state.cat.catMode ? 30 : 20;
+        updateScore();
+        state.cat.completed = true;
+        missionActionSecondary.classList.remove("hidden");
+        setFeedback(
+          "success",
+          `回答正确。小老鼠就藏在纸箱旁边。${state.cat.catMode ? "切换到小猫夜视后，你更容易看清暗处目标。" : "你在人类视角下也发现了目标，但如果环境更暗，小猫会更有优势。"}`
+        );
+      } else {
+        setFeedback(
+          "error",
+          "这里没有小老鼠。再想一想：暗处的小目标通常会躲在角落和遮挡物旁边。"
+        );
+      }
+    }
+
+    function initAudio() {
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === "suspended") {
+        return audioContext.resume();
+      }
+      return Promise.resolve();
+    }
+
+    function playDirectionalSound(direction) {
+      return initAudio().then(() => {
+        const now = audioContext.currentTime + 0.03;
+        pulseA.classList.remove("run");
+        pulseB.classList.remove("run");
+        void pulseA.offsetWidth;
+        pulseA.classList.add("run");
+        setTimeout(() => {
+          pulseB.classList.remove("run");
+          void pulseB.offsetWidth;
+          pulseB.classList.add("run");
+        }, 220);
+
+        const panNode = typeof audioContext.createStereoPanner === "function"
+          ? audioContext.createStereoPanner()
+          : null;
+        if (panNode) {
+          panNode.pan.value = direction === "left" ? -0.78 : direction === "right" ? 0.78 : 0;
+          panNode.connect(audioContext.destination);
+        }
+
+        const filter = audioContext.createBiquadFilter();
+        filter.type = direction === "back" ? "lowpass" : "bandpass";
+        filter.frequency.value =
+          direction === "front" ? 2200 :
+          direction === "back" ? 620 :
+          direction === "left" ? 1450 : 1320;
+        filter.Q.value = direction === "front" ? 1.2 : 0.9;
+
+        const gain = audioContext.createGain();
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(
+          direction === "front" ? 0.085 :
+          direction === "back" ? 0.035 : 0.07,
+          now + 0.02
+        );
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + (direction === "back" ? 0.28 : 0.22));
+
+        const osc = audioContext.createOscillator();
+        osc.type = direction === "back" ? "sine" : direction === "right" ? "square" : "triangle";
+        osc.frequency.setValueAtTime(direction === "front" ? 1160 : direction === "back" ? 500 : direction === "left" ? 820 : 960, now);
+        osc.frequency.exponentialRampToValueAtTime(direction === "front" ? 1980 : direction === "back" ? 580 : direction === "left" ? 1380 : 1720, now + 0.08);
+        osc.frequency.exponentialRampToValueAtTime(direction === "front" ? 980 : direction === "back" ? 420 : direction === "left" ? 760 : 860, now + (direction === "back" ? 0.28 : 0.22));
+
+        const echoOsc = audioContext.createOscillator();
+        const echoGain = audioContext.createGain();
+        echoOsc.type = direction === "front" ? "triangle" : direction === "right" ? "square" : "sine";
+        const echoDelay = direction === "front" ? 0.12 : direction === "back" ? 0.34 : direction === "left" ? 0.16 : 0.18;
+        echoOsc.frequency.setValueAtTime(direction === "front" ? 760 : direction === "back" ? 380 : direction === "left" ? 560 : 700, now + echoDelay);
+        echoGain.gain.setValueAtTime(0.0001, now + echoDelay);
+        echoGain.gain.linearRampToValueAtTime(
+          direction === "front" ? 0.016 :
+          direction === "back" ? 0.032 : 0.022,
+          now + echoDelay + 0.04
+        );
+        echoGain.gain.exponentialRampToValueAtTime(0.0001, now + echoDelay + (direction === "back" ? 0.34 : 0.22));
+
+        osc.connect(filter);
+        filter.connect(gain);
+        if (panNode) {
+          gain.connect(panNode);
+          echoGain.connect(panNode);
+        } else {
+          gain.connect(audioContext.destination);
+          echoGain.connect(audioContext.destination);
+        }
+        echoOsc.connect(echoGain);
+
+        osc.start(now);
+        osc.stop(now + (direction === "back" ? 0.3 : 0.24));
+        echoOsc.start(now + echoDelay);
+        echoOsc.stop(now + echoDelay + (direction === "back" ? 0.38 : 0.26));
+
+        if (direction === "left" || direction === "right") {
+          const tick1 = audioContext.createOscillator();
+          const tickGain1 = audioContext.createGain();
+          tick1.type = direction === "left" ? "triangle" : "square";
+          tick1.frequency.setValueAtTime(direction === "left" ? 540 : 760, now + 0.28);
+          tickGain1.gain.setValueAtTime(0.0001, now + 0.28);
+          tickGain1.gain.linearRampToValueAtTime(0.02, now + 0.3);
+          tickGain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.38);
+
+          if (panNode) {
+            tickGain1.connect(panNode);
+          } else {
+            tickGain1.connect(audioContext.destination);
+          }
+          tick1.connect(tickGain1);
+          tick1.start(now + 0.28);
+          tick1.stop(now + 0.4);
+        }
+      });
+    }
+
+    function renderBatMission() {
+      batRoundText.textContent = state.bat.completed
+        ? `听音完成：共答对 ${state.bat.correct} 次`
+        : `第 ${state.bat.round + 1} 次听音：先播放，再判断方向`;
+      missionActionSecondary.classList.toggle("hidden", !state.bat.completed);
+      submitBatAnswerButton.disabled = !state.bat.canAnswer || !state.bat.selected;
+      batSelectionText.textContent = state.bat.completed
+        ? `你已经完成 4 次听音辨位，共答对 ${state.bat.correct} 次。`
+        : !state.bat.played
+          ? "步骤 1：先播放回声线索。步骤 2：点击一个方向。步骤 3：点击“提交方向答案”。"
+          : state.bat.selected
+            ? `你当前选择的是：${{ left: "左边", right: "右边", front: "前方", back: "后方" }[state.bat.selected]}。点击“提交方向答案”完成本轮。`
+            : "回声已经播放。请先点击一个方向按钮，再提交答案。";
+      document.querySelectorAll(".direction-btn").forEach((btn) => {
+        btn.classList.toggle("selected", state.bat.selected === btn.dataset.direction);
+      });
+      applyExperiment2Tweaks();
+    }
+
+    function handleBatPlay() {
+      if (state.bat.completed) {
+        return;
+      }
+      state.bat.played = true;
+      state.bat.canAnswer = true;
+      state.bat.selected = "";
+      renderBatMission();
+      playDirectionalSound(batDirections[state.bat.round]);
+      setFeedback("success", "回声已经播放。现在请先选择方向，再点击“提交方向答案”。");
+    }
+
+    function selectBatDirection(direction) {
+      if (state.bat.completed || !state.bat.played || !state.bat.canAnswer) {
+        return;
+      }
+      state.bat.selected = direction;
+      renderBatMission();
+    }
+
+    function submitBatAnswer() {
+      if (state.bat.completed || !state.bat.played || !state.bat.canAnswer || !state.bat.selected) {
+        return;
+      }
+      const correctDirection = batDirections[state.bat.round];
+      if (state.bat.selected === correctDirection) {
+        state.bat.correct += 1;
+        score += 10;
+        updateScore();
+        setFeedback("success", `判断正确。这次回声来自${state.bat.selected === "left" ? "左边" : state.bat.selected === "right" ? "右边" : state.bat.selected === "front" ? "前方" : "后方"}。`);
+      } else {
+        const dirMap = { left: "左边", right: "右边", front: "前方", back: "后方" };
+        setFeedback("error", `这次判断错了。正确方向是${dirMap[correctDirection]}。`);
+      }
+      state.bat.round += 1;
+      state.bat.played = false;
+      state.bat.canAnswer = false;
+      state.bat.selected = "";
+      if (state.bat.round >= batDirections.length) {
+        state.bat.completed = true;
+        missionActionSecondary.classList.remove("hidden");
+        setTimeout(() => {
+          setFeedback("success", `蝙蝠挑战完成。你共答对 ${state.bat.correct} / ${batDirections.length} 次。`);
+        }, 40);
+      }
+      renderBatMission();
+    }
+
+    function renderAntMission() {
+      const percent = Math.min(state.ant.scanCount / 5, 1);
+      scanFill.style.width = `${percent * 100}%`;
+      scanText.textContent = `触角扫描进度：${state.ant.scanCount} / 5`;
+      scanMask.style.clipPath = `inset(${Math.min(100, percent * 100)}% 0 0 0)`;
+      scanMask.style.opacity = state.ant.scanCount >= 5 ? "0" : "1";
+      scanButton.disabled = state.ant.scanCount >= 5 || state.ant.completed;
+      missionActionSecondary.classList.toggle("hidden", !state.ant.completed);
+      antOptionGrid.querySelectorAll(".option-btn").forEach((btn) => {
+        btn.classList.toggle("selected", state.ant.selected === btn.dataset.option);
+      });
+    }
+
+    function handleScan() {
+      if (state.ant.completed || state.ant.scanCount >= 5) {
+        return;
+      }
+      state.ant.scanCount += 1;
+      renderAntMission();
+      if (state.ant.scanCount < 5) {
+        setFeedback("success", "触角又探索到了一部分轮廓。你可以继续扫描，也可以试着先猜。");
+      } else {
+        setFeedback("success", "轮廓已经全部显示。现在试着判断这是什么。");
+      }
+    }
+
+    function handleAntGuess(option) {
+      if (state.ant.completed) {
+        return;
+      }
+      state.ant.selected = option;
+      renderAntMission();
+      if (option === "leaf") {
+        score += Math.max(16, 30 - state.ant.scanCount * 2);
+        updateScore();
+        state.ant.completed = true;
+        missionActionSecondary.classList.remove("hidden");
+        setFeedback("success", "回答正确。这是一片树叶。蚂蚁虽然不能像人一样直接看清完整图像，但能靠一点点接触信息判断形状。");
+      } else {
+        setFeedback("error", "还不对。继续扫描一下，留意整体轮廓是不是细长、尖尖、对称。");
+      }
+    }
+
+    function showSummary() {
+      summaryModal.classList.add("show");
+      summaryModal.setAttribute("aria-hidden", "false");
+      finalScore.textContent = String(score);
+      finalCat.textContent = state.cat.completed ? "完成" : "未完成";
+      finalBat.textContent = `${state.bat.correct}/4`;
+      finalAnt.textContent = state.ant.completed ? "完成" : "未完成";
+      summaryText.textContent = score >= 70
+        ? "你已经能看出动物感知世界的特别之处：小猫擅长暗处观察，蝙蝠擅长听音辨位，蚂蚁擅长靠局部线索探索。"
+        : "你已经完成三项动物感官任务。下次可以更注意环境和线索之间的关系，判断会更准确。";
+    }
+
+    function resetAll() {
+      score = 0;
+      updateScore();
+      Object.assign(state.cat, { catMode: false, selected: "", completed: false });
+      Object.assign(state.bat, { round: 0, selected: "", correct: 0, played: false, canAnswer: false, completed: false });
+      Object.assign(state.ant, { scanCount: 0, selected: "", completed: false });
+      summaryModal.classList.remove("show");
+      summaryModal.setAttribute("aria-hidden", "true");
+      showMission(0);
+    }
+
+    tabCat.addEventListener("click", () => showMission(0));
+    tabBat.addEventListener("click", () => showMission(1));
+    tabAnt.addEventListener("click", () => showMission(2));
+
+    catSpotPlant.addEventListener("click", () => handleCatPick("catSpotPlant"));
+    catSpotBasket.addEventListener("click", () => handleCatPick("catSpotBasket"));
+    catSpotCrate.addEventListener("click", () => handleCatPick("catSpotCrate"));
+
+    missionActionPrimary.addEventListener("click", () => {
+      if (currentMission === 0) {
+        state.cat.catMode = !state.cat.catMode;
+        renderCatMission();
+        missionActionPrimary.textContent = state.cat.catMode ? "回到人类视角" : "切换猫咪夜视";
+        setFeedback("success", state.cat.catMode ? "已经切换到小猫夜视。暗处目标现在更容易看清。"
+          : "已经回到人类视角。现在试着比较两种观察效果。");
+      }
+    });
+
+    missionActionSecondary.addEventListener("click", () => {
+      if (currentMission === 0) {
+        showMission(1);
+      } else if (currentMission === 1) {
+        showMission(2);
+      } else {
+        showSummary();
+      }
+    });
+
+    playBatSoundButton.addEventListener("click", handleBatPlay);
+    document.querySelectorAll(".direction-btn").forEach((btn) => {
+      btn.addEventListener("click", () => selectBatDirection(btn.dataset.direction));
+    });
+    submitBatAnswerButton.addEventListener("click", submitBatAnswer);
+
+    scanButton.addEventListener("click", handleScan);
+    antOptionGrid.querySelectorAll(".option-btn").forEach((btn) => {
+      btn.addEventListener("click", () => handleAntGuess(btn.dataset.option));
+    });
+
+    tutorialButton.addEventListener("click", speakTutorial);
+    restartButton.addEventListener("click", resetAll);
+
+    drawAntObject();
+    updateScore();
+    showMission(0);
+    applyExperiment2Tweaks();
+  </script>
+</body>
+</html>
